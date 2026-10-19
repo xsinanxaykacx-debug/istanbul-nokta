@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Crosshair, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Plus, Search, ShieldCheck, UserRound, X } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Plus, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 
