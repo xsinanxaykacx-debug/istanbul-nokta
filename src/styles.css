@@ -196,3 +196,9 @@
   .copy-code-button { padding: 8px; }
   .copy-code-button span { display: none; }
 }
+
+
+/* Pin deletion is available only to the pin owner and admins. */
+.delete-pin-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 42px; margin-top: 14px; padding: 11px 14px; border: 1px solid #f1c7c7; border-radius: 10px; background: #fff3f3; color: #b42318; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .15s, border-color .15s; }
+.delete-pin-button:hover:not(:disabled) { background: #ffe5e5; border-color: #e9a4a4; }
+.delete-pin-button:disabled { opacity: .6; cursor: not-allowed; }
