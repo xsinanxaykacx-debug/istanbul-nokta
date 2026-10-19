@@ -236,3 +236,69 @@
 .pin-searchbox input { flex: 1; width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #29372f; font-size: 11px; }
 .pin-searchbox .search-clear { flex: 0 0 auto; }
 @media(max-width:760px) { .place-search-wrap { width: 100%; max-width: none; } .place-searchbox { height: 45px; } .place-searchbox input { font-size: 12px; } .map-toolbar { align-items: flex-start; } .map-hint { display: none; } }
+
+
+/* Pin categories: marker colors, list labels, detail badge and form selector. */
+.pin-icon.pin-icon-yesiller { background: #1e8e55; }
+.pin-icon.pin-icon-siviller { background: #2878d0; }
+.pin-icon.pin-icon-hepsi { background: #d64545; }
+
+.category-select {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #dfe6e1;
+  border-radius: 10px;
+  outline: none;
+  background: #fbfcfb;
+  color: #25352c;
+  font-size: 12px;
+}
+.category-select:focus {
+  border-color: #6a9c82;
+  box-shadow: 0 0 0 3px #dcefe3;
+}
+
+.pin-category-label {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-top: 5px !important;
+  font-weight: 700;
+}
+.pin-category-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.category-yesiller { color: #1e8e55 !important; }
+.category-siviller { color: #2878d0 !important; }
+.category-hepsi { color: #d64545 !important; }
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 0 0 8px;
+  padding: 5px 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+.category-badge::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
