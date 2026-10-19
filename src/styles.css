@@ -240,7 +240,8 @@
 
 /* Pin categories: marker colors, list labels, detail badge and form selector. */
 .pin-icon.pin-icon-yesiller { background: #1e8e55; }
-.pin-icon.pin-icon-siviller { background: #2878d0; }
+.pin-icon.pin-icon-maviler { background: #3b82f6; }
+.pin-icon.pin-icon-siviller { background: #1f2937; }
 .pin-icon.pin-icon-hepsi { background: #d64545; }
 
 .category-select {
@@ -277,7 +278,8 @@
   background: currentColor;
 }
 .category-yesiller { color: #1e8e55 !important; }
-.category-siviller { color: #2878d0 !important; }
+.category-maviler { color: #3b82f6 !important; }
+.category-siviller { color: #1f2937 !important; }
 .category-hepsi { color: #d64545 !important; }
 
 .category-badge {
@@ -515,5 +517,70 @@ footer { flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   }
   .side-panel > .panel-footnote {
     padding: 7px 10px;
+  }
+}
+
+
+/* Category filter buttons below the place search. */
+.map-toolbar {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.place-search-wrap {
+  width: min(430px, 100%);
+  max-width: 100%;
+}
+.category-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 2px 2px 6px;
+  pointer-events: auto;
+  scrollbar-width: thin;
+}
+.category-filter-button {
+  flex: 0 0 auto;
+  border: 1px solid #dce4de;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #f7f9f7;
+  color: #34463c;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.category-filter-button.selected {
+  border-color: #173f34;
+  background: #173f34;
+  color: #fff;
+}
+.category-filter-button:focus-visible {
+  outline: 2px solid #6a9c82;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .map-toolbar {
+    align-items: flex-start;
+  }
+  .place-search-wrap {
+    width: 100%;
+    max-width: none;
+  }
+  .category-filter-row {
+    width: 100%;
+    max-width: calc(100vw - 44px);
+    gap: 6px;
+    margin-top: 7px;
+    padding-bottom: 7px;
+  }
+  .category-filter-button {
+    padding: 8px 11px;
+    font-size: 11px;
   }
 }
