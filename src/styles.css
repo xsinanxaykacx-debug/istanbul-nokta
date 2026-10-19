@@ -37,3 +37,18 @@
 @media(max-width:760px) { .lightbox-backdrop { padding: 55px 12px; } .lightbox-image { max-width: 100%; max-height: calc(100vh - 110px); } .lightbox-prev { left: 7px; } .lightbox-next { right: 7px; } .lightbox-nav { width: 40px; height: 48px; background: #17231dbb; } }
 
 .pin-date { margin: 14px 0 0; color: #87928b; font-size: 11px; }
+
+
+/* GPS Sprint */
+.locate-button{position:absolute;z-index:600;right:16px;bottom:18px;width:48px;height:48px;display:grid;place-items:center;border:1px solid #dce5df;border-radius:14px;background:#fff;color:#245945;box-shadow:0 4px 16px #20382a26}
+.locate-button:hover:not(:disabled){background:#f0f7f2}
+.locate-button:disabled{opacity:.8}
+.gps-spinner{animation:gps-spin .9s linear infinite}
+@keyframes gps-spin{to{transform:rotate(360deg)}}
+.user-location-marker{background:transparent;border:0}
+.user-location-dot{display:block;width:20px;height:20px;border:3px solid #fff;border-radius:50%;background:#2785ff;box-shadow:0 0 0 7px #2785ff33,0 2px 8px #102b4c66}
+.user-location-popup{display:grid;gap:7px;min-width:150px}
+.user-location-popup strong{font-size:12px;color:#243b30}
+.user-location-popup span{font-size:11px;color:#68776e;font-variant-numeric:tabular-nums}
+.user-location-popup button{min-height:40px;padding:8px 11px;border:0;border-radius:8px;background:#173f34;color:#fff;font-size:12px;font-weight:700}
+@media(max-width:760px){.locate-button{right:12px;bottom:72px;width:48px;height:48px}}
