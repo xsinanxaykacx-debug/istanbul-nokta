@@ -204,9 +204,8 @@
 .delete-pin-button:disabled { opacity: .6; cursor: not-allowed; }
 
 
-/* Precise location selection: draggable draft marker and GPS control. */
-.draft-pin-icon-wrap { background: transparent; border: 0; cursor: grab; touch-action: none; }
-.draft-pin-icon-wrap:active { cursor: grabbing; }
+/* Draft pin appearance and GPS control. */
+.draft-pin-icon-wrap { background: transparent; border: 0; }
 .draft-pin-target { position: relative; width: 44px; height: 50px; display: flex; justify-content: center; align-items: flex-start; }
 .draft-pin-target > .pin-icon { z-index: 2; flex: 0 0 28px; }
 .draft-pin-halo { position: absolute; z-index: 1; width: 25px; height: 25px; left: 9.5px; bottom: 0; border: 2px solid #2c8a65; border-radius: 50%; background: #4aa77c26; box-shadow: 0 0 0 5px #4aa77c1a, 0 2px 8px #173f3440; pointer-events: none; }
