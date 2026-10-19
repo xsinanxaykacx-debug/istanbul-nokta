@@ -584,3 +584,13 @@ footer { flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
     font-size: 11px;
   }
 }
+
+/* Keep Leaflet zoom controls below the added category-filter row. */
+.map .leaflet-top.leaflet-left {
+  top: 112px;
+}
+@media (max-width: 760px) {
+  .map .leaflet-top.leaflet-left {
+    top: 112px;
+  }
+}
