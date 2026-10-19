@@ -377,3 +377,38 @@ footer { flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   footer span:first-child { width: auto; }
   .notice, .setup-banner { font-size: 11px; padding: 8px 10px; }
 }
+
+
+/* Keep the panel note in normal layout flow and prevent it covering form controls. */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.side-panel > .panel-content,
+.side-panel > .empty-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+.side-panel > .panel-footnote {
+  position: static;
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #edf0ee;
+}
+.side-panel > form.panel-content {
+  padding-bottom: 28px;
+}
+@media (max-width: 760px) {
+  .side-panel > .panel-footnote {
+    padding: 10px 12px;
+  }
+  .side-panel > form.panel-content {
+    padding-bottom: 24px;
+  }
+}
