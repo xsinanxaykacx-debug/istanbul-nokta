@@ -202,3 +202,18 @@
 .delete-pin-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 42px; margin-top: 14px; padding: 11px 14px; border: 1px solid #f1c7c7; border-radius: 10px; background: #fff3f3; color: #b42318; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .15s, border-color .15s; }
 .delete-pin-button:hover:not(:disabled) { background: #ffe5e5; border-color: #e9a4a4; }
 .delete-pin-button:disabled { opacity: .6; cursor: not-allowed; }
+
+
+/* Precise location selection: draggable draft marker and GPS control. */
+.draft-pin-icon-wrap { background: transparent; border: 0; }
+.draft-pin-target { position: relative; width: 44px; height: 50px; display: flex; justify-content: center; align-items: flex-start; }
+.draft-pin-target > .pin-icon { z-index: 2; flex: 0 0 28px; }
+.draft-pin-halo { position: absolute; z-index: 1; width: 25px; height: 25px; left: 9.5px; bottom: 0; border: 2px solid #2c8a65; border-radius: 50%; background: #4aa77c26; box-shadow: 0 0 0 5px #4aa77c1a, 0 2px 8px #173f3440; pointer-events: none; }
+.draft-coordinates-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 11px 0 0; }
+.draft-coordinates-row .coordinates { margin: 0; overflow-wrap: anywhere; }
+.use-location-button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px; border: 1px solid #d5e6dc; border-radius: 9px; padding: 8px 10px; background: #edf7f0; color: #245d43; font-size: 11px; font-weight: 700; }
+.use-location-button:hover:not(:disabled) { background: #e0f0e6; }
+.use-location-button:disabled { opacity: .65; cursor: wait; }
+.draft-location-hint { margin: 7px 0 16px; color: #819087; font-size: 10px; line-height: 1.55; }
+.draft-coordinates-row + .draft-location-hint { margin-top: 7px; }
+@media(max-width:420px) { .draft-coordinates-row { align-items: flex-start; flex-direction: column; } .use-location-button { align-self: flex-start; } }
