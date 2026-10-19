@@ -204,7 +204,7 @@
 .delete-pin-button:disabled { opacity: .6; cursor: not-allowed; }
 
 
-/* Precise location selection: draggable draft marker and GPS control. */
+/* Draft pin appearance and GPS control. */
 .draft-pin-icon-wrap { background: transparent; border: 0; }
 .draft-pin-target { position: relative; width: 44px; height: 50px; display: flex; justify-content: center; align-items: flex-start; }
 .draft-pin-target > .pin-icon { z-index: 2; flex: 0 0 28px; }
