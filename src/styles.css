@@ -819,3 +819,47 @@ h1, h2 { color: var(--text-dark); }
   color: #9ca3af;
   font-size: 0.75rem;
 }
+
+/* Optional TomTom live traffic toggle, stacked above the GPS control. */
+.traffic-button {
+  position: absolute;
+  z-index: 600;
+  right: 16px;
+  bottom: 76px;
+  min-width: 48px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--border-color, #dce5df);
+  border-radius: 14px;
+  background: #fff;
+  color: #245945;
+  box-shadow: 0 4px 16px rgba(32, 56, 42, .16);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.traffic-button:hover { background: #f0f7f2; }
+.traffic-button.is-active {
+  border-color: #059669;
+  background: #059669;
+  color: #fff;
+}
+.traffic-button.is-active:hover { background: #047857; }
+.traffic-button:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .traffic-button {
+    right: 12px;
+    bottom: 130px;
+    height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .traffic-button { transition: none; }
+}
