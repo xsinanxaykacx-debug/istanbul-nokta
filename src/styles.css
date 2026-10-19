@@ -863,3 +863,36 @@ h1, h2 { color: var(--text-dark); }
 @media (prefers-reduced-motion: reduce) {
   .traffic-button { transition: none; }
 }
+
+/* AYTAR: yakın işaretçi grupları */
+.pin-cluster-icon-wrap {
+  background: transparent;
+  border: 0;
+}
+.pin-cluster-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 3px solid rgba(255, 255, 255, .96);
+  border-radius: 50%;
+  background: #17664d;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(18, 54, 39, .32), 0 0 0 2px rgba(23, 102, 77, .22);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transition: transform .15s ease, background .15s ease;
+}
+.pin-cluster-icon-wrap:hover .pin-cluster-icon {
+  transform: scale(1.08);
+  background: #0f513d;
+}
+.pin-cluster-icon-wrap:focus-visible {
+  outline: 3px solid #f2b84b;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pin-cluster-icon { transition: none; }
+}
