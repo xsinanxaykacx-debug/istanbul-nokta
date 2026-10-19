@@ -389,8 +389,29 @@ footer { flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
 .side-panel > .empty-panel {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
   overscroll-behavior: contain;
+}
+.side-panel > .panel-content {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.side-panel > .empty-panel {
+  overflow: hidden;
+}
+.side-panel > .empty-panel:has(.pin-list) {
+  display: flex;
+  flex-direction: column;
+}
+.side-panel > .empty-panel > .pin-searchbox {
+  flex: 0 0 auto;
+}
+.side-panel > .empty-panel > .pin-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-content: start;
 }
 .side-panel > form.panel-content {
   display: flex;
