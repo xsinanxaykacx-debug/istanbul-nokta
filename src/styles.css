@@ -217,3 +217,22 @@
 .draft-location-hint { margin: 7px 0 16px; color: #819087; font-size: 10px; line-height: 1.55; }
 .draft-coordinates-row + .draft-location-hint { margin-top: 7px; }
 @media(max-width:420px) { .draft-coordinates-row { align-items: flex-start; flex-direction: column; } .use-location-button { align-self: flex-start; } }
+
+/* Nominatim place search and separate pin search */
+.place-search-wrap { position: relative; width: min(430px, 72%); pointer-events: auto; }
+.place-searchbox { width: 100%; min-width: 0; height: 46px; border-radius: 13px; box-sizing: border-box; }
+.place-searchbox input { font-size: 13px; }
+.place-search-spinner { flex: 0 0 auto; color: #537160; }
+.place-search-results { position: absolute; z-index: 1200; top: calc(100% + 7px); left: 0; right: 0; overflow: hidden; border: 1px solid #e1e8e3; border-radius: 13px; background: #fff; box-shadow: 0 12px 30px #20382a24; }
+.place-search-result { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 12px; border: 0; border-bottom: 1px solid #edf1ee; background: #fff; color: #34463c; text-align: left; font-size: 12px; line-height: 1.5; cursor: pointer; }
+.place-search-result:last-child { border-bottom: 0; }
+.place-search-result:hover, .place-search-result:focus-visible { background: #f1f7f3; outline: none; }
+.place-search-result svg { flex: 0 0 auto; margin-top: 1px; color: #3478d4; }
+.place-search-status { padding: 13px; color: #7b8981; font-size: 12px; }
+.search-place-marker { display: grid; place-items: center; background: transparent; border: 0; }
+.search-place-dot { display: block; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: #2785ff; box-shadow: 0 0 0 5px #2785ff33, 0 3px 10px #102b4c66; }
+.pin-searchbox { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 37px; margin: 0 0 16px; padding: 0 10px; border: 1px solid #e5ebe7; border-radius: 9px; background: #fbfcfb; color: #7b8981; }
+.pin-searchbox:focus-within { border-color: #8bb39a; box-shadow: 0 0 0 2px #dcefe366; }
+.pin-searchbox input { flex: 1; width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #29372f; font-size: 11px; }
+.pin-searchbox .search-clear { flex: 0 0 auto; }
+@media(max-width:760px) { .place-search-wrap { width: 100%; max-width: none; } .place-searchbox { height: 45px; } .place-searchbox input { font-size: 12px; } .map-toolbar { align-items: flex-start; } .map-hint { display: none; } }
