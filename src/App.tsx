@@ -97,6 +97,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: ClusteredPinsPr
       key={key}
       position={center}
       icon={clusterIcon}
+      opacity={group.some(pin => !isDimmed(pin)) ? 1 : 0.35}
       alt={`${group.length} işaretçi içeren grup`}
       title={`${group.length} işaretçi — yakınlaştırmak için tıkla`}
       keyboard
