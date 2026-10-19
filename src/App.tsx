@@ -13,10 +13,10 @@ type Pin = { id: string; owner_id: string; lat: number; lng: number; description
 type Notice = { kind: 'success'|'error'|'info'; text: string };
 type PlaceResult = { place_id: number; lat: string; lon: string; display_name: string; address?: Record<string,string> };
 const pinIcons: Record<string, L.DivIcon> = {
-  'Yeşiller': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesiller"><span></span></div>', iconSize:[28,36], iconAnchor:[14,34] }),
-  'Maviler': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-maviler"><span></span></div>', iconSize:[28,36], iconAnchor:[14,34] }),
-  'Siviller': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-siviller"><span></span></div>', iconSize:[28,36], iconAnchor:[14,34] }),
-  'Hepsi': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-hepsi"><span></span></div>', iconSize:[28,36], iconAnchor:[14,34] })
+  'Yeşiller': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesiller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8 0-14 4-14 11a5 5 0 0 0 5 5c7 0 11-6 9-16Z"/><path d="M4 20c4-5 7-7 12-10"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
+  'Maviler': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-maviler"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 10 6 14a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
+  'Siviller': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-siviller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
+  'Hepsi': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-hepsi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] })
 };
 function normalizeCategory(category?: string | null): string { return category === 'Yeşiller' || category === 'Maviler' || category === 'Siviller' ? category : 'Hepsi'; }
 function categoryClass(category?: string | null): string { return `category-${normalizeCategory(category) === 'Yeşiller' ? 'yesiller' : normalizeCategory(category) === 'Maviler' ? 'maviler' : normalizeCategory(category) === 'Siviller' ? 'siviller' : 'hepsi'}`; }
