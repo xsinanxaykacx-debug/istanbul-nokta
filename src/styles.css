@@ -797,3 +797,25 @@ h1, h2 { color: var(--text-dark); }
   .voice-button { transition: none; }
   .voice-button.is-listening { animation: none; }
 }
+
+/* Reverse-geocoded address in the selected pin details */
+.selected-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 4px;
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.selected-address > svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: #4b5563;
+}
+.selected-coordinates {
+  margin-top: 2px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
