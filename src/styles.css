@@ -52,3 +52,20 @@
 .user-location-popup span{font-size:11px;color:#68776e;font-variant-numeric:tabular-nums}
 .user-location-popup button{min-height:40px;padding:8px 11px;border:0;border-radius:8px;background:#173f34;color:#fff;font-size:12px;font-weight:700}
 @media(max-width:760px){.locate-button{right:12px;bottom:72px;width:48px;height:48px}}
+
+
+/* Reference-code onboarding */
+.pending-status{cursor:pointer;border:1px solid #f0d6a1;background:#fff5df;color:#835b12;font:inherit;font-size:11px;font-weight:800;padding:8px 11px;border-radius:999px}
+.pending-status:hover{background:#ffedc6}
+.onboarding-panel{display:flex;flex-direction:column;justify-content:center;min-height:100%;text-align:left}
+.onboarding-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:#e5f1e8;color:#2c6b4c;margin-bottom:18px}
+.onboarding-panel .eyebrow{margin-bottom:8px}
+.onboarding-panel h2{font:800 23px Manrope,sans-serif;letter-spacing:-.6px;color:#23372b;margin:0}
+.onboarding-copy{font-size:12px;line-height:1.75;color:#748078;margin:10px 0 12px}
+.onboarding-form{margin-top:2px}
+.onboarding-form input{display:block;width:100%;min-width:0;border:1px solid #dfe6e1;border-radius:10px;padding:13px 12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px}
+.onboarding-form input:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}
+.onboarding-form .primary-button{min-height:44px}
+.onboarding-form .primary-button:disabled{opacity:.6;cursor:not-allowed}
+.onboarding-footnote{font-size:10px;line-height:1.6;color:#8a958e;margin:13px 0 0}
+@media(max-width:760px){.pending-status{font-size:10px;padding:7px 9px}.onboarding-panel{min-height:300px}}
