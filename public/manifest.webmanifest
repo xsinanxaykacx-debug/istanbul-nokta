@@ -1,1 +1,17 @@
-{"name":"İstanbul Nokta","short_name":"İstanbul Nokta","description":"İstanbul üzerinde konum ve fotoğraf paylaşımı","start_url":"/","display":"standalone","background_color":"#f6f8f6","theme_color":"#173f34","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "name": "Gözcü",
+  "short_name": "Gözcü",
+  "description": "İstanbul üzerinde konum ve fotoğraf paylaşımı",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
