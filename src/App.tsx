@@ -135,13 +135,11 @@ export default function App() {
 // Keep pins and their photos synchronized across connected clients.
   useEffect(()=>{
     if(!session?.user)return;
+    if(!supabase)return;
+    const supabaseClient=supabase;
 
     console.log('[realtime] Abonelik başlatılıyor...');
     console.log('Supabase URL:',import.meta.env.VITE_SUPABASE_URL);
-    if(!supabase){
-      console.error('[realtime] Supabase istemcisi oluşturulmamış. VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY ayarlarını kontrol et.');
-      return;
-    }
     if(!canSeePins){
       console.warn('[realtime] Profil aktif değil; pin aboneliği kurulmadı.');
       return;
@@ -149,7 +147,7 @@ export default function App() {
 
     let channel: ReturnType<typeof supabase.channel>|null=null;
     try{
-      channel=supabase.channel('realtime-pins')
+      channel=supabaseClient.channel('realtime-pins')
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
           const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
           if(!row||!row.id){
@@ -216,11 +214,11 @@ export default function App() {
       });
 
       return()=>{
-        if(channel)void supabase.removeChannel(channel);
+        if(channel)void supabaseClient.removeChannel(channel);
       };
     }catch(error){
       console.error('[realtime] Abonelik başlatılırken beklenmeyen hata:',error);
-      if(channel)void supabase.removeChannel(channel);
+      if(channel)void supabaseClient.removeChannel(channel);
     }
   },[session?.user?.id,canSeePins,ensurePhotoUrls]);
 
