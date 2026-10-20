@@ -128,7 +128,7 @@ export default function App() {
   const filteredListPins=useMemo(()=>{if(!debouncedQuery.trim()||searchResultIds===null)return filteredPins;return filteredPins.filter(pin=>searchResultIds.includes(pin.id));},[filteredPins,debouncedQuery,searchResultIds]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
-  const loadPins=useCallback(async(options:{silent?:boolean}={})=>{if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){if(!options.silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!options.silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
+  const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean}=false)=>{const silent=typeof silentOrOptions==='boolean'?silentOrOptions:!!silentOrOptions.silent;if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
   // Keep the latest loadPins callback available to the interval without stale closures.
@@ -137,9 +137,16 @@ export default function App() {
   useEffect(()=>{void loadPins();},[loadPins]);
   // Poll silently every 10 seconds while the user is signed in.
   useEffect(()=>{
-    if(!session?.user)return;
-    const interval=window.setInterval(()=>{void loadPinsRef.current({silent:true});},10_000);
-    return()=>window.clearInterval(interval);
+    if(!session?.user?.id)return;
+    console.log("Polling başladı: Her 10 saniyede bir veri çekilecek.");
+    const intervalId=window.setInterval(()=>{
+      console.log("Polling: Veri çekiliyor...");
+      void loadPinsRef.current(true);
+    },10000);
+    return()=>{
+      console.log("Polling durduruldu.");
+      window.clearInterval(intervalId);
+    };
   },[session?.user?.id]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
