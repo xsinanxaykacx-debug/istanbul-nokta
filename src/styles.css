@@ -1529,3 +1529,54 @@ select option { background: var(--surface); color: var(--text-dark); }
 .avoid-time-control { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 12px; }
 .avoid-time-control select { max-width: 145px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface); color: var(--text-dark); }
 .route-info-card .route-avoid-note { margin: 0; color: #dc2626; }
+
+
+/* Fix right-panel vertical layout: keep controls compact and scroll the pin list. */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.side-panel > .empty-panel:has(.pin-searchbox) {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel-top-controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0;
+}
+.panel-top-controls .route-info-card {
+  flex-shrink: 0;
+  margin-bottom: 7px;
+  padding: 10px;
+}
+.panel-top-controls .route-info-heading { margin-bottom: 5px; }
+.panel-top-controls .route-info-heading h2 { font-size: 12px; }
+.panel-top-controls .route-info-card p { margin: 4px 0; font-size: 10px; line-height: 1.35; }
+.panel-top-controls .avoid-route-controls { gap: 5px; margin-top: 7px; padding-top: 7px; }
+.panel-top-controls .avoid-route-toggle,
+.panel-top-controls .avoid-time-control { font-size: 10px; }
+.panel-top-controls .avoid-time-control select { padding: 4px 6px; font-size: 10px; }
+.panel-top-controls .route-card-actions { margin-top: 5px; }
+.panel-top-controls .route-card-actions .secondary-button { padding: 5px 8px; font-size: 10px; }
+.panel-top-controls .panel-filters { flex-shrink: 0; margin-bottom: 6px; }
+.panel-top-controls .pin-searchbox { flex-shrink: 0; }
+.panel-top-controls .route-stop-list-heading { flex-shrink: 0; margin: 7px 0 2px; }
+.side-panel > .empty-panel:has(.pin-list) .pin-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  align-content: start;
+}
