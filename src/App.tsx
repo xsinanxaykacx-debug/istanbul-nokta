@@ -134,76 +134,86 @@ export default function App() {
   useEffect(()=>{void loadPins();},[loadPins]);
 // Keep pins and their photos synchronized across connected clients.
   useEffect(()=>{
+    if(!session?.user)return;
     if(!supabase||!canSeePins)return;
 
-    const channel=supabase.channel('realtime-pins')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
-        const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
-        if(!row||!row.id){
-          console.warn('[realtime-pins] pins INSERT payload has no id; event skipped.',payload);
-          return;
-        }
-        const newPin={...row,pin_photos:[]} as Pin;
-        setPins(current=>{
-          if(current.some(p=>p.id===newPin.id))return current;
-          return [newPin,...current];
+    try{
+      console.log('[realtime] Abonelik başlatılıyor...');
+      console.log('Supabase URL:',import.meta.env.VITE_SUPABASE_URL);
+
+      const channel=supabase.channel('realtime-pins')
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
+          const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
+          if(!row||!row.id){
+            console.warn('[realtime] pins INSERT payload içinde id yok; olay atlandı.',payload);
+            return;
+          }
+          const newPin={...row,pin_photos:[]} as Pin;
+          setPins(current=>{
+            if(current.some(p=>p.id===newPin.id))return current;
+            return [newPin,...current];
+          });
+        })
+        .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
+          const deletedId=(payload.old as {id?:string}|null)?.id;
+          if(!deletedId){
+            console.warn('[realtime] pins DELETE payload içinde id yok; olay atlandı.',payload);
+            return;
+          }
+          setPins(current=>current.filter(pin=>pin.id!==deletedId));
+          setSelected(current=>current?.id===deletedId?null:current);
+          setLightboxIndex(null);
+        })
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
+          const incoming=payload.new as (Partial<PinPhoto>&{pin_id?:string})|null;
+          if(!incoming?.id||!incoming.pin_id){
+            console.warn('[realtime] pin_photos INSERT payload içinde id/pin_id eksik; olay atlandı.',payload);
+            return;
+          }
+          if(!incoming.storage_path){
+            console.warn('[realtime] pin_photos INSERT payload içinde storage_path eksik.',payload);
+          }
+          const photo=incoming as PinPhoto&{pin_id:string};
+          setPins(current=>current.map(pin=>{
+            if(pin.id!==photo.pin_id||pin.pin_photos.some(item=>item.id===photo.id))return pin;
+            return {...pin,pin_photos:[...pin.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
+          }));
+          setSelected(current=>{
+            if(!current||current.id!==photo.pin_id||current.pin_photos.some(item=>item.id===photo.id))return current;
+            return {...current,pin_photos:[...current.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
+          });
+          if(photo.storage_path)void ensurePhotoUrls([photo.storage_path]);
+        })
+        .on('postgres_changes',{event:'DELETE',schema:'public',table:'pin_photos'},payload=>{
+          const deletedId=(payload.old as {id?:string}|null)?.id;
+          if(!deletedId){
+            console.warn('[realtime] pin_photos DELETE payload içinde id yok; olay atlandı.',payload);
+            return;
+          }
+          setPins(current=>current.map(pin=>pin.pin_photos.some(photo=>photo.id===deletedId)
+            ?{...pin,pin_photos:pin.pin_photos.filter(photo=>photo.id!==deletedId)}
+            :pin));
+          setSelected(current=>current&&current.pin_photos.some(photo=>photo.id===deletedId)
+            ?{...current,pin_photos:current.pin_photos.filter(photo=>photo.id!==deletedId)}
+            :current);
         });
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
-        const deletedId=(payload.old as {id?:string}|null)?.id;
-        if(!deletedId){
-          console.warn('[realtime-pins] pins DELETE payload has no id; event skipped.',payload);
-          return;
-        }
-        setPins(current=>current.filter(pin=>pin.id!==deletedId));
-        setSelected(current=>current?.id===deletedId?null:current);
-        setLightboxIndex(null);
-      })
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
-        const incoming=payload.new as (Partial<PinPhoto>&{pin_id?:string})|null;
-        if(!incoming?.id||!incoming.pin_id){
-          console.warn('[realtime-pins] pin_photos INSERT payload is missing id or pin_id; event skipped.',payload);
-          return;
-        }
-        if(!incoming.storage_path){
-          console.warn('[realtime-pins] pin_photos INSERT payload is missing storage_path.',payload);
-        }
-        const photo=incoming as PinPhoto&{pin_id:string};
-        setPins(current=>current.map(pin=>{
-          if(pin.id!==photo.pin_id||pin.pin_photos.some(item=>item.id===photo.id))return pin;
-          return {...pin,pin_photos:[...pin.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
-        }));
-        setSelected(current=>{
-          if(!current||current.id!==photo.pin_id||current.pin_photos.some(item=>item.id===photo.id))return current;
-          return {...current,pin_photos:[...current.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
-        });
-        if(photo.storage_path)void ensurePhotoUrls([photo.storage_path]);
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pin_photos'},payload=>{
-        const deletedId=(payload.old as {id?:string}|null)?.id;
-        if(!deletedId){
-          console.warn('[realtime-pins] pin_photos DELETE payload has no id; event skipped.',payload);
-          return;
-        }
-        setPins(current=>current.map(pin=>pin.pin_photos.some(photo=>photo.id===deletedId)
-          ?{...pin,pin_photos:pin.pin_photos.filter(photo=>photo.id!==deletedId)}
-          :pin));
-        setSelected(current=>current&&current.pin_photos.some(photo=>photo.id===deletedId)
-          ?{...current,pin_photos:current.pin_photos.filter(photo=>photo.id!==deletedId)}
-          :current);
-      })
-      .subscribe(status=>{
-        if(status!=='SUBSCRIBED'){
-          console.warn(`[realtime-pins] Supabase channel status: ${status}`);
+
+      console.log('[realtime] Dinleyiciler eklendi; abonelik başlatılıyor.');
+      channel.subscribe((status,err)=>{
+        if(status!=='SUBSCRIBED'||err){
+          console.error('[realtime] Hata:',status,err);
         }else{
-          console.info('[realtime-pins] Supabase Realtime subscription active.');
+          console.log('[realtime] SUBSCRIBED — bağlantı kuruldu.');
         }
       });
 
-    return()=>{
-      void supabase.removeChannel(channel);
-    };
-  },[canSeePins,ensurePhotoUrls]);
+      return()=>{
+        void supabase.removeChannel(channel);
+      };
+    }catch(error){
+      console.error('[realtime] Abonelik başlatılırken beklenmeyen hata:',error);
+    }
+  },[session?.user?.id,canSeePins,ensurePhotoUrls]);
 
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
