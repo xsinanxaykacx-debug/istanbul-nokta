@@ -347,27 +347,26 @@ export default function App() {
     const areas=avoidPinClusters?computeAvoidAreas(pins,avoidTimeFilter):[];
     setAvoidedAreas(areas.map(({minLat,minLng,maxLat,maxLng})=>({minLat,minLng,maxLat,maxLng})));
     const url=`https://api.tomtom.com/routing/1/calculateRoute/json?key=${encodeURIComponent(tomtomApiKey)}&traffic=true&travelMode=car&language=tr-TR`;
-    const requestRoute=async(useSupportingPoints:boolean,useAvoidAreas:boolean)=>{
+    const requestRoute=async(useAvoidAreas:boolean)=>{
       const body: {
-        supportingPoints?:Array<{point:{latitude:number;longitude:number}}>;
-        avoidAreas?:{rectangles:Array<{southWestCorner:{latitude:number;longitude:number};northEastCorner:{latitude:number;longitude:number}}>};
-      } = {};
-      if(useSupportingPoints){
-        body.supportingPoints=[
+        locations:Array<{point:{latitude:number;longitude:number}}>;
+        options?:{avoidAreas:{rectangles:Array<{southWestCorner:{latitude:number;longitude:number};northEastCorner:{latitude:number;longitude:number}}>}};
+      } = {
+        locations:[
           {point:{latitude:startLat,longitude:startLng}},
           {point:{latitude:endLat,longitude:endLng}},
-        ];
-      }
+        ],
+      };
       if(useAvoidAreas&&areas.length>0){
-        body.avoidAreas={rectangles:areas.map(area=>({
+        body.options={avoidAreas:{rectangles:areas.map(area=>({
           southWestCorner:{latitude:area.minLat,longitude:area.minLng},
           northEastCorner:{latitude:area.maxLat,longitude:area.maxLng},
-        }))};
+        }))}};
       }
       const response=await fetch(url,{
         method:'POST',
         signal:controller.signal,
-        headers:{'Accept':'application/json','Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
         body:JSON.stringify(body),
       });
       const result=await response.json().catch(()=>null) as {routes?:Array<{summary?:{lengthInMeters?:number;travelTimeInSeconds?:number};legs?:Array<{points?:Array<{latitude:number;longitude:number}>}>}>;error?:string;detailedError?:{message?:string}}|null;
@@ -381,13 +380,13 @@ export default function App() {
       try{
         let result:{route:{summary?:{lengthInMeters?:number;travelTimeInSeconds?:number}};coordinates:[number,number][]};
         try{
-          result=await requestRoute(true,avoidPinClusters&&areas.length>0);
+          result=await requestRoute(avoidPinClusters&&areas.length>0);
         }catch(error){
           if(controller.signal.aborted)return;
           const status=typeof error==='object'&&error!==null&&'status' in error?(error as {status?:number}).status:undefined;
-          if(status!==400)throw error;
-          console.warn('TomTom supportingPoints içeren POST 400 döndürdü; supportingPoints olmadan tekrar deneniyor:',error);
-          result=await requestRoute(false,avoidPinClusters&&areas.length>0);
+          if(status!==400||!avoidPinClusters||areas.length===0)throw error;
+          console.warn('TomTom avoidAreas içeren POST 400 döndürdü; locations korunarak avoidAreas olmadan tekrar deneniyor:',error);
+          result=await requestRoute(false);
         }
         if(controller.signal.aborted)return;
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,result.coordinates).distanceMeters<=150).map(pin=>pin.id);
