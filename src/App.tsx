@@ -346,19 +346,14 @@ export default function App() {
     const [endLat,endLng]=routeEnd;
     const areas=avoidPinClusters?computeAvoidAreas(pins,avoidTimeFilter):[];
     setAvoidedAreas(areas.map(({minLat,minLng,maxLat,maxLng})=>({minLat,minLng,maxLat,maxLng})));
-    const url=`https://api.tomtom.com/routing/1/calculateRoute/json?key=${encodeURIComponent(tomtomApiKey)}&traffic=true&travelMode=car&language=tr-TR`;
+    const url=`https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${endLat},${endLng}/json?key=${encodeURIComponent(tomtomApiKey)}&traffic=true&travelMode=car&language=tr-TR`;
     const requestRoute=async(useAvoidAreas:boolean)=>{
-      const body:{locations:Array<{point:{latitude:number;longitude:number}}>;options?:{avoidAreas:{rectangles:Array<{southWestCorner:{latitude:number;longitude:number};northEastCorner:{latitude:number;longitude:number}} >}}}={
-        locations:[
-          {point:{latitude:startLat,longitude:startLng}},
-          {point:{latitude:endLat,longitude:endLng}},
-        ],
-      };
+      const body: {avoidAreas?:{rectangles:Array<{southWestCorner:{latitude:number;longitude:number};northEastCorner:{latitude:number;longitude:number}}>}} = {};
       if(useAvoidAreas&&areas.length>0){
-        body.options={avoidAreas:{rectangles:areas.map(area=>({
+        body.avoidAreas={rectangles:areas.map(area=>({
           southWestCorner:{latitude:area.minLat,longitude:area.minLng},
           northEastCorner:{latitude:area.maxLat,longitude:area.maxLng},
-        }))}};
+        }))};
       }
       const response=await fetch(url,{
         method:'POST',
