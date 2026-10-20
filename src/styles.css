@@ -1515,3 +1515,27 @@ select option { background: var(--surface); color: var(--text-dark); }
   .route-stop-number { flex-basis: 21px; width: 21px; height: 21px; font-size: 10px; }
   .pin-list-item.route-stop-item { gap: 6px; }
 }
+
+
+/* Time-filtered route avoidance controls and visualized avoid areas. */
+.avoid-route-controls { display: flex; flex-direction: column; gap: 10px; margin: 0 0 13px; padding: 10px; border: 1px solid var(--border-color); border-radius: 11px; background: var(--bg-main); }
+.avoid-route-toggle { display: flex; align-items: center; gap: 9px; color: var(--text-dark); font-size: 12px; font-weight: 700; cursor: pointer; }
+.avoid-route-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.avoid-route-switch { position: relative; flex: 0 0 34px; width: 34px; height: 19px; border-radius: 999px; background: #94a3b8; transition: background .18s ease; }
+.avoid-route-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.22); transition: transform .18s ease; }
+.avoid-route-toggle input:checked + .avoid-route-switch { background: #dc2626; }
+.avoid-route-toggle input:checked + .avoid-route-switch::after { transform: translateX(15px); }
+.avoid-route-toggle input:focus-visible + .avoid-route-switch { outline: 2px solid var(--primary); outline-offset: 3px; }
+.avoid-time-select { display: flex; flex-direction: column; gap: 5px; color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.avoid-time-select select { width: 100%; min-height: 34px; padding: 6px 9px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface); color: var(--text-dark); font: inherit; font-size: 12px; }
+.route-info-card .route-fallback-warning { margin: 9px 0 0; padding: 9px 10px; border: 1px solid rgba(217,119,6,.35); border-radius: 9px; background: rgba(245,158,11,.1); color: #b45309; font-size: 11px; font-weight: 650; }
+@media (max-width: 768px) {
+  .avoid-route-controls { gap: 8px; margin-bottom: 8px; padding: 8px; }
+  .avoid-route-toggle { gap: 7px; font-size: 10px; }
+  .avoid-route-switch { flex-basis: 30px; width: 30px; height: 17px; }
+  .avoid-route-switch::after { width: 11px; height: 11px; }
+  .avoid-route-toggle input:checked + .avoid-route-switch::after { transform: translateX(13px); }
+  .avoid-time-select { gap: 4px; font-size: 10px; }
+  .avoid-time-select select { min-height: 30px; font-size: 11px; }
+  .route-info-card .route-fallback-warning { padding: 7px; font-size: 10px; }
+}
