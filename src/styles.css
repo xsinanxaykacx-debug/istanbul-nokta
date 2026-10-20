@@ -598,13 +598,13 @@ footer { flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
 
 /* Premium visual refresh: design-only overrides. */
 :root {
-  --bg-main: #f8fafc;
-  --surface: #ffffff;
-  --primary: #059669;
-  --primary-hover: #047857;
-  --text-dark: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --bg-main: #0b1121;
+  --surface: #151f32;
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --text-dark: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-dark);
   background: var(--bg-main);
@@ -895,4 +895,150 @@ h1, h2 { color: var(--text-dark); }
 }
 @media (prefers-reduced-motion: reduce) {
   .pin-cluster-icon { transition: none; }
+}
+
+
+/* Midnight Sapphire — cohesive dark palette overrides */
+html, body, #root, .app-shell { background: var(--bg-main); color: var(--text-dark); }
+body { color-scheme: dark; }
+.topbar { border-bottom-color: var(--border-color); }
+.brand, .brand strong, h1, h2, h3, strong, .panel-heading h2, .empty-panel h2,
+.modal-head h2, .onboarding-panel h2, .pin-meta strong, .pin-list-item strong,
+.profile-welcome strong, .invite-code-info strong { color: var(--text-dark); }
+.brand small, .intro-copy, .eyebrow, .stat-label, .coordinates, .pin-date,
+.pin-list-item small, .pin-meta small, footer, .panel-footnote, .modal-privacy,
+.invite-intro, .invite-code-info small, .invite-footnote, .onboarding-copy,
+.onboarding-footnote, .empty-panel p, .field-label span { color: var(--text-muted); }
+.topbar, .side-panel, .panel-footnote, .auth-modal, .invite-modal, .profile-dropdown,
+.invite-row, .pin-list-item, .setup-banner, .notice, .map-overlay, .searchbox,
+.pin-searchbox, .place-search-results, .place-search-result, .upload-box,
+.file-list div, .photo-grid a, .photo-grid .photo-tile, .selected-address,
+.voice-button, .traffic-button, .locate-button, .icon-button {
+  border-color: var(--border-color);
+}
+.side-panel, .auth-modal, .invite-modal, .profile-dropdown, .map-overlay {
+  background: var(--surface);
+  color: var(--text-dark);
+  border-color: var(--border-color);
+}
+.panel-footnote { background: var(--surface); border-top-color: var(--border-color); }
+.pin-list-item, .invite-row, .file-list div { background: var(--surface); color: var(--text-dark); }
+.pin-list-item:hover, .profile-menu-item:hover, .search-clear:hover {
+  background: #1d2b42;
+  border-color: #3d566d;
+  color: var(--text-dark);
+}
+.pin-list-item strong, .pin-meta strong { color: var(--text-dark); }
+.primary-button, .map-add-button {
+  background: var(--primary);
+  color: #05251d;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, .18);
+}
+.primary-button:hover, .map-add-button:hover { background: #34d399; color: #05251d; }
+.secondary-button, .icon-button, .category-filter-button, .profile-trigger,
+.copy-code-button, .use-location-button, .delete-pin-button {
+  background: var(--surface);
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+.secondary-button:hover, .icon-button:hover, .category-filter-button:hover,
+.profile-menu-item:hover, .use-location-button:hover:not(:disabled),
+.copy-code-button:hover { background: #1d2b42; color: var(--text-dark); }
+.category-filter-button.selected { background: var(--primary); border-color: var(--primary); color: #05251d; }
+.searchbox, .pin-searchbox, .place-searchbox {
+  background: #101a2b;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+.searchbox > svg, .pin-searchbox > svg { color: var(--text-muted); }
+.searchbox input, .pin-searchbox input, .place-searchbox input {
+  background: transparent;
+  color: var(--text-dark);
+}
+.searchbox input::placeholder, .pin-searchbox input::placeholder,
+.place-searchbox input::placeholder, input::placeholder, textarea::placeholder {
+  color: #8495aa;
+  opacity: 1;
+}
+.searchbox:focus-within, .pin-searchbox:focus-within, .place-searchbox:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
+}
+.panel-content input:not([type="file"]), .panel-content textarea,
+.panel-content select, .auth-form input, .activation-form input,
+.onboarding-form input, .category-select, input, textarea, select {
+  background-color: #101a2b;
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+.panel-content input:not([type="file"]):focus, .panel-content textarea:focus,
+.panel-content select:focus, .auth-form input:focus, .activation-form input:focus,
+.onboarding-form input:focus, .category-select:focus, input:focus-visible,
+textarea:focus-visible, select:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
+  outline-color: var(--primary);
+}
+select option { background: var(--surface); color: var(--text-dark); }
+.upload-box { background: #101a2b; border-color: #52647a; color: #6ee7b7; }
+.upload-box:hover { background: #17283a; border-color: var(--primary); }
+.upload-box small { color: var(--text-muted); }
+.file-list button, .search-clear { color: var(--text-muted); }
+.empty-icon, .overlay-icon, .mini-pin, .avatar-placeholder, .pin-thumb {
+  background: #1d3440;
+  color: #6ee7b7;
+}
+.map-overlay { background: rgba(21, 31, 50, .96); border-color: var(--border-color); }
+.map-overlay p { color: var(--text-muted); }
+.selected-address { color: var(--text-dark); }
+.selected-address > svg { color: var(--text-muted); }
+.selected-coordinates { color: var(--text-muted); }
+.directions-link, .text-button { color: #6ee7b7; }
+.directions-link:hover, .text-button:hover { color: #a7f3d0; }
+.modal-backdrop { background: rgba(3, 8, 20, .78); }
+.profile-dropdown { box-shadow: 0 12px 34px rgba(0, 0, 0, .38); }
+.profile-welcome { color: var(--text-muted); border-bottom-color: var(--border-color); }
+.profile-menu-item { color: var(--text-dark); }
+.profile-menu-item svg { color: var(--text-muted); }
+.invite-row { border-color: var(--border-color); }
+.invite-code-info small { color: var(--text-muted); }
+.voice-button { background: var(--surface); color: var(--text-dark); border-color: var(--border-color); }
+.voice-button:hover { background: #1d2b42; color: #6ee7b7; border-color: var(--primary); }
+.traffic-button, .locate-button { background: var(--surface); color: var(--text-dark); border-color: var(--border-color); }
+.traffic-button:hover, .locate-button:hover:not(:disabled) { background: #1d2b42; color: #6ee7b7; }
+.traffic-button.is-active { background: var(--primary); border-color: var(--primary); color: #05251d; }
+.pin-cluster-icon { background: #0f8060; }
+.pin-cluster-icon-wrap:hover .pin-cluster-icon { background: #10b981; }
+.leaflet-container { background: var(--bg-main); color: var(--text-dark); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--text-dark);
+}
+.leaflet-popup-content { color: var(--text-dark); }
+.leaflet-control-zoom a, .leaflet-bar a {
+  background: var(--surface);
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+.leaflet-control-zoom a:hover, .leaflet-bar a:hover {
+  background: #1d2b42;
+  color: #6ee7b7;
+}
+.leaflet-control-attribution { background: rgba(21, 31, 50, .86); color: var(--text-muted); }
+.leaflet-control-attribution a { color: #6ee7b7; }
+.status-chip.active { background: #123a33; color: #6ee7b7; }
+.status-chip { background: #352d1c; color: #fcd58b; }
+.notice.success { background: #12372b; color: #86efac; }
+.notice.error { background: #3b2026; color: #fca5a5; }
+.notice.info { background: #172d47; color: #93c5fd; }
+.setup-banner { background: #352d1c; border-color: #66502a; color: #fcd58b; }
+.activation-note { background: #352d1c; color: #fcd58b; }
+.pending-status { background: #352d1c; border-color: #66502a; color: #fcd58b; }
+.pending-status:hover { background: #44371f; }
+.panel-content textarea, .auth-form input, .activation-form input, .onboarding-form input {
+  border-radius: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pin-list-item, .primary-button, .secondary-button, .icon-button,
+  .category-filter-button, .traffic-button, .locate-button { transition: none; }
 }
