@@ -1225,3 +1225,49 @@ select option { background: var(--surface); color: var(--text-dark); }
   pointer-events: auto;
   touch-action: manipulation;
 }
+
+
+/* Filters now live in the right panel, directly above pin search. */
+.panel-filters {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 15px;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+.panel-filters .category-filter-row {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0;
+  padding: 2px 0;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.panel-filters .category-filter-row.is-open {
+  width: 100%;
+  max-width: 100%;
+}
+.panel-filters .category-filter-row:not(.is-open) {
+  justify-content: flex-start;
+}
+.panel-filters .time-filter-control {
+  align-self: flex-start;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0;
+  justify-content: flex-start;
+}
+.panel-filters .time-filter-control select {
+  width: 100%;
+  max-width: none;
+}
+@media (max-width: 760px) {
+  .panel-filters .category-filter-row { max-width: 100%; }
+  .panel-filters .category-filter-row.is-open { max-width: 100%; }
+  .panel-filters .time-filter-control select { max-width: none; }
+}
