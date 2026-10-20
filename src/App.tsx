@@ -128,52 +128,26 @@ export default function App() {
   const filteredListPins=useMemo(()=>{if(!debouncedQuery.trim()||searchResultIds===null)return filteredPins;return filteredPins.filter(pin=>searchResultIds.includes(pin.id));},[filteredPins,debouncedQuery,searchResultIds]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
-  const loadPins=useCallback(async()=>{if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);},[canSeePins,ensurePhotoUrls]);
+  const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean}=false)=>{const silent=typeof silentOrOptions==='boolean'?silentOrOptions:!!silentOrOptions.silent;if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
+  // Keep the latest loadPins callback available to the interval without stale closures.
+  const loadPinsRef=useRef(loadPins);
+  useEffect(()=>{loadPinsRef.current=loadPins;},[loadPins]);
   useEffect(()=>{void loadPins();},[loadPins]);
-// Keep pins and their photos synchronized across connected clients.
+  // Poll silently every 10 seconds while the user is signed in.
   useEffect(()=>{
-    if(!supabase||!canSeePins)return;
-    const channel=supabase.channel('realtime-pins')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
-        const incoming={...(payload.new as unknown as Omit<Pin,'pin_photos'>),pin_photos:[]} as Pin;
-        setPins(current=>current.some(pin=>pin.id===incoming.id)?current:[incoming,...current]);
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
-        const deletedId=String((payload.old as {id?:string}).id??'');
-        if(!deletedId)return;
-        setPins(current=>current.filter(pin=>pin.id!==deletedId));
-        setSelected(current=>current?.id===deletedId?null:current);
-        setLightboxIndex(null);
-      })
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
-        const incoming=payload.new as unknown as PinPhoto & {pin_id:string};
-        if(!incoming?.id||!incoming.pin_id)return;
-        setPins(current=>current.map(pin=>{
-          if(pin.id!==incoming.pin_id||pin.pin_photos.some(photo=>photo.id===incoming.id))return pin;
-          return {...pin,pin_photos:[...pin.pin_photos,incoming].sort((a,b)=>a.sort_order-b.sort_order)};
-        }));
-        setSelected(current=>{
-          if(!current||current.id!==incoming.pin_id||current.pin_photos.some(photo=>photo.id===incoming.id))return current;
-          return {...current,pin_photos:[...current.pin_photos,incoming].sort((a,b)=>a.sort_order-b.sort_order)};
-        });
-        void ensurePhotoUrls([incoming.storage_path]);
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pin_photos'},payload=>{
-        const deletedId=String((payload.old as {id?:string}).id??'');
-        if(!deletedId)return;
-        setPins(current=>current.map(pin=>pin.pin_photos.some(photo=>photo.id===deletedId)
-          ?{...pin,pin_photos:pin.pin_photos.filter(photo=>photo.id!==deletedId)}
-          :pin));
-        setSelected(current=>current&&current.pin_photos.some(photo=>photo.id===deletedId)
-          ?{...current,pin_photos:current.pin_photos.filter(photo=>photo.id!==deletedId)}
-          :current);
-      })
-      .subscribe();
-    return()=>{void supabase.removeChannel(channel);};
-  },[canSeePins,ensurePhotoUrls]);
-
+    if(!session?.user?.id)return;
+    console.log("Polling başladı: Her 10 saniyede bir veri çekilecek.");
+    const intervalId=window.setInterval(()=>{
+      console.log("Polling: Veri çekiliyor...");
+      void loadPinsRef.current(true);
+    },10000);
+    return()=>{
+      console.log("Polling durduruldu.");
+      window.clearInterval(intervalId);
+    };
+  },[session?.user?.id]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
   useEffect(()=>{let cancelled=false;async function runSearch(){const q=debouncedQuery.trim();if(!q){setSearchResultIds(null);return;}if(!supabase||!canSeePins){setSearchResultIds([]);return;}const {data,error}=await supabase.rpc('pins_search',{q});if(cancelled)return;if(error){setSearchResultIds([]);setNotice({kind:'error',text:`Arama başarısız: ${error.message}`});return;}setSearchResultIds((data??[]).map((row:{id:string})=>row.id));}void runSearch();return()=>{cancelled=true;};},[debouncedQuery,canSeePins]);
