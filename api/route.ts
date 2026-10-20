@@ -1,7 +1,7 @@
 type VercelRequest = { method?: string; body?: unknown };
 type VercelResponse = { setHeader(name: string, value: string): void; status(code: number): VercelResponse; json(body: unknown): VercelResponse; send(body: string): VercelResponse };
 
-const ORS_URL = 'https://api.heigit.org/v2/directions/driving-car/geojson';
+const ORS_URL = 'https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson';
 const MAX_BODY_BYTES = 32 * 1024;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
