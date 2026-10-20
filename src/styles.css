@@ -1212,3 +1212,16 @@ select option { background: var(--surface); color: var(--text-dark); }
   .time-filter-control > svg { width: 14px; height: 14px; }
   .time-filter-control select { max-width: min(190px, calc(100vw - 90px)); padding: 6px 14px 6px 0; font-size: 11px; }
 }
+
+
+/* Keep floating map filters interactive above Leaflet's click surface. */
+.category-filter-row,
+.time-filter-control {
+  position: relative;
+  z-index: 700;
+  pointer-events: auto;
+}
+.time-filter-control select {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
