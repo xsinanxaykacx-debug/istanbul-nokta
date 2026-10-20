@@ -1759,3 +1759,73 @@ select option { background: var(--surface); color: var(--text-dark); }
     font-size: 12px;
   }
 }
+
+
+/* Independent voice command for creating a new pin. */
+.voice-pin-control {
+  position: absolute;
+  z-index: 650;
+  right: 76px;
+  bottom: 18px;
+}
+.voice-pin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid #8b5cf6;
+  border-radius: 14px;
+  background: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(79, 35, 150, .3);
+  font-size: 11px;
+  font-weight: 700;
+  transition: background .15s ease, transform .15s ease;
+}
+.voice-pin-button:hover { background: #7c3aed; }
+.voice-pin-button.is-listening {
+  width: auto;
+  min-width: 48px;
+  padding: 0 12px;
+  background: #dc2626;
+  border-color: #dc2626;
+  animation: voice-pin-pulse 1s ease-in-out infinite;
+}
+.voice-pin-button.is-listening svg { flex: 0 0 auto; }
+.voice-pin-tooltip {
+  position: absolute;
+  right: -8px;
+  bottom: calc(100% + 10px);
+  width: max-content;
+  max-width: min(270px, calc(100vw - 32px));
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #1f2937;
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .2);
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.voice-pin-tooltip::after {
+  content: '';
+  position: absolute;
+  right: 24px;
+  top: 100%;
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+@keyframes voice-pin-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, .38), 0 4px 16px rgba(79, 35, 150, .2); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0), 0 4px 16px rgba(79, 35, 150, .2); }
+}
+@media (max-width: 768px) {
+  .voice-pin-control { right: 58px; bottom: 72px; }
+  .voice-pin-button { width: 40px; height: 40px; border-radius: 11px; }
+  .voice-pin-button.is-listening { width: auto; height: 40px; padding: 0 9px; }
+  .voice-pin-tooltip { right: -48px; max-width: calc(100vw - 32px); }
+}
+@media (prefers-reduced-motion: reduce) { .voice-pin-button { transition: none; } .voice-pin-button.is-listening { animation: none; } }
