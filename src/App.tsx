@@ -206,11 +206,8 @@ export default function App() {
 
       console.log('[realtime] Dinleyiciler eklendi; abonelik başlatılıyor.');
       channel.subscribe((status,err)=>{
-        if(status!=='SUBSCRIBED'||err){
-          console.error('[realtime] Hata:',status,err);
-        }else{
-          console.log('[realtime] SUBSCRIBED — bağlantı kuruldu.');
-        }
+        console.log('[realtime] Durum:',status);
+        if(err)console.error('[realtime] Hata:',err);
       });
 
       return()=>{
