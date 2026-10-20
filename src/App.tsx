@@ -341,11 +341,32 @@ export default function App() {
     const [endLat,endLng]=routeEnd;
     const areas=avoidPinClusters?computeAvoidAreas(pins,avoidTimeFilter):[];
     setAvoidedAreas(areas.map(({minLat,minLng,maxLat,maxLng})=>({minLat,minLng,maxLat,maxLng})));
-    const avoidAreasValue=areas.map(area=>`${area.minLat.toFixed(6)},${area.minLng.toFixed(6)}:${area.maxLat.toFixed(6)},${area.maxLng.toFixed(6)}`).join(':');
     const requestRoute=async(useAvoidAreas:boolean)=>{
-      const avoidParam=useAvoidAreas&&avoidAreasValue?`&avoidAreas=${encodeURIComponent(avoidAreasValue)}`:'';
-      const url=`https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${endLat},${endLng}/json?key=${encodeURIComponent(tomtomApiKey)}&traffic=true&travelMode=car&language=tr-TR${avoidParam}`;
-      const response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'}});
+      const url=`https://api.tomtom.com/routing/1/calculateRoute/json?key=${encodeURIComponent(tomtomApiKey)}`;
+      const options:{traffic:'live';travelMode:'car';language:'tr-TR';avoidAreas?:{rectangles:Array<{southWestCorner:{latitude:number;longitude:number};northEastCorner:{latitude:number;longitude:number}} >}}={
+        traffic:'live',
+        travelMode:'car',
+        language:'tr-TR',
+      };
+      if(useAvoidAreas&&areas.length>0){
+        options.avoidAreas={rectangles:areas.map(area=>({
+          southWestCorner:{latitude:area.minLat,longitude:area.minLng},
+          northEastCorner:{latitude:area.maxLat,longitude:area.maxLng},
+        }))};
+      }
+      const body={
+        locations:[
+          {point:{latitude:startLat,longitude:startLng}},
+          {point:{latitude:endLat,longitude:endLng}},
+        ],
+        options,
+      };
+      const response=await fetch(url,{
+        method:'POST',
+        signal:controller.signal,
+        headers:{'Accept':'application/json','Content-Type':'application/json'},
+        body:JSON.stringify(body),
+      });
       const result=await response.json().catch(()=>null) as {routes?:Array<{summary?:{lengthInMeters?:number;travelTimeInSeconds?:number};legs?:Array<{points?:Array<{latitude:number;longitude:number}>}>}>;error?:string;detailedError?:{message?:string}}|null;
       if(!response.ok)throw new Error(result?.detailedError?.message||result?.error||`TomTom HTTP ${response.status}`);
       const route=result?.routes?.[0];
