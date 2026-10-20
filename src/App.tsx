@@ -128,105 +128,16 @@ export default function App() {
   const filteredListPins=useMemo(()=>{if(!debouncedQuery.trim()||searchResultIds===null)return filteredPins;return filteredPins.filter(pin=>searchResultIds.includes(pin.id));},[filteredPins,debouncedQuery,searchResultIds]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
-  const loadPins=useCallback(async()=>{if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);},[canSeePins,ensurePhotoUrls]);
+  const loadPins=useCallback(async(options:{silent?:boolean}={})=>{if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){if(!options.silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!options.silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
   useEffect(()=>{void loadPins();},[loadPins]);
-  // Keep the pin list fresh if Realtime events are delayed or unavailable.
-  useEffect(()=>{
-    if(!session?.user||!canSeePins)return;
-    const interval=window.setInterval(()=>{void loadPins();},30_000);
-    return()=>window.clearInterval(interval);
-  },[session?.user?.id,canSeePins,loadPins]);
-// Keep pins and their photos synchronized across connected clients.
+  // Poll silently every 10 seconds; stop when the user signs out or the component unmounts.
   useEffect(()=>{
     if(!session?.user)return;
-    if(!supabase)return;
-    const supabaseClient=supabase;
-
-    console.log('[realtime] Abonelik başlatılıyor...');
-    console.log('Supabase URL:',import.meta.env.VITE_SUPABASE_URL);
-    if(!canSeePins){
-      console.warn('[realtime] Profil aktif değil; pin aboneliği kurulmadı.');
-      return;
-    }
-
-    let channel: ReturnType<typeof supabase.channel>|null=null;
-    try{
-      channel=supabaseClient.channel('realtime-pins')
-        .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
-          console.log('YENİ PİN GELDİ:',payload.new);
-          const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
-          if(!row||!row.id){
-            console.warn('[realtime] pins INSERT payload içinde id yok; olay atlandı.',payload);
-            return;
-          }
-          const newPin={...row,pin_photos:[]} as Pin;
-          setPins(current=>{
-            if(current.some(p=>p.id===newPin.id))return current;
-            return [newPin,...current];
-          });
-        })
-        .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
-          const deletedId=(payload.old as {id?:string}|null)?.id;
-          if(!deletedId){
-            console.warn('[realtime] pins DELETE payload içinde id yok; olay atlandı.',payload);
-            return;
-          }
-          setPins(current=>current.filter(pin=>pin.id!==deletedId));
-          setSelected(current=>current?.id===deletedId?null:current);
-          setLightboxIndex(null);
-        })
-        .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
-          console.log('YENİ FOTOĞRAF GELDİ:',payload.new);
-          const incoming=payload.new as (Partial<PinPhoto>&{pin_id?:string})|null;
-          if(!incoming?.id||!incoming.pin_id){
-            console.warn('[realtime] pin_photos INSERT payload içinde id/pin_id eksik; olay atlandı.',payload);
-            return;
-          }
-          if(!incoming.storage_path){
-            console.warn('[realtime] pin_photos INSERT payload içinde storage_path eksik.',payload);
-          }
-          const photo=incoming as PinPhoto&{pin_id:string};
-          setPins(current=>current.map(pin=>{
-            if(pin.id!==photo.pin_id||pin.pin_photos.some(item=>item.id===photo.id))return pin;
-            return {...pin,pin_photos:[...pin.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
-          }));
-          setSelected(current=>{
-            if(!current||current.id!==photo.pin_id||current.pin_photos.some(item=>item.id===photo.id))return current;
-            return {...current,pin_photos:[...current.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
-          });
-          if(photo.storage_path)void ensurePhotoUrls([photo.storage_path]);
-        })
-        .on('postgres_changes',{event:'DELETE',schema:'public',table:'pin_photos'},payload=>{
-          const deletedId=(payload.old as {id?:string}|null)?.id;
-          if(!deletedId){
-            console.warn('[realtime] pin_photos DELETE payload içinde id yok; olay atlandı.',payload);
-            return;
-          }
-          setPins(current=>current.map(pin=>pin.pin_photos.some(photo=>photo.id===deletedId)
-            ?{...pin,pin_photos:pin.pin_photos.filter(photo=>photo.id!==deletedId)}
-            :pin));
-          setSelected(current=>current&&current.pin_photos.some(photo=>photo.id===deletedId)
-            ?{...current,pin_photos:current.pin_photos.filter(photo=>photo.id!==deletedId)}
-            :current);
-        });
-
-      console.log('[realtime] Dinleyiciler eklendi; abonelik başlatılıyor.');
-      channel.subscribe((status,err)=>{
-        console.log('[realtime] Durum:',status);
-        if(err)console.error('[realtime] Hata:',err);
-      });
-
-      return()=>{
-        if(channel)void supabaseClient.removeChannel(channel);
-      };
-    }catch(error){
-      console.error('[realtime] Abonelik başlatılırken beklenmeyen hata:',error);
-      if(channel)void supabaseClient.removeChannel(channel);
-    }
-  },[session?.user?.id,canSeePins,ensurePhotoUrls]);
-
+    const interval=window.setInterval(()=>{void loadPins({silent:true});},10_000);
+    return()=>window.clearInterval(interval);
+  },[session?.user?.id,loadPins]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
   useEffect(()=>{let cancelled=false;async function runSearch(){const q=debouncedQuery.trim();if(!q){setSearchResultIds(null);return;}if(!supabase||!canSeePins){setSearchResultIds([]);return;}const {data,error}=await supabase.rpc('pins_search',{q});if(cancelled)return;if(error){setSearchResultIds([]);setNotice({kind:'error',text:`Arama başarısız: ${error.message}`});return;}setSearchResultIds((data??[]).map((row:{id:string})=>row.id));}void runSearch();return()=>{cancelled=true;};},[debouncedQuery,canSeePins]);
