@@ -135,34 +135,56 @@ export default function App() {
 // Keep pins and their photos synchronized across connected clients.
   useEffect(()=>{
     if(!supabase||!canSeePins)return;
+
     const channel=supabase.channel('realtime-pins')
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
-        const incoming={...(payload.new as unknown as Omit<Pin,'pin_photos'>),pin_photos:[]} as Pin;
-        setPins(current=>current.some(pin=>pin.id===incoming.id)?current:[incoming,...current]);
+        const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
+        if(!row||!row.id){
+          console.warn('[realtime-pins] pins INSERT payload has no id; event skipped.',payload);
+          return;
+        }
+        const newPin={...row,pin_photos:[]} as Pin;
+        setPins(current=>{
+          if(current.some(p=>p.id===newPin.id))return current;
+          return [newPin,...current];
+        });
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
-        const deletedId=String((payload.old as {id?:string}).id??'');
-        if(!deletedId)return;
+        const deletedId=(payload.old as {id?:string}|null)?.id;
+        if(!deletedId){
+          console.warn('[realtime-pins] pins DELETE payload has no id; event skipped.',payload);
+          return;
+        }
         setPins(current=>current.filter(pin=>pin.id!==deletedId));
         setSelected(current=>current?.id===deletedId?null:current);
         setLightboxIndex(null);
       })
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
-        const incoming=payload.new as unknown as PinPhoto & {pin_id:string};
-        if(!incoming?.id||!incoming.pin_id)return;
+        const incoming=payload.new as (Partial<PinPhoto>&{pin_id?:string})|null;
+        if(!incoming?.id||!incoming.pin_id){
+          console.warn('[realtime-pins] pin_photos INSERT payload is missing id or pin_id; event skipped.',payload);
+          return;
+        }
+        if(!incoming.storage_path){
+          console.warn('[realtime-pins] pin_photos INSERT payload is missing storage_path.',payload);
+        }
+        const photo=incoming as PinPhoto&{pin_id:string};
         setPins(current=>current.map(pin=>{
-          if(pin.id!==incoming.pin_id||pin.pin_photos.some(photo=>photo.id===incoming.id))return pin;
-          return {...pin,pin_photos:[...pin.pin_photos,incoming].sort((a,b)=>a.sort_order-b.sort_order)};
+          if(pin.id!==photo.pin_id||pin.pin_photos.some(item=>item.id===photo.id))return pin;
+          return {...pin,pin_photos:[...pin.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
         }));
         setSelected(current=>{
-          if(!current||current.id!==incoming.pin_id||current.pin_photos.some(photo=>photo.id===incoming.id))return current;
-          return {...current,pin_photos:[...current.pin_photos,incoming].sort((a,b)=>a.sort_order-b.sort_order)};
+          if(!current||current.id!==photo.pin_id||current.pin_photos.some(item=>item.id===photo.id))return current;
+          return {...current,pin_photos:[...current.pin_photos,photo].sort((a,b)=>a.sort_order-b.sort_order)};
         });
-        void ensurePhotoUrls([incoming.storage_path]);
+        if(photo.storage_path)void ensurePhotoUrls([photo.storage_path]);
       })
       .on('postgres_changes',{event:'DELETE',schema:'public',table:'pin_photos'},payload=>{
-        const deletedId=String((payload.old as {id?:string}).id??'');
-        if(!deletedId)return;
+        const deletedId=(payload.old as {id?:string}|null)?.id;
+        if(!deletedId){
+          console.warn('[realtime-pins] pin_photos DELETE payload has no id; event skipped.',payload);
+          return;
+        }
         setPins(current=>current.map(pin=>pin.pin_photos.some(photo=>photo.id===deletedId)
           ?{...pin,pin_photos:pin.pin_photos.filter(photo=>photo.id!==deletedId)}
           :pin));
@@ -170,8 +192,17 @@ export default function App() {
           ?{...current,pin_photos:current.pin_photos.filter(photo=>photo.id!==deletedId)}
           :current);
       })
-      .subscribe();
-    return()=>{void supabase.removeChannel(channel);};
+      .subscribe(status=>{
+        if(status!=='SUBSCRIBED'){
+          console.warn(`[realtime-pins] Supabase channel status: ${status}`);
+        }else{
+          console.info('[realtime-pins] Supabase Realtime subscription active.');
+        }
+      });
+
+    return()=>{
+      void supabase.removeChannel(channel);
+    };
   },[canSeePins,ensurePhotoUrls]);
 
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
