@@ -1172,3 +1172,43 @@ select option { background: var(--surface); color: var(--text-dark); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+
+/* Compact time filter for recent pins */
+.time-filter-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: min(100%, calc(100vw - 44px));
+  min-height: 36px;
+  margin-top: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: rgba(21, 31, 50, .96);
+  color: var(--text-muted);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .16);
+  backdrop-filter: blur(10px);
+}
+.time-filter-control > svg { flex: 0 0 auto; color: #6ee7b7; }
+.time-filter-control select {
+  min-width: 0;
+  max-width: 210px;
+  padding: 7px 18px 7px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-dark);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.time-filter-control select:focus { box-shadow: none; }
+.time-filter-control option { background: var(--surface); color: var(--text-dark); }
+@media (max-width: 768px) {
+  .time-filter-control { min-height: 32px; margin-top: 5px; padding: 0 8px; gap: 5px; }
+  .time-filter-control > svg { width: 14px; height: 14px; }
+  .time-filter-control select { max-width: min(190px, calc(100vw - 90px)); padding: 6px 14px 6px 0; font-size: 11px; }
+}
