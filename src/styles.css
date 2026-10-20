@@ -1453,3 +1453,50 @@ select option { background: var(--surface); color: var(--text-dark); }
   cursor: not-allowed;
   filter: grayscale(50%);
 }
+
+
+/* AYTAR: TomTom route planning */
+.route-button {
+  position: absolute;
+  z-index: 600;
+  right: 16px;
+  bottom: 132px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--border-color, #dce5df);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  color: var(--text-dark, #245945);
+  box-shadow: 0 4px 16px rgba(32, 56, 42, .16);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.route-button:hover { background: #1d2b42; }
+.route-button.is-active { border-color: #f97316; background: #f97316; color: #fff; }
+.route-button:focus-visible { outline: 2px solid #f97316; outline-offset: 3px; }
+.route-marker-wrap { background: transparent; border: 0; }
+.route-marker { display: grid; width: 30px; height: 30px; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 800; box-shadow: 0 3px 12px rgba(0,0,0,.35); }
+.route-marker-start { background: #16a34a; }
+.route-marker-end { background: #dc2626; }
+.route-info-card { margin: 0 0 12px; padding: 13px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--surface); }
+.route-info-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #f97316; }
+.route-info-heading h2 { margin: 0; font-size: 14px; }
+.route-info-card p { margin: 6px 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.route-info-card .route-summary { color: var(--text-dark); font-weight: 700; }
+.route-info-card .route-error { color: #f87171; }
+.route-status { display: flex; align-items: center; gap: 7px; }
+.route-card-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
+.route-card-actions .secondary-button { padding: 7px 10px; font-size: 11px; }
+@media (max-width: 768px) {
+  .route-button { right: 8px; bottom: 146px; min-height: 37px; padding: 0 9px; border-radius: 11px; font-size: 10px; }
+  .route-button svg { width: 15px; height: 15px; }
+  .route-info-card { margin-bottom: 7px; padding: 9px; }
+  .route-info-heading h2 { font-size: 12px; }
+  .route-info-card p { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .route-button { transition: none; } }
