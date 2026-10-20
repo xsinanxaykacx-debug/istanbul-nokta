@@ -36,7 +36,6 @@ const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
 const searchPlaceIcon = new L.DivIcon({ className:'search-place-marker', html:'<span class="search-place-dot"></span>', iconSize:[30,30], iconAnchor:[15,15] });
 const tomtomApiKey = import.meta.env.VITE_TOMTOM_API_KEY?.trim() ?? '';
-const orsApiKey = import.meta.env.VITE_ORS_API_KEY?.trim() ?? '';
 type AvoidArea = { minLat:number; minLng:number; maxLat:number; maxLng:number };
 function computeAvoidAreas(pins:Pin[], timeFilter:'6h'|'12h'|'24h'):AvoidArea[] {
   const durationMs = timeFilter === '6h' ? 6*60*60*1000 : timeFilter === '12h' ? 12*60*60*1000 : 24*60*60*1000;
@@ -320,7 +319,6 @@ export default function App() {
   const avoidAreas = useMemo(() => computeAvoidAreas(pins, avoidTimeFilter), [pins, avoidTimeFilter]);
   useEffect(()=>{
     if(!routeMode||!routeStart||!routeEnd)return;
-    if(!orsApiKey){setRouteError('Rota hesaplanamadı, VITE_ORS_API_KEY ortam değişkenini kontrol edin.');setRouteLine(null);setRouteInfo(null);return;}
     const controller=new AbortController();
     setRouteLoading(true);
     setRouteError(null);
@@ -330,7 +328,7 @@ export default function App() {
     const [endLat,endLng]=routeEnd;
     const polygons = avoidAreas.map(area => [[[area.minLng,area.minLat],[area.maxLng,area.minLat],[area.maxLng,area.maxLat],[area.minLng,area.maxLat],[area.minLng,area.minLat]]]);
     const shouldAvoid = avoidPinClusters && polygons.length > 0;
-    const url=`https://api.heigit.org/v2/directions/driving-car/geojson?api_key=${encodeURIComponent(orsApiKey)}`;
+    const url='/api/route';
     const calculate=async()=>{
       try{
         const requestRoute=async(includeAvoid:boolean)=>{
