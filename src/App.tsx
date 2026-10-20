@@ -128,36 +128,84 @@ export default function App() {
   const filteredListPins=useMemo(()=>{if(!debouncedQuery.trim()||searchResultIds===null)return filteredPins;return filteredPins.filter(pin=>searchResultIds.includes(pin.id));},[filteredPins,debouncedQuery,searchResultIds]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
-  const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean}=false)=>{const silent=typeof silentOrOptions==='boolean'?silentOrOptions:!!silentOrOptions.silent;if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,created_at,category,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false});if(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
+  const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean}=false)=>{const silent=typeof silentOrOptions==='boolean'?silentOrOptions:!!silentOrOptions.silent;if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}try{const {data,error}=await supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,pin_photos(id,storage_path,public_url,sort_order)').order('created_at',{ascending:false}).limit(200);if(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error.message}`});return;}const rows=(data??[]) as unknown as Pin[];setPins(rows);const paths=rows.flatMap(pin=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];return first?[first.storage_path]:[];});void ensurePhotoUrls(paths);}catch(error){if(!silent)setNotice({kind:'error',text:`İşaretçiler yüklenemedi: ${error instanceof Error?error.message:'Bilinmeyen hata'}`});}},[canSeePins,ensurePhotoUrls]);
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
   // Keep the latest loadPins callback available to the interval without stale closures.
   const loadPinsRef=useRef(loadPins);
   useEffect(()=>{loadPinsRef.current=loadPins;},[loadPins]);
   useEffect(()=>{void loadPins();},[loadPins]);
-  // Poll silently every 10 seconds while the user is signed in.
+  // Realtime is the primary synchronization path for pins and their photos.
+  useEffect(()=>{
+    if(!supabase||!session?.user)return;
+    const channel=supabase.channel('realtime-pins')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
+        const incoming={...(payload.new as unknown as Omit<Pin,'pin_photos'>),pin_photos:[]} as Pin;
+        setPins(current=>{
+          if(current.some(pin=>pin.id===incoming.id))return current;
+          return [incoming,...current].sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime()).slice(0,200);
+        });
+        console.log("Realtime: Yeni pin alındı.",incoming.id);
+      })
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
+        const deletedId=String((payload.old as {id?:string}).id??'');
+        if(!deletedId)return;
+        setPins(current=>current.filter(pin=>pin.id!==deletedId));
+        setSelected(current=>current?.id===deletedId?null:current);
+        console.log("Realtime: Pin silindi.",deletedId);
+      })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
+        const photo=payload.new as unknown as PinPhoto & {pin_id?:string};
+        if(!photo?.id||!photo.pin_id)return;
+        setPins(current=>current.map(pin=>{
+          if(pin.id!==photo.pin_id||(pin.pin_photos??[]).some(item=>item.id===photo.id))return pin;
+          return {...pin,pin_photos:[...(pin.pin_photos??[]),{id:photo.id,storage_path:photo.storage_path,public_url:photo.public_url,sort_order:photo.sort_order}].sort((a,b)=>a.sort_order-b.sort_order)};
+        }));
+        setSelected(current=>{
+          if(!current||current.id!==photo.pin_id||(current.pin_photos??[]).some(item=>item.id===photo.id))return current;
+          return {...current,pin_photos:[...(current.pin_photos??[]),{id:photo.id,storage_path:photo.storage_path,public_url:photo.public_url,sort_order:photo.sort_order}].sort((a,b)=>a.sort_order-b.sort_order)};
+        });
+        void ensurePhotoUrls([photo.storage_path]);
+        console.log("Realtime: Pin fotoğrafı alındı.",photo.id);
+      })
+      .subscribe(status=>{
+        console.log("Realtime abonelik durumu:",status);
+      });
+    return()=>{void supabase.removeChannel(channel);};
+  },[session?.user?.id,ensurePhotoUrls]);
+
+  // Poll only as a fallback, and only while the page is visible.
   useEffect(()=>{
     if(!session?.user?.id)return;
-    console.log("Polling başladı: Her 10 saniyede bir veri çekilecek.");
-    const intervalId=window.setInterval(()=>{
-      console.log("Polling: Veri çekiliyor...");
-      void loadPinsRef.current(true);
-    },10000);
-    return()=>{
-      console.log("Polling durduruldu.");
-      window.clearInterval(intervalId);
+    let intervalId:number|undefined;
+    const stopPolling=()=>{
+      if(intervalId!==undefined){window.clearInterval(intervalId);intervalId=undefined;console.log("Yedek polling durduruldu.");}
     };
-  },[session?.user?.id]);
-  // Refresh immediately when the app returns to the foreground on mobile.
-  useEffect(()=>{
+    const startPolling=()=>{
+      if(document.visibilityState!=='visible'||intervalId!==undefined)return;
+      console.log("Yedek polling başladı: Her 60 saniyede bir.");
+      intervalId=window.setInterval(()=>{
+        if(document.visibilityState==='visible'){
+          console.log("Yedek polling: Veri çekiliyor...");
+          void loadPinsRef.current(true);
+        }
+      },60000);
+    };
     const handleVisibilityChange=()=>{
-      if(document.visibilityState==='visible'&&session?.user){
+      if(document.visibilityState==='visible'){
         console.log("Uygulama öne geldi, veriler yenileniyor...");
         void loadPinsRef.current(true);
+        startPolling();
+      }else{
+        stopPolling();
       }
     };
+    startPolling();
     document.addEventListener('visibilitychange',handleVisibilityChange);
-    return()=>document.removeEventListener('visibilitychange',handleVisibilityChange);
+    return()=>{
+      stopPolling();
+      document.removeEventListener('visibilitychange',handleVisibilityChange);
+    };
   },[session?.user?.id]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
