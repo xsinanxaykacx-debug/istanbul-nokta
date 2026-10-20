@@ -83,7 +83,7 @@ function computeAvoidAreas(pins:Pin[],timeFilter:'6h'|'12h'|'24h'):AvoidArea[] {
   for(const pin of pins){
     const createdAt=new Date(pin.created_at).getTime();
     if(!Number.isFinite(createdAt)||createdAt<cutoff||createdAt>now)continue;
-    let box:AvoidArea={minLat:pin.lat-0.00135,minLng:pin.lng-0.00175,maxLat:pin.lat+0.00135,maxLng:pin.lng+0.00175,pinCount:1};
+    let box:AvoidArea={minLat:pin.lat-0.00045,minLng:pin.lng-0.00060,maxLat:pin.lat+0.00045,maxLng:pin.lng+0.00060,pinCount:1};
     let merged=true;
     while(merged){
       merged=false;
@@ -98,7 +98,7 @@ function computeAvoidAreas(pins:Pin[],timeFilter:'6h'|'12h'|'24h'):AvoidArea[] {
     }
     boxes.push(box);
   }
-  return boxes.sort((a,b)=>b.pinCount-a.pinCount).slice(0,20);
+  return boxes.sort((a,b)=>b.pinCount-a.pinCount).slice(0,10);
 }
 function formatRouteDistance(meters:number):string { return meters>=1000?`${(meters/1000).toLocaleString('tr-TR',{maximumFractionDigits:1})} km`:`${Math.round(meters)} m`; }
 function formatRouteDuration(seconds:number):string {
@@ -369,7 +369,7 @@ export default function App() {
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,result.coordinates).distanceMeters<=150).map(pin=>pin.id);
         setRouteLine(result.coordinates);
         setRouteInfo({distance:formatRouteDistance(result.route.summary?.lengthInMeters??0),duration:formatRouteDuration(result.route.summary?.travelTimeInSeconds??0),pinsOnRoute});
-        if(usedFallback)setRouteError('Seçilen zaman aralığındaki sorunlu bölgelerden kaçınan bir rota bulunamadı. Normal rota gösteriliyor.');
+        if(usedFallback)setRouteError('Çok fazla sorunlu bölge olduğu için kaçınmalı rota bulunamadı. Normal rota gösteriliyor.');
       }catch(error){
         if(controller.signal.aborted)return;
         console.warn('TomTom rota hesabı başarısız:',error);
