@@ -148,6 +148,17 @@ export default function App() {
       window.clearInterval(intervalId);
     };
   },[session?.user?.id]);
+  // Refresh immediately when the app returns to the foreground on mobile.
+  useEffect(()=>{
+    const handleVisibilityChange=()=>{
+      if(document.visibilityState==='visible'&&session?.user){
+        console.log("Uygulama öne geldi, veriler yenileniyor...");
+        void loadPinsRef.current(true);
+      }
+    };
+    document.addEventListener('visibilitychange',handleVisibilityChange);
+    return()=>document.removeEventListener('visibilitychange',handleVisibilityChange);
+  },[session?.user?.id]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
   useEffect(()=>{let cancelled=false;async function runSearch(){const q=debouncedQuery.trim();if(!q){setSearchResultIds(null);return;}if(!supabase||!canSeePins){setSearchResultIds([]);return;}const {data,error}=await supabase.rpc('pins_search',{q});if(cancelled)return;if(error){setSearchResultIds([]);setNotice({kind:'error',text:`Arama başarısız: ${error.message}`});return;}setSearchResultIds((data??[]).map((row:{id:string})=>row.id));}void runSearch();return()=>{cancelled=true;};},[debouncedQuery,canSeePins]);
