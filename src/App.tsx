@@ -221,7 +221,7 @@ export default function App() {
       .subscribe(status=>{
         console.log("Realtime abonelik durumu:",status);
       });
-    return()=>{void supabase.removeChannel(channel);};
+    return()=>{void supabase?.removeChannel(channel);};
   },[session?.user?.id,ensurePhotoUrls]);
 
   // Poll only as a fallback, and only while the page is visible.
