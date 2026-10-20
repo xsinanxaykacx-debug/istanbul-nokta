@@ -944,7 +944,14 @@ body { color-scheme: dark; }
 .secondary-button:hover, .icon-button:hover, .category-filter-button:hover,
 .profile-menu-item:hover, .use-location-button:hover:not(:disabled),
 .copy-code-button:hover { background: #1d2b42; color: var(--text-dark); }
-.category-filter-button.selected { background: var(--primary); border-color: var(--primary); color: #05251d; }
+.category-filter-button {
+  color: #d1d5db;
+  transition: background-color .3s ease, border-color .3s ease, color .3s ease, transform .2s ease;
+}
+.category-filter-button.selected {
+  color: #fff;
+  transition: background-color .3s ease, border-color .3s ease, color .3s ease, transform .2s ease;
+}
 .searchbox, .pin-searchbox, .place-searchbox {
   background: #101a2b;
   border-color: var(--border-color);
