@@ -331,6 +331,7 @@ export default function App() {
   useEffect(()=>{
     if(!routeMode||!routeStart||!routeEnd||!avoidPinClusters){setAvoidedAreas([]);return;}
     const areas=computeAvoidAreas(pins,avoidTimeFilter);
+    setAvoidedAreas(areas.map(({minLat,minLng,maxLat,maxLng})=>({minLat,minLng,maxLat,maxLng})));
   },[routeMode,routeStart,routeEnd,pins,avoidPinClusters,avoidTimeFilter]);
 
   useEffect(()=>{
