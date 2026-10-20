@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.VITE_ORS_API_KEY?.trim();
+  const apiKey = process.env.ORS_API_KEY?.trim();
   if (!apiKey) {
     return res.status(500).json({ error: 'ORS API key is missing' });
   }
