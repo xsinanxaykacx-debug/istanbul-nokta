@@ -1668,3 +1668,94 @@ select option { background: var(--surface); color: var(--text-dark); }
   }
 }
 
+
+
+/* Definitive compact route bar: the copy and clear action share one row. */
+.panel-top-controls .route-info-card {
+  display: block;
+  width: 100%;
+  margin: 0 0 5px;
+  padding: 8px 10px;
+}
+.panel-top-controls .route-info-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+}
+.panel-top-controls .route-info-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+.panel-top-controls .route-info-copy .route-info-heading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+.panel-top-controls .route-info-copy .route-info-heading h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.panel-top-controls .route-info-copy p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.panel-top-controls .route-info-copy .route-status {
+  gap: 4px;
+}
+.panel-top-controls .route-info-card .route-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+}
+.panel-top-controls .route-info-card .route-card-actions .secondary-button {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.panel-top-controls .route-info-card .route-stop-hint {
+  display: none;
+}
+@media (max-width: 768px) {
+  .panel-top-controls .route-info-card {
+    margin-bottom: 4px;
+    padding: 8px 10px;
+  }
+  .panel-top-controls .route-info-row { gap: 6px; }
+  .panel-top-controls .route-info-copy { gap: 6px; }
+  .panel-top-controls .route-info-copy .route-info-heading { gap: 3px; }
+  .panel-top-controls .route-info-copy .route-info-heading svg {
+    width: 14px;
+    height: 14px;
+  }
+  .panel-top-controls .route-info-copy .route-info-heading h2 { font-size: 12px; }
+  .panel-top-controls .route-info-copy p { font-size: 11px; }
+  .panel-top-controls .route-info-card .route-card-actions .secondary-button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
