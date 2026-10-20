@@ -1042,3 +1042,85 @@ select option { background: var(--surface); color: var(--text-dark); }
   .pin-list-item, .primary-button, .secondary-button, .icon-button,
   .category-filter-button, .traffic-button, .locate-button { transition: none; }
 }
+
+
+/* Mobile UI sprint: compact map action and collapsible category filter. */
+.map-add-button { gap: 6px; }
+.category-filter-row {
+  position: relative;
+  width: fit-content;
+  max-width: min(100%, calc(100vw - 44px));
+  flex-wrap: wrap;
+  overflow: visible;
+  scrollbar-width: none;
+}
+.category-filter-row:not(.is-open) {
+  align-items: center;
+  gap: 5px;
+  padding: 2px;
+  background: transparent;
+}
+.category-filter-row.is-open {
+  width: fit-content;
+  max-width: min(100%, calc(100vw - 44px));
+  padding: 8px;
+  gap: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: rgba(21, 31, 50, .97);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  backdrop-filter: blur(10px);
+}
+.filter-toggle-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-dark);
+}
+.filter-toggle-button:hover,
+.filter-toggle-button:focus-visible {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.category-filter-row:not(.is-open) .category-filter-button {
+  padding: 10px 13px;
+}
+@media (max-width: 768px) {
+  .map-add-button {
+    left: 10px;
+    bottom: 10px;
+    gap: 5px;
+    padding: 7px 9px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  .map-add-button svg { width: 15px; height: 15px; }
+  .category-filter-row {
+    width: fit-content;
+    max-width: calc(100vw - 44px);
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-top: 7px;
+    padding: 2px;
+  }
+  .category-filter-row.is-open {
+    max-width: calc(100vw - 44px);
+    gap: 5px;
+    padding: 7px;
+  }
+  .category-filter-button {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .category-filter-row:not(.is-open) .category-filter-button {
+    padding: 8px 11px;
+  }
+  .filter-toggle-button { width: 32px; height: 32px; }
+}
