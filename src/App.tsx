@@ -132,6 +132,12 @@ export default function App() {
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
   useEffect(()=>{void loadPins();},[loadPins]);
+  // Keep the pin list fresh if Realtime events are delayed or unavailable.
+  useEffect(()=>{
+    if(!session?.user||!canSeePins)return;
+    const interval=window.setInterval(()=>{void loadPins();},30_000);
+    return()=>window.clearInterval(interval);
+  },[session?.user?.id,canSeePins,loadPins]);
 // Keep pins and their photos synchronized across connected clients.
   useEffect(()=>{
     if(!session?.user)return;
@@ -149,6 +155,7 @@ export default function App() {
     try{
       channel=supabaseClient.channel('realtime-pins')
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
+          console.log('YENİ PİN GELDİ:',payload.new);
           const row=payload.new as Partial<Omit<Pin,'pin_photos'>>|null;
           if(!row||!row.id){
             console.warn('[realtime] pins INSERT payload içinde id yok; olay atlandı.',payload);
@@ -171,6 +178,7 @@ export default function App() {
           setLightboxIndex(null);
         })
         .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
+          console.log('YENİ FOTOĞRAF GELDİ:',payload.new);
           const incoming=payload.new as (Partial<PinPhoto>&{pin_id?:string})|null;
           if(!incoming?.id||!incoming.pin_id){
             console.warn('[realtime] pin_photos INSERT payload içinde id/pin_id eksik; olay atlandı.',payload);
