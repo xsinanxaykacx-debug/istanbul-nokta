@@ -1572,3 +1572,99 @@ select option { background: var(--surface); color: var(--text-dark); }
   -webkit-overflow-scrolling: touch;
   align-content: start;
 }
+
+/* Compact route information card: title, summary and clear action share one row. */
+.route-info-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 8px 12px;
+}
+.route-info-card .route-info-heading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+.route-info-card .route-info-heading h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.route-info-card p {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.25;
+}
+.route-info-card .route-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.route-info-card .route-stop-hint {
+  order: 4;
+  flex: 1 0 100%;
+  margin: 0;
+}
+.route-info-card .route-card-actions {
+  order: 3;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0 0 0 auto;
+  padding: 0;
+}
+.route-info-card .route-card-actions .secondary-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .panel-top-controls .route-info-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-bottom: 5px;
+    padding: 8px 12px;
+  }
+  .panel-top-controls .route-info-card .route-info-heading {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+  }
+  .panel-top-controls .route-info-card .route-info-heading h2 {
+    font-size: 14px;
+  }
+  .panel-top-controls .route-info-card p {
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .panel-top-controls .route-info-card .route-summary {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+  .panel-top-controls .route-info-card .route-card-actions {
+    flex: 0 0 auto;
+    margin: 0 0 0 auto;
+  }
+  .panel-top-controls .route-info-card .route-card-actions .secondary-button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .panel-top-controls .route-info-card .route-stop-hint {
+    display: none;
+  }
+}
+
