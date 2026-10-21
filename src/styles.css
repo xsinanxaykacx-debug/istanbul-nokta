@@ -241,7 +241,8 @@
 /* Pin categories: marker colors, list labels, detail badge and form selector. */
 .pin-icon.pin-icon-yesiller { background: #1e8e55; }
 .pin-icon.pin-icon-maviler { background: #3b82f6; }
-.pin-icon.pin-icon-siviller { background: #1f2937; }
+.pin-icon.pin-icon-siviller { background: #9ca3af; }
+.pin-icon.pin-icon-siviller svg { stroke: #374151; }
 .pin-icon.pin-icon-hepsi { background: #d64545; }
 
 .category-select {
@@ -279,7 +280,8 @@
 }
 .category-yesiller { color: #1e8e55 !important; }
 .category-maviler { color: #3b82f6 !important; }
-.category-siviller { color: #1f2937 !important; }
+.category-siviller { color: #374151 !important; }
+.category-siviller .pin-category-dot { background: #9ca3af; }
 .category-hepsi { color: #d64545 !important; }
 
 .category-badge {
