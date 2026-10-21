@@ -1765,8 +1765,9 @@ select option { background: var(--surface); color: var(--text-dark); }
 .voice-pin-control {
   position: absolute;
   z-index: 650;
-  right: 76px;
-  bottom: 18px;
+  left: 150px;
+  right: auto;
+  bottom: 20px;
 }
 .voice-pin-button {
   display: inline-flex;
@@ -1797,7 +1798,8 @@ select option { background: var(--surface); color: var(--text-dark); }
 .voice-pin-button.is-listening svg { flex: 0 0 auto; }
 .voice-pin-tooltip {
   position: absolute;
-  right: -8px;
+  left: 0;
+  right: auto;
   bottom: calc(100% + 10px);
   width: max-content;
   max-width: min(270px, calc(100vw - 32px));
@@ -1823,9 +1825,9 @@ select option { background: var(--surface); color: var(--text-dark); }
   50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0), 0 4px 16px rgba(79, 35, 150, .2); }
 }
 @media (max-width: 768px) {
-  .voice-pin-control { right: 58px; bottom: 72px; }
-  .voice-pin-button { width: 40px; height: 40px; border-radius: 11px; }
-  .voice-pin-button.is-listening { width: auto; height: 40px; padding: 0 9px; }
-  .voice-pin-tooltip { right: -48px; max-width: calc(100vw - 32px); }
+  .voice-pin-control { left: 116px; right: auto; bottom: 8px; }
+  .voice-pin-button { width: 44px; height: 44px; border-radius: 11px; }
+  .voice-pin-button.is-listening { width: auto; min-width: 44px; height: 44px; padding: 0 9px; }
+  .voice-pin-tooltip { left: 0; right: auto; max-width: min(270px, calc(100vw - 132px)); }
 }
 @media (prefers-reduced-motion: reduce) { .voice-pin-button { transition: none; } .voice-pin-button.is-listening { animation: none; } }
