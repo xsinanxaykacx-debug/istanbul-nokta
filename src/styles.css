@@ -1833,3 +1833,133 @@ select option { background: var(--surface); color: var(--text-dark); }
   .voice-pin-tooltip { left: 0; right: auto; max-width: min(270px, calc(100vw - 132px)); }
 }
 @media (prefers-reduced-motion: reduce) { .voice-pin-button { transition: none; } .voice-pin-button.is-listening { animation: none; } }
+
+
+/* Map action groups: keep controls anchored to the map edges. */
+.map-action-left-group,
+.map-action-right-group {
+  position: absolute;
+  z-index: 650;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 32px);
+}
+.map-action-left-group {
+  left: 16px;
+  justify-content: flex-start;
+}
+.map-action-right-group {
+  right: 16px;
+  justify-content: flex-end;
+}
+.map-action-left-group .map-add-button,
+.map-action-left-group .locate-button,
+.map-action-right-group .route-button,
+.map-action-right-group .traffic-button {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.map-action-left-group .map-add-button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+.map-action-left-group .locate-button {
+  width: 48px;
+  height: 48px;
+}
+.map-action-left-group .voice-pin-control {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 auto;
+}
+.voice-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: #1f2937;
+  color: #fff;
+  pointer-events: none;
+  z-index: 5;
+  line-height: 1.4;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .2);
+}
+.voice-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+@media (max-width: 768px) {
+  .map-action-left-group,
+  .map-action-right-group {
+    bottom: 8px;
+    gap: 6px;
+    max-width: calc(100% - 16px);
+  }
+  .map-action-left-group {
+    left: 8px;
+    right: 124px;
+    max-width: none;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .map-action-right-group {
+    right: 8px;
+    left: auto;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: 116px;
+  }
+  .map-action-left-group .map-add-button {
+    min-height: 40px;
+    max-width: 100%;
+    padding: 7px 9px;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .map-action-left-group .locate-button,
+  .map-action-left-group .voice-pin-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+  .map-action-left-group .voice-pin-button.is-listening {
+    width: auto;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 8px;
+  }
+  .map-action-right-group .route-button,
+  .map-action-right-group .traffic-button {
+    min-height: 37px;
+    height: 37px;
+    padding: 0 9px;
+    border-radius: 11px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .voice-tooltip {
+    left: 50%;
+    right: auto;
+    max-width: calc(100vw - 32px);
+    white-space: nowrap;
+  }
+}
