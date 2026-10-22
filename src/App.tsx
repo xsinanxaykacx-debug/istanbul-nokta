@@ -377,7 +377,7 @@ export default function App() {
     if(!content){setNotice({kind:'error',text:'Lütfen yorumunuzu yazın.'});return;}
     if(containsProfanity(content)){setNotice({kind:'error',text:'Yorumunuzda uygun olmayan bir ifade tespit edildi.'});return;}
     if(busy)return;setBusy(true);setNotice(null);
-    try{const {error}=await supabase.rpc('add_comment',{p_pin_id:selected.id,p_content:content});if(error)throw error;setCommentText('');setNotice({kind:'success',text:'Yorumunuz onay için gönderildi.'});}
+    try{const {error}=await supabase.rpc('add_comment',{p_pin_id:selected.id,p_content:content});if(error)throw error;setCommentText('');let query=supabase.from('pin_comments').select('id,pin_id,user_id,content,status,created_at').eq('pin_id',selected.id).order('created_at',{ascending:true});if(!canDeleteSelected)query=query.eq('status','approved');const {data:updatedComments}=await query;setPinComments((updatedComments??[]) as PinComment[]);setNotice({kind:'success',text:'Yorumunuz onay için gönderildi.'});}
     catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Yorum gönderilemedi. Lütfen tekrar deneyin.'});}
     finally{setBusy(false);}
   }
