@@ -333,6 +333,62 @@ export default function App() {
     await savePinDirectly(draftPosition,description,category,files);
   }
 
+
+  function beginPinEdit(){if(!selected||!canDeleteSelected)return;setEditDescription(selected.description);setEditCategory(normalizeCategory(selected.category));setEditPhotos([...selectedPhotos]);setEditFiles([]);setEditPinMode(true);setNotice(null);}
+
+  async function savePinEdits(e:FormEvent){
+    e.preventDefault();
+    if(!supabase||!selected||!canDeleteSelected||busy)return;
+    if(containsProfanity(editDescription)){setNotice({kind:'error',text:'Açıklamanızda uygun olmayan bir ifade tespit edildi.'});return;}
+    if(editPhotos.length+editFiles.length>3){setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});return;}
+    setBusy(true);setNotice({kind:'info',text:'Değişiklikler kaydediliyor…'});
+    const uploadedPaths:string[]=[];
+    try{
+      const newPhotoRows:{pin_id:string;storage_path:string;public_url:string;sort_order:number}[]=[];
+      for(let i=0;i<editFiles.length;i++){
+        const blob=await compressPhoto(editFiles[i]);
+        const path=`${session.user.id}/${crypto.randomUUID()}.jpg`;
+        const {error:uploadError}=await supabase.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});
+        if(uploadError)throw uploadError;
+        uploadedPaths.push(path);
+        const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
+        newPhotoRows.push({pin_id:selected.id,storage_path:path,public_url:data.publicUrl,sort_order:editPhotos.length+i});
+      }
+      const {error:pinError}=await supabase.from('pins').update({description:editDescription.trim(),category:editCategory}).eq('id',selected.id);
+      if(pinError)throw pinError;
+      const keptIds=new Set(editPhotos.map(photo=>photo.id));
+      const removedPhotos=selectedPhotos.filter(photo=>!keptIds.has(photo.id));
+      if(removedPhotos.length){const {error:removeRowsError}=await supabase.from('pin_photos').delete().in('id',removedPhotos.map(photo=>photo.id));if(removeRowsError)throw removeRowsError;}
+      for(let i=0;i<editPhotos.length;i++){const photo=editPhotos[i];const {error:orderError}=await supabase.from('pin_photos').update({sort_order:i}).eq('id',photo.id);if(orderError)throw orderError;}
+      if(newPhotoRows.length){const {error:insertError}=await supabase.from('pin_photos').insert(newPhotoRows);if(insertError)throw insertError;}
+      let cleanupMessage='';
+      const removedPaths=removedPhotos.map(photo=>photo.storage_path);
+      if(removedPaths.length){const {error:storageError}=await supabase.storage.from('pin-photos').remove(removedPaths);if(storageError)cleanupMessage=storageError.message;}
+      setEditPinMode(false);setEditFiles([]);setNotice(cleanupMessage?{kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}:{kind:'success',text:'Değişiklikler kaydedildi.'});
+      await loadPins();
+    }catch(err){if(uploadedPaths.length)await supabase.storage.from('pin-photos').remove(uploadedPaths);setNotice({kind:'error',text:err instanceof Error?err.message:'Pin değişiklikleri kaydedilemedi.'});}
+    finally{setBusy(false);}
+  }
+
+  async function submitPinComment(e:FormEvent){
+    e.preventDefault();
+    if(!supabase||!selected||!session?.user){setNotice({kind:'error',text:'Yorum yazmak için giriş yapmalısınız.'});return;}
+    const content=commentText.trim();
+    if(!content){setNotice({kind:'error',text:'Lütfen yorumunuzu yazın.'});return;}
+    if(containsProfanity(content)){setNotice({kind:'error',text:'Yorumunuzda uygun olmayan bir ifade tespit edildi.'});return;}
+    if(busy)return;setBusy(true);setNotice(null);
+    try{const {error}=await supabase.rpc('add_comment',{p_pin_id:selected.id,p_content:content});if(error)throw error;setCommentText('');setNotice({kind:'success',text:'Yorumunuz onay için gönderildi.'});}
+    catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Yorum gönderilemedi. Lütfen tekrar deneyin.'});}
+    finally{setBusy(false);}
+  }
+
+  async function moderatePinComment(comment:PinComment,status:'approved'|'rejected'){
+    if(!supabase||!selected||!canDeleteSelected||comment.status!=='pending'||busy)return;setBusy(true);setNotice(null);
+    try{const {error}=await supabase.from('pin_comments').update({status}).eq('id',comment.id).eq('pin_id',selected.id);if(error)throw error;setPinComments(current=>current.map(item=>item.id===comment.id?{...item,status}:item));setNotice({kind:'success',text:status==='approved'?'Yorum onaylandı.':'Yorum reddedildi.'});}
+    catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Yorum durumu güncellenemedi.'});}
+    finally{setBusy(false);}
+  }
+
   async function deleteSelectedPin(){
     if(!supabase||!selected||!canDeleteSelected||busy)return; if(!window.confirm("Bu noktayı silmek istediğinize emin misiniz?"))return; setBusy(true);setNotice(null);
     try{ const pinId=selected.id; const {data:paths,error}=await supabase.rpc('delete_pin',{p_pin_id:pinId}); if(error)throw error; let storageCleanupError:string|null=null;
