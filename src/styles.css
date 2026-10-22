@@ -1992,3 +1992,35 @@ select option { background: var(--surface); color: var(--text-dark); }
 .pin-vote-score.score-negative { color:#dc2626; }
 .pin-vote-bar small { flex-basis:100%; text-align:center; color:var(--text-muted,#64748b); font-size:11px; }
 @media (max-width:768px) { .pin-owner-actions { gap:6px; } .pin-vote-bar { gap:10px; padding:9px; } .pin-vote-button { width:36px; height:34px; } .edit-photo-item img { width:42px; height:42px; flex-basis:42px; } }
+
+
+/* Compact vote score badge in the pin list */
+.pin-score-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  width: fit-content;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .07);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.pin-score-badge.score-positive {
+  border-color: rgba(34, 197, 94, .24);
+  background: rgba(34, 197, 94, .12);
+  color: #15803d;
+}
+.pin-score-badge.score-negative {
+  border-color: rgba(239, 68, 68, .24);
+  background: rgba(239, 68, 68, .12);
+  color: #dc2626;
+}
+.pin-score-badge.score-neutral {
+  color: #64748b;
+}
