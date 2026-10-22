@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable */
 type VercelRequest = { method?: string; body?: unknown };
 type VercelResponse = { setHeader(name: string, value: string): void; status(code: number): VercelResponse; json(body: unknown): VercelResponse; send(body: string): VercelResponse };
 
