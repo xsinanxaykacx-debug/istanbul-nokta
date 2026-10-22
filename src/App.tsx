@@ -283,38 +283,51 @@ export default function App() {
   async function submitAuth(e:FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);setNotice(null);try{if(authMode==='signup'){const {error}=await supabase.auth.signUp({email,password});if(error)throw error;setNotice({kind:'success',text:'Kayıt oluşturuldu. E-posta doğrulaması açıksa gelen kutunu kontrol et; hesabın pending durumunda başlar.'});}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;setAuthOpen(false);setNotice({kind:'success',text:'Giriş yapıldı.'});}}catch(err){const message=err instanceof Error?err.message:'';setNotice({kind:'error',text:authMode==='login'&&/invalid login credentials|invalid_credentials/i.test(message)?'E-posta veya şifre hatalı. Lütfen tekrar deneyin veya yeni kayıt olun.':message||'İşlem başarısız.'});}finally{setBusy(false);}}
   async function activateAccount(e:FormEvent){e.preventDefault();if(!supabase||!pending)return;const code=referenceCode.trim();if(!code){setNotice({kind:'error',text:'Lütfen referans kodunuzu girin.'});return;}setBusy(true);setNotice(null);try{const {error}=await supabase.rpc('redeem_reference_code',{p_code:code});if(error){const message=error.message||'';if(/geçersiz|kullanılmış|devre dışı|invalid|redeemed|disabled/i.test(message))throw new Error('Geçersiz veya kullanılmış kod.');throw error;}setReferenceCode('');setProfile(current=>current?{...current,status:'active'}:current);setAuthOpen(false);setNotice({kind:'success',text:'Hesabınız aktifleştirildi!'});if(session?.user)await loadProfile(session.user.id);}catch(err){const message=err instanceof Error?err.message:'';setNotice({kind:'error',text:/geçersiz|kullanılmış|devre dışı|invalid|redeemed|disabled|kod geçersiz/i.test(message)?'Geçersiz veya kullanılmış kod.':message||'Kod doğrulanamadı. Lütfen tekrar deneyin.'});}finally{setBusy(false);}}
 
-  async function savePinDirectly(lat: number, lng: number, desc: string, cat: string, photoFiles: File[] = []) {
-    if(!supabase||!session?.user||!canAdd) return;
-    if(photoFiles.length>3){ setNotice({kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}); return; }
-    setBusy(true); setNotice(null);
+  async function savePinDirectly(
+    position:[number,number],
+    descriptionValue:string,
+    categoryValue:string,
+    filesValue:File[]
+  ){
+    if(!supabase){setNotice({kind:'error',text:'Veritabanı bağlantısı hazır değil. Sayfayı yenileyip tekrar deneyin.'});return;}
+    if(!session?.user||!canAdd){setNotice({kind:'error',text:'Pin kaydetmek için giriş yapmış ve aktif üye olmalısınız.'});return;}
+    if(!position||!Number.isFinite(position[0])||!Number.isFinite(position[1])){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}
+    if(busy){setNotice({kind:'info',text:'Önceki kayıt işlemi devam ediyor. Lütfen bekleyin.'});return;}
+    if(filesValue.length>3){setNotice({kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'});return;}
+    if(containsProfanity(descriptionValue)){setNotice({kind:'error',text:'Açıklamanızda uygun olmayan bir ifade tespit edildi.'});return;}
+    setBusy(true);setNotice({kind:'info',text:'Pin kaydediliyor…'});
     const paths:string[]=[];
     try{
       const photoRows:{storage_path:string;public_url:string;sort_order:number}[]=[];
-      for(let i=0;i<photoFiles.length;i++){
-        const blob=await compressPhoto(photoFiles[i]);
+      for(let i=0;i<filesValue.length;i++){
+        const blob=await compressPhoto(filesValue[i]);
         const path=`${session.user.id}/${crypto.randomUUID()}.jpg`;
         const {error}=await supabase.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});
-        if(error)throw error; paths.push(path);
+        if(error)throw error;
+        paths.push(path);
         const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
         photoRows.push({storage_path:path,public_url:data.publicUrl,sort_order:i});
       }
-      const {error}=await supabase.rpc('create_pin_with_photos',{ p_lat:lat, p_lng:lng, p_description:desc, p_category:cat, p_photos:photoRows });
+      const {error}=await supabase.rpc('create_pin_with_photos',{
+        p_lat:position[0],p_lng:position[1],p_description:descriptionValue.trim(),
+        p_category:categoryValue,p_photos:photoRows
+      });
       if(error)throw error;
-      setDescription(''); setCategory('KIRMIZI'); setFiles([]); setDraftPosition(null);
-      const input=document.getElementById('photo-input') as HTMLInputElement|null; if(input)input.value='';
+      setDescription('');setCategory('KIRMIZI');setFiles([]);setDraftPosition(null);
+      const input=document.getElementById('photo-input') as HTMLInputElement|null;if(input)input.value='';
       setNotice({kind:'success',text:'Konum başarıyla kaydedildi.'});
       await loadPins();
     }catch(err){
       if(paths.length)await supabase.storage.from('pin-photos').remove(paths);
       const errorMessage=err&&typeof err==='object'&&'message'in err?String((err as {message?:unknown}).message??''):err instanceof Error?err.message:'';
-      setNotice({kind:'error',text:/Açıklamanızda uygun olmayan ifadeler/i.test(errorMessage)?'Açıklamanızda uygun olmayan bir ifade tespit edildi.':errorMessage||'Konum eklenemedi.'});
-    }finally{ setBusy(false); }
+      setNotice({kind:'error',text:/uygun olmayan ifadeler/i.test(errorMessage)?'Açıklamanızda uygun olmayan bir ifade tespit edildi.':errorMessage||'Pin kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.'});
+    }finally{setBusy(false);}
   }
 
   async function addPin(e:FormEvent){
     e.preventDefault();
-    if(!draftPosition) return;
-    await savePinDirectly(draftPosition[0], draftPosition[1], description.trim(), category, files);
+    if(!draftPosition){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}
+    await savePinDirectly(draftPosition,description,category,files);
   }
 
   async function deleteSelectedPin(){
@@ -334,90 +347,111 @@ export default function App() {
   function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
   
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
-  function normalizeVoicePinText(value:string):string{return value.toLocaleLowerCase('tr-TR').replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c').replace(/İ/g,'i');}
-  
-  function parseVoicePinCommand(transcript:string):{category:string|null, shouldSave:boolean}|null{
-    let normalized=normalizeVoicePinText(transcript).trim();
-    normalized = normalized.replace(/[.,!?;:]/g, '').replace(/\s+/g,' '); // Noktalama işaretlerini temizle
-    
-    const hasSave = /\b(kaydet|kaydet lütfen|şimdi kaydet)\b/.test(normalized);
-    const hasPinKeyword = /\b(pin|isaret|nokta|konum|buraya|konuma|konumuma)\b/.test(normalized);
-    const hasActionVerb = /\b(koy|ekle|birak|yerlestir|isaretle|olustur)\b/.test(normalized);
-    
-    if (!hasPinKeyword && !hasActionVerb && !hasSave) return null;
-    
-    let category = null;
-    if (/\b(mavi|maviler)\b/.test(normalized)) category = 'MAVİ';
-    else if (/\b(yesil|yesiller)\b/.test(normalized)) category = 'YEŞİL';
-    else if (/\b(gri|griler|siyah|sivil|siviller)\b/.test(normalized)) category = 'GRİ';
-    else if (/\b(kirmizi|hepsi|tumu)\b/.test(normalized)) category = 'KIRMIZI';
-    
-    // Sadece "kaydet" dediyse
-    if (hasSave && !category && !hasPinKeyword && !hasActionVerb) {
-      return { category: null, shouldSave: true };
+  type ParsedVoicePinCommand = 'SAVE' | {category:string; signal:'PREPARE'|'SAVE'; useCurrentLocation:boolean};
+  function parseVoicePinCommand(transcript:string):ParsedVoicePinCommand|null{
+    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+    if(!normalized)return null;
+    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
+    const categoryWords=[
+      {pattern:/((?:^|\s)(?:mavi|maviler)(?=$|\s))/,value:'MAVİ'},
+      {pattern:/((?:^|\s)(?:yeşil|yeşiller)(?=$|\s))/,value:'YEŞİL'},
+      {pattern:/((?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s))/,value:'KIRMIZI'},
+      {pattern:/((?:^|\s)(?:gri|griler)(?=$|\s))/,value:'GRİ'}
+    ];
+    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(normalized);
+    const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(normalized);
+    if(hasSave&&!matchedCategory&&!hasPinKeyword)return 'SAVE';
+    if(matchedCategory&&hasPinKeyword){
+      return {category:matchedCategory,signal:hasSave?'SAVE':'PREPARE',useCurrentLocation};
     }
-    
-    // Renk yoksa ama pin kelimesi varsa varsayılan KIRMIZI
-    if (!category && (hasPinKeyword || hasActionVerb)) category = 'KIRMIZI';
-    
-    if(category) return { category, shouldSave: hasSave };
+    if(hasSave)return 'SAVE';
     return null;
   }
-  
-  function addVoicePinAtCurrentLocation(parsedCategory:string, autoSave:boolean){
-    if(!navigator.geolocation){setNotice({kind:'error',text:'Konum alınamadı. Lütfen tarayıcıdan konum izni verin.'});return;}
-    setBusy(true); setNotice({kind:'info', text:'📍 Konumunuz alınıyor...'});
+
+  function addVoicePinAtCurrentLocation(parsedCategory:string,saveImmediately=false){
+    if(!navigator.geolocation){setNotice({kind:'error',text:'Bu tarayıcı konum hizmetini desteklemiyor. Lütfen konum seçin.'});return;}
+    setLocating(true);
+    setNotice({kind:'info',text:saveImmediately?'GPS konumu alınıyor; konum alınır alınmaz pin kaydedilecek…':'GPS konumu alınıyor…'});
     navigator.geolocation.getCurrentPosition(async position=>{
-      const lat = position.coords.latitude; const lng = position.coords.longitude; setUserPosition([lat, lng]);
-      setDraftPosition([lat, lng]); setSelected(null); setCategory(parsedCategory); setFiles([]);
-      if (autoSave) {
-        setNotice({kind:'info', text:'📍 Konum alındı, otomatik kaydediliyor...'});
-        await savePinDirectly(lat, lng, 'Sesli komut ile eklendi', parsedCategory, []);
-      } else {
-        setBusy(false); setNotice({kind:'success', text:'📍 Konum ve renk seçildi. Kaydetmek için "Konumu kaydet" butonuna basın veya "Kaydet" deyin.'});
+      const coords:[number,number]=[position.coords.latitude,position.coords.longitude];
+      setUserPosition(coords);
+      setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);
+      setSearchPlace(null);
+      setCategory(parsedCategory);
+      const descriptionValue=description.trim()||'Sesli komut ile eklendi';
+      setDescription(descriptionValue);
+      if(saveImmediately){
+        await savePinDirectly(coords,descriptionValue,parsedCategory,files);
+      }else{
+        openAddPinAt({lat:coords[0],lng:coords[1]});
+        setNotice({kind:'success',text:'Konum alındı. Pin hazır; kaydetmek için “Kaydet” deyin veya düğmeye basın.'});
       }
-    },()=>{ setBusy(false); setNotice({kind:'error',text:'Konum alınamadı. Lütfen tarayıcıdan konum izni verin.'}); },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+      setLocating(false);
+    },()=>{
+      setLocating(false);
+      setNotice({kind:'error',text:'GPS konumu alınamadı. Konum iznini açıp tekrar deneyin veya haritadan konum seçin.'});
+    },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
-  
+
   function startVoicePinCommand(){
-    setVoicePinHintVisible(false); if(voicePinListening){voicePinRecognitionRef.current?.stop();return;}
+    setVoicePinHintVisible(false);
+    if(voicePinListening){voicePinRecognitionRef.current?.stop();return;}
     if(!canAdd){setNotice({kind:'info',text:'Sesli pin eklemek için hesabını etkinleştirmen veya giriş yapman gerekiyor.'});setAuthOpen(true);return;}
     const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};
-    const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition; if(!Recognition){setSpeechSupported(false);return;}
-    voicePinRecognitionRef.current?.stop(); if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);
-    const recognition=new Recognition(); let handled=false;
+    const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;
+    if(!Recognition){setSpeechSupported(false);setNotice({kind:'error',text:'Bu tarayıcı sesli komutları desteklemiyor. Haritadan konum seçerek devam edebilirsin.'});return;}
+    voicePinRecognitionRef.current?.stop();
+    if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);
+    const recognition=new Recognition();
+    let handled=false;
     recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
-    recognition.onstart=()=>{ setVoicePinListening(true); voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},8000); };
+    recognition.onstart=()=>{
+      setVoicePinListening(true);
+      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},8000);
+    };
     recognition.onresult=(event:any)=>{
-      const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim(); handled=true;
-      if(!transcript){setNotice({kind:'error',text:"Ses duyulamadı. Tekrar deneyin."});return;}
-      
-      const parsed = parseVoicePinCommand(transcript);
-      if (!parsed) { setNotice({kind:'error',text:`Komut anlaşılamadı: "${transcript}". Örnek: 'Konuma mavi pin ekle kaydet'`}); return; }
-
-      if (parsed.shouldSave) {
-        if(draftPositionRef.current) {
-          setNotice({kind:'info', text:'📍 Kaydediliyor...'});
-          // Ref kullanarak güncel state'e erişiyoruz
-          void savePinDirectly(draftPositionRef.current[0], draftPositionRef.current[1], descriptionRef.current.trim() || 'Sesli komut ile eklendi', categoryRef.current, filesRef.current);
-        } else if (parsed.category) {
-          addVoicePinAtCurrentLocation(parsed.category, true);
-        } else {
-          setNotice({kind:'error', text:'Kaydedilecek bir konum seçili değil. Önce haritadan konum seçin veya "Konuma mavi pin koy" deyin.'});
-        }
-        try{recognition.stop();}catch{} return;
+      const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
+      handled=true;
+      if(!transcript){setNotice({kind:'error',text:'Sesli komut algılanamadı. Tekrar deneyin.'});return;}
+      const parsed=parseVoicePinCommand(transcript);
+      if(!parsed){
+        setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". “Konuma mavi pin ekle” veya “Kaydet” deyin.`});
+        return;
       }
-      
-      if (parsed.category) { addVoicePinAtCurrentLocation(parsed.category, false); }
+      if(parsed==='SAVE'){
+        if(!draftPosition){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}
+        void savePinDirectly(draftPosition,description,category,files);
+      }else if(parsed.signal==='SAVE'){
+        if(parsed.useCurrentLocation){
+          addVoicePinAtCurrentLocation(parsed.category,true);
+        }else if(draftPosition){
+          void savePinDirectly(draftPosition,description,parsed.category,files);
+        }else{
+          setNotice({kind:'error',text:'Lütfen önce haritadan konum seçin veya “Konuma mavi pin ekle kaydet” diyerek GPS ile kaydedin.'});
+        }
+      }else{
+        addVoicePinAtCurrentLocation(parsed.category,false);
+      }
       try{recognition.stop();}catch{}
     };
-    recognition.onerror=(event:any)=>{ handled=true; if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi.'}); else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı.'}); else if(event.error!=='aborted')setNotice({kind:'error',text:"Komut anlaşılamadı."}); };
-    recognition.onend=()=>{ setVoicePinListening(false); if(voicePinTimeoutRef.current!==undefined){window.clearTimeout(voicePinTimeoutRef.current);voicePinTimeoutRef.current=undefined;} if(voicePinRecognitionRef.current===recognition)voicePinRecognitionRef.current=null; if(!handled)setNotice({kind:'error',text:"Komut anlaşılamadı."}); };
+    recognition.onerror=(event:any)=>{
+      handled=true;
+      if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi. Lütfen tarayıcıdan mikrofon izni verin.'});
+      else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});
+      else if(event.error==='no-speech')setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 8 saniye içinde konuşun.'});
+      else if(event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma başarısız oldu. Tekrar deneyin.'});
+    };
+    recognition.onend=()=>{
+      setVoicePinListening(false);
+      if(voicePinTimeoutRef.current!==undefined){window.clearTimeout(voicePinTimeoutRef.current);voicePinTimeoutRef.current=undefined;}
+      if(voicePinRecognitionRef.current===recognition)voicePinRecognitionRef.current=null;
+      if(!handled)setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 8 saniye içinde konuşun.'});
+    };
     voicePinRecognitionRef.current=recognition;
-    try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı.'});}
+    try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}
   }
-  
-  useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
+    useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
   function locateUser(useForDraft=false){if(locating)return;if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}setLocating(true);navigator.geolocation.getCurrentPosition(position=>{const coords:[number,number]=[position.coords.latitude,position.coords.longitude];setUserPosition(coords);if(useForDraft){setDraftPosition(coords);setSelected(null);}else{setSelected(null);if(draftPosition)setDraftPosition(coords);}setNotice(null);setLocating(false);},()=>{setNotice({kind:'error',text:locationErrorText});setLocating(false);},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
   function openAddPinAt(initialCoords:{lat:number;lng:number}){setDraftPosition([initialCoords.lat,initialCoords.lng]);setSelected(null);setLightboxIndex(null);}
   
