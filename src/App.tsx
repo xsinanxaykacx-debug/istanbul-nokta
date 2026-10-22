@@ -438,21 +438,26 @@ export default function App() {
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
   function normalizeVoicePinText(value:string):string{return value.toLocaleLowerCase('tr-TR').replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c').replace(/İ/g,'i');}
   
-  function parseVoicePinCommand(transcript:string):string|null{
+    function parseVoicePinCommand(transcript:string):string|null{
     const normalized=normalizeVoicePinText(transcript).trim().replace(/\s+/g,' ');
-    const color='(?:mavi(?:ler)?|yesil(?:ler)?|gri|griler|siyah|sivil(?:ler)?|kirmizi|hepsi|tumu)';
-    const action='(?:isaret|pin|nokta)';
-    const verb='(?:koy|ekle|birak)';
-    const valid=new RegExp(`^(?:(?:konumuma|buraya)\\s+)?(?:${color}\\s+)?(?:${action}\\s+)?${verb}$`);
-    if(!valid.test(normalized))return null;
-    const categories:Array<{pattern:RegExp;value:string}>=[
-      {pattern:/\b(?:mavi|maviler)\b/,value:'MAVİ'},
-      {pattern:/\b(?:yesil|yesiller)\b/,value:'YEŞİL'},
-      {pattern:/\b(?:gri|griler|siyah|sivil|siviller)\b/,value:'GRİ'},
-      {pattern:/\b(?:kirmizi|hepsi|tumu)\b/,value:'KIRMIZI'},
-    ];
-    const matches=categories.map(item=>({index:normalized.search(item.pattern),value:item.value})).filter(item=>item.index>=0).sort((a,b)=>a.index-b.index);
-    return matches[0]?.value??'KIRMIZI';
+    
+    // Komutun geçerli olup olmadığını anlamak için kelime kontrolü
+    // "pin", "işaret", "nokta", "konuma", "buraya" gibi kelimeler var mı?
+    const hasPinKeyword = /\b(pin|isaret|nokta|konum|buraya|konuma|konumuma)\b/.test(normalized);
+    // "koy", "ekle", "bırak" gibi eylemler var mı?
+    const hasActionVerb = /\b(koy|ekle|birak|olustur)\b/.test(normalized);
+    
+    // Eğer ne eylem ne de pin kelimesi geçmiyorsa, komut değildir.
+    if (!hasPinKeyword && !hasActionVerb) return null;
+    
+    // Kategoriyi (rengi) bul
+    if (/\b(mavi|maviler)\b/.test(normalized)) return 'MAVİ';
+    if (/\b(yesil|yesiller)\b/.test(normalized)) return 'YEŞİL';
+    if (/\b(gri|griler|siyah|sivil|siviller)\b/.test(normalized)) return 'GRİ';
+    if (/\b(kirmizi|hepsi|tumu)\b/.test(normalized)) return 'KIRMIZI';
+    
+    // Eğer pin eklenecekse ama renk söylenmediyse varsayılan KIRMIZI
+    return 'KIRMIZI';
   }
   
   function addVoicePinAtCurrentLocation(parsedCategory:string){
