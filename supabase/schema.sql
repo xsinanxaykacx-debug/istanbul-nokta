@@ -78,6 +78,12 @@ begin
   if not found then raise exception 'Hesap etkinleştirilemedi.'; end if;
 end; $$;
 
+create table if not exists public.banned_words (
+  word text primary key
+);
+alter table public.banned_words enable row level security;
+revoke all on public.banned_words from public, anon, authenticated;
+
 create or replace function public.check_profanity(input_text text)
 returns boolean language plpgsql security definer set search_path = '' as $$
 declare
@@ -134,7 +140,7 @@ begin
   if public.check_profanity(p_description) then
     raise exception 'Açıklamanızda uygun olmayan ifadeler tespit edildi. Lütfen saygılı bir dil kullanın.';
   end if;
-  if p_category not in ('YEŞİL','MAVİ','KIRMIZI','GRİ') then
+  if p_category is null or p_category not in ('YEŞİL','MAVİ','KIRMIZI','GRİ') then
     raise exception 'Kategori geçersiz.';
   end if;
   if jsonb_typeof(coalesce(p_photos, '[]'::jsonb)) <> 'array' then
