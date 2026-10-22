@@ -26,6 +26,7 @@ create table if not exists public.pins (
   lat double precision not null check (lat between 40.7 and 41.8),
   lng double precision not null check (lng between 27.8 and 29.9),
   description text not null default '' check (length(description) <= 5000),
+  category text not null default 'KIRMIZI' check (category in ('YEŞİL','MAVİ','KIRMIZI','GRİ')),
   created_at timestamptz not null default now()
 );
 create table if not exists public.pin_photos (
@@ -77,32 +78,107 @@ begin
   if not found then raise exception 'Hesap etkinleştirilemedi.'; end if;
 end; $$;
 
-create or replace function public.create_pin_with_photos(p_lat double precision,p_lng double precision,p_description text,p_photos jsonb)
+create table if not exists public.banned_words (
+  word text primary key
+);
+alter table public.banned_words enable row level security;
+revoke all on public.banned_words from public, anon, authenticated;
+
+create or replace function public.check_profanity(input_text text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare
+  v_clean_text text;
+  v_clean_word text;
+begin
+  if input_text is null or length(trim(input_text)) = 0 then return false; end if;
+  v_clean_text := lower(input_text);
+  v_clean_text := replace(v_clean_text, 'ı', 'i');
+  v_clean_text := replace(v_clean_text, 'ğ', 'g');
+  v_clean_text := replace(v_clean_text, 'ü', 'u');
+  v_clean_text := replace(v_clean_text, 'ş', 's');
+  v_clean_text := replace(v_clean_text, 'ö', 'o');
+  v_clean_text := replace(v_clean_text, 'ç', 'c');
+  for v_clean_word in select lower(word) from public.banned_words loop
+    v_clean_word := replace(v_clean_word, 'ı', 'i');
+    v_clean_word := replace(v_clean_word, 'ğ', 'g');
+    v_clean_word := replace(v_clean_word, 'ü', 'u');
+    v_clean_word := replace(v_clean_word, 'ş', 's');
+    v_clean_word := replace(v_clean_word, 'ö', 'o');
+    v_clean_word := replace(v_clean_word, 'ç', 'c');
+    if v_clean_text like '%' || v_clean_word || '%' then return true; end if;
+  end loop;
+  return false;
+end; $$;
+
+drop function if exists public.create_pin_with_photos(double precision, double precision, text, jsonb);
+
+create or replace function public.create_pin_with_photos(
+  p_lat double precision,
+  p_lng double precision,
+  p_description text,
+  p_category text,
+  p_photos jsonb
+)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare v_uid uuid:=auth.uid(); v_pin_id uuid; v_count integer; v_item jsonb; v_path text; v_url text; v_order integer;
+declare
+  v_uid uuid := auth.uid();
+  v_pin_id uuid;
+  v_count integer;
+  v_item jsonb;
+  v_path text;
+  v_url text;
+  v_order integer;
 begin
   if v_uid is null then raise exception 'Önce giriş yapmalısınız.'; end if;
-  if not exists(select 1 from public.profiles where id=v_uid and status='active') then raise exception 'İşaretçi eklemek için aktif üye olmalısınız.'; end if;
-  if p_lat is null or p_lng is null or p_lat not between 40.7 and 41.8 or p_lng not between 27.8 and 29.9 then raise exception 'Konum İstanbul sınırları dışında veya geçersiz.'; end if;
-  if p_description is null or length(p_description)>5000 then raise exception 'Açıklama en fazla 5000 karakter olabilir.'; end if;
-  if p_photos is null or jsonb_typeof(p_photos)<>'array' then raise exception 'Fotoğraf listesi geçersiz.'; end if;
-  v_count:=jsonb_array_length(p_photos);
-  if v_count<1 or v_count>3 then raise exception 'Her işaretçi için 1 ile 3 fotoğraf zorunludur.'; end if;
-  for v_item in select value from jsonb_array_elements(p_photos) loop
-    v_path:=v_item->>'storage_path'; v_url:=v_item->>'public_url'; v_order:=(v_item->>'sort_order')::integer;
-    if v_path is null or split_part(v_path,'/',1)<>v_uid::text or v_path !~ '\.jpg$' then raise exception 'Fotoğraf yolu geçersiz.'; end if;
-    if v_url is null or v_order<0 or v_order>2 then raise exception 'Fotoğraf bilgisi geçersiz.'; end if;
+  if not exists(select 1 from public.profiles where id=v_uid and status='active') then
+    raise exception 'İşaretçi eklemek için aktif üye olmalısınız.';
+  end if;
+  if p_lat is null or p_lng is null or p_lat not between 40.7 and 41.8 or p_lng not between 27.8 and 29.9 then
+    raise exception 'Konum İstanbul sınırları dışında veya geçersiz.';
+  end if;
+  if p_description is null or length(p_description)>5000 then
+    raise exception 'Açıklama en fazla 5000 karakter olabilir.';
+  end if;
+  if public.check_profanity(p_description) then
+    raise exception 'Açıklamanızda uygun olmayan ifadeler tespit edildi. Lütfen saygılı bir dil kullanın.';
+  end if;
+  if p_category is null or p_category not in ('YEŞİL','MAVİ','KIRMIZI','GRİ') then
+    raise exception 'Kategori geçersiz.';
+  end if;
+  if jsonb_typeof(coalesce(p_photos, '[]'::jsonb)) <> 'array' then
+    raise exception 'Fotoğraf listesi geçersiz.';
+  end if;
+  v_count := jsonb_array_length(coalesce(p_photos, '[]'::jsonb));
+  if v_count > 3 then raise exception 'En fazla 3 fotoğraf ekleyebilirsiniz.'; end if;
+
+  for v_item in select value from jsonb_array_elements(coalesce(p_photos, '[]'::jsonb)) loop
+    if jsonb_typeof(v_item) <> 'object' then raise exception 'Fotoğraf bilgisi geçersiz.'; end if;
+    v_path := v_item->>'storage_path';
+    v_url := v_item->>'public_url';
+    v_order := (v_item->>'sort_order')::integer;
+    if v_path is null or split_part(v_path,'/',1) <> v_uid::text or v_path !~ '\.jpg$' then
+      raise exception 'Fotoğraf yolu geçersiz.';
+    end if;
+    if v_url is null or length(trim(v_url)) = 0 or v_order is null or v_order < 0 or v_order > 2 then
+      raise exception 'Fotoğraf bilgisi geçersiz.';
+    end if;
   end loop;
-  if (select count(distinct (value->>'sort_order')) from jsonb_array_elements(p_photos))<>v_count then raise exception 'Fotoğraf sıraları tekrarlanamaz.'; end if;
-  insert into public.pins(owner_id,lat,lng,description) values(v_uid,p_lat,p_lng,p_description) returning id into v_pin_id;
+  if (select count(distinct (value->>'sort_order')) from jsonb_array_elements(coalesce(p_photos, '[]'::jsonb))) <> v_count then
+    raise exception 'Fotoğraf sıraları tekrarlanamaz.';
+  end if;
+
+  insert into public.pins(owner_id,lat,lng,description,category)
+  values(v_uid,p_lat,p_lng,p_description,p_category) returning id into v_pin_id;
+
   insert into public.pin_photos(pin_id,storage_path,public_url,sort_order)
-  select v_pin_id,item->>'storage_path',item->>'public_url',(item->>'sort_order')::smallint from jsonb_array_elements(p_photos) as x(item);
+  select v_pin_id,item->>'storage_path',item->>'public_url',(item->>'sort_order')::smallint
+  from jsonb_array_elements(coalesce(p_photos, '[]'::jsonb)) as x(item);
   return v_pin_id;
 end; $$;
 revoke all on function public.redeem_reference_code(text) from public,anon;
 grant execute on function public.redeem_reference_code(text) to authenticated;
-revoke all on function public.create_pin_with_photos(double precision,double precision,text,jsonb) from public,anon;
-grant execute on function public.create_pin_with_photos(double precision,double precision,text,jsonb) to authenticated;
+revoke all on function public.create_pin_with_photos(double precision,double precision,text,text,jsonb) from public,anon;
+grant execute on function public.create_pin_with_photos(double precision,double precision,text,text,jsonb) to authenticated;
 
 -- MVP kolaylığı için public bucket kullanılıyor: URL'yi bilen fotoğrafı görebilir.
 -- Gizli fotoğraf gerekiyorsa private bucket ve imzalı URL uygulamasına geçin.

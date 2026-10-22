@@ -1,6 +1,6 @@
 # İstanbul Nokta — PWA MVP
 
-İstanbul haritasında konum, serbest açıklama ve konum başına 1–3 sıkıştırılmış JPEG fotoğraf paylaşımı. React + TypeScript + Vite + Leaflet/OpenStreetMap + Supabase kullanır. Telefon ve bilgisayar tarayıcılarında çalışır; PWA olarak ana ekrana eklenebilir.
+İstanbul haritasında konum, serbest açıklama ve isteğe bağlı 0–3 sıkıştırılmış JPEG fotoğraf paylaşımı. Kategori seçenekleri: YEŞİL, MAVİ, KIRMIZI ve GRİ. React + TypeScript + Vite + Leaflet/OpenStreetMap + Supabase kullanır. Telefon ve bilgisayar tarayıcılarında çalışır; PWA olarak ana ekrana eklenebilir.
 
 ## Maliyet ve servis sınırları
 
@@ -68,8 +68,8 @@ PowerShell'de proje klasörüne gidin. Örneğin ZIP'i çıkardığınız klasö
 - Anonim ziyaretçi haritayı görür; işaretçi sorgusu yapamaz.
 - Yeni hesap `pending` başlar. Geçerli referans kodu hesabı `active` yapar.
 - Yalnızca `active` üyeler ortak işaretçileri görebilir ve ekleyebilir.
-- Fotoğraf başına kaynak dosya sınırı 12 MB; istemci en uzun kenarı 1280 piksele indirip JPEG'e sıkıştırır.
-- Pin ve 1–3 fotoğraf metadata'sı tek PostgreSQL RPC transaction'ında kaydedilir.
+- Fotoğraf isteğe bağlıdır; pin başına en fazla 3 fotoğraf kabul edilir. 4 veya daha fazla fotoğraf reddedilir. Fotoğraf başına kaynak dosya sınırı 12 MB; istemci en uzun kenarı 1280 piksele indirip JPEG'e sıkıştırır.
+- Pin ve varsa 0–3 fotoğraf metadata'sı tek PostgreSQL RPC transaction'ında kaydedilir. Uygunsuz ifadeler istemcide ve veritabanında küfür filtresiyle kontrol edilir.
 
 ## Güvenlik / MVP sınırlamaları
 
