@@ -110,6 +110,8 @@ begin
   return false;
 end; $$;
 
+drop function if exists public.create_pin_with_photos(double precision, double precision, text, jsonb);
+
 create or replace function public.create_pin_with_photos(
   p_lat double precision,
   p_lng double precision,
