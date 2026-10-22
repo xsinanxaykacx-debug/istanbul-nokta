@@ -15,12 +15,14 @@ type Notice = { kind: 'success'|'error'|'info'; text: string };
 type PlaceResult = { place_id: number; lat: string; lon: string; display_name: string; address?: Record<string,string> };
 type SpeechSetter = (value: string | ((current: string) => string)) => void;
 type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlternatives: number; onstart: (() => void) | null; onresult: ((event: any) => void) | null; onerror: ((event: any) => void) | null; onend: (() => void) | null; start: () => void; stop: () => void };
+
 const pinIcons: Record<string, L.DivIcon> = {
   'YEŞİL': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8 0-14 4-14 11a5 5 0 0 0 5 5c7 0 11-6 9-16Z"/><path d="M4 20c4-5 7-7 12-10"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'MAVİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-mavi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 10 6 14a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'KIRMIZI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-kirmizi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'GRİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-gri"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] })
 };
+
 const categoryFilterColors: Record<string, string> = {
   'Tümü': '#f97316',
   'YEŞİL': '#1e8e55',
@@ -28,6 +30,7 @@ const categoryFilterColors: Record<string, string> = {
   'KIRMIZI': '#d64545',
   'GRİ': '#9ca3af',
 };
+
 function normalizeCategory(category?: string | null): string {
   switch (category) {
     case 'YEŞİL': case 'Yeşiller': case 'Yeşil': return 'YEŞİL';
@@ -42,13 +45,14 @@ function categoryClass(category?: string | null): string {
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'GRİ' ? 'gri' : 'kirmizi'}`;
 }
 function getPinIcon(category?: string | null): L.DivIcon { return pinIcons[normalizeCategory(category)]; }
-const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div class="draft-pin-target"><span class="draft-pin-halo"></span><div class="pin-icon"><span></span></div></div>', iconSize:[44,50], iconAnchor:[22,48] });
 
+const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div class="draft-pin-target"><span class="draft-pin-halo"></span><div class="pin-icon"><span></span></div></div>', iconSize:[44,50], iconAnchor:[22,48] });
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
 const searchPlaceIcon = new L.DivIcon({ className:'search-place-marker', html:'<span class="search-place-dot"></span>', iconSize:[30,30], iconAnchor:[15,15] });
 const tomtomApiKey = import.meta.env.VITE_TOMTOM_API_KEY?.trim() ?? '';
 const routeStartIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-start">A</span>', iconSize:[30,30], iconAnchor:[15,15] });
 const routeEndIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-end">B</span>', iconSize:[30,30], iconAnchor:[15,15] });
+
 function haversineMeters(a:[number,number],b:[number,number]):number {
   const radians=(degrees:number)=>degrees*Math.PI/180;
   const dLat=radians(b[0]-a[0]);
@@ -113,12 +117,10 @@ function relativeTime(iso: string): string {
   if (months < 12) return `${months} ay önce`;
   return new Date(timestamp).toLocaleDateString('tr-TR');
 }
+
 function MapClick({ enabled, routeMode, onRoutePick, onPick, onMapClick }: { enabled:boolean; routeMode:boolean; onRoutePick:(lat:number,lng:number)=>void; onPick:(lat:number,lng:number)=>void; onMapClick:()=>void }) { useMapEvents({ click(e) { onMapClick(); if(routeMode){onRoutePick(e.latlng.lat,e.latlng.lng);return;} if (enabled) onPick(e.latlng.lat,e.latlng.lng); } }); return null; }
 function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number, number, number, number]) => void }) {
-  const map = useMapEvents({
-    moveend: () => schedule(),
-    zoomend: () => schedule(),
-  });
+  const map = useMapEvents({ moveend: () => schedule(), zoomend: () => schedule() });
   const timerRef = useRef<number | undefined>(undefined);
   const lastRef = useRef<string>('');
   const publish = useCallback(() => {
@@ -137,72 +139,31 @@ function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number,
   return null;
 }
 function FlyTo({ position, zoom }: { position:[number,number]|null; zoom?:number }) { const map=useMap(); useEffect(()=>{ if(position) map.flyTo(position,zoom??Math.max(map.getZoom(),14),{duration:.5}); },[map,position,zoom]); return null; }
-type ClusteredPinsProps = {
-  pins: Pin[];
-  selectedId: string | null;
-  isDimmed: (pin: Pin) => boolean;
-  onSelect: (pin: Pin) => void;
-};
 
+type ClusteredPinsProps = { pins: Pin[]; selectedId: string | null; isDimmed: (pin: Pin) => boolean; onSelect: (pin: Pin) => void; };
 function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: ClusteredPinsProps) {
   const [revision, setRevision] = useState(0);
-  const map = useMapEvents({
-    zoomend: () => setRevision(value => value + 1),
-    moveend: () => setRevision(value => value + 1),
-  });
+  const map = useMapEvents({ zoomend: () => setRevision(value => value + 1), moveend: () => setRevision(value => value + 1) });
   void revision;
-
   const zoom = map.getZoom();
   const cells = new Map<string, Pin[]>();
   for (const pin of pins) {
-    if (zoom >= 17 || pin.id === selectedId) {
-      cells.set(`single:${pin.id}`, [pin]);
-      continue;
-    }
+    if (zoom >= 17 || pin.id === selectedId) { cells.set(`single:${pin.id}`, [pin]); continue; }
     const point = map.project([pin.lat, pin.lng], zoom);
     const key = `cell:${Math.floor(point.x / 56)}:${Math.floor(point.y / 56)}`;
     const cell = cells.get(key);
-    if (cell) cell.push(pin);
-    else cells.set(key, [pin]);
+    if (cell) cell.push(pin); else cells.set(key, [pin]);
   }
-
   return <>{Array.from(cells.entries()).map(([key, group]) => {
     if (group.length === 1) {
       const pin = group[0];
       return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinTitle(pin)} alt={pinTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
-    const center: [number, number] = [
-      group.reduce((sum, pin) => sum + pin.lat, 0) / group.length,
-      group.reduce((sum, pin) => sum + pin.lng, 0) / group.length,
-    ];
-    const clusterIcon = L.divIcon({
-      className: 'pin-cluster-icon-wrap',
-      html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`,
-      iconSize: [44, 44],
-      iconAnchor: [22, 22],
-    });
-    return <Marker
-      key={key}
-      position={center}
-      icon={clusterIcon}
-      opacity={group.some(pin => !isDimmed(pin)) ? 1 : 0.35}
-      alt={`${group.length} işaretçi içeren grup`}
-      title={`${group.length} işaretçi — yakınlaştırmak için tıkla`}
-      keyboard
-      eventHandlers={{
-        click: () => {
-          const bounds = L.latLngBounds(group.map(pin => [pin.lat, pin.lng] as L.LatLngTuple));
-          if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
-            map.flyTo(center, Math.min(18, zoom + 3), { duration: 0.4 });
-          } else {
-            map.fitBounds(bounds, { padding: [36, 36], maxZoom: Math.min(18, zoom + 3), animate: true });
-          }
-        },
-      }}
-    />;
+    const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
+    const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
+    return <Marker key={key} position={center} icon={clusterIcon} opacity={group.some(pin => !isDimmed(pin)) ? 1 : 0.35} alt={`${group.length} işaretçi içeren grup`} title={`${group.length} işaretçi — yakınlaştırmak için tıkla`} keyboard eventHandlers={{ click: () => { const bounds = L.latLngBounds(group.map(pin => [pin.lat, pin.lng] as L.LatLngTuple)); if (bounds.getNorthEast().equals(bounds.getSouthWest())) { map.flyTo(center, Math.min(18, zoom + 3), { duration: 0.4 }); } else { map.fitBounds(bounds, { padding: [36, 36], maxZoom: Math.min(18, zoom + 3), animate: true }); } } }} />;
   })}</>;
 }
-
 
 function LazyPinThumbnail({ path, url, onVisible, onError }: { path:string; url?:string; onVisible:(paths:string[])=>void; onError:()=>void }) {
   const ref=useRef<HTMLSpanElement|null>(null);
@@ -216,10 +177,13 @@ export default function App() {
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [referenceCode,setReferenceCode]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
+  
   const active=profile?.status==='active'; const pending=!!session?.user&&profile?.status==='pending'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
+  
   const matchingIds=useMemo(()=>new Set(searchResultIds??pins.map(p=>p.id)),[searchResultIds,pins]);
   const filteredPins=useMemo(()=>{const categoryPins=selectedCategoryFilter==='Tümü'?pins:pins.filter(pin=>normalizeCategory(pin.category)===selectedCategoryFilter);if(timeFilter==='all')return categoryPins;const durationByFilter:Record<string,number>={'1m':60_000,'15m':15*60_000,'30m':30*60_000,'1h':60*60_000,'6h':6*60*60_000,'12h':12*60*60_000};const duration=durationByFilter[timeFilter];if(!duration)return categoryPins;const now=Date.now();return categoryPins.filter(pin=>{const createdAt=new Date(pin.created_at).getTime();const age=now-createdAt;return Number.isFinite(createdAt)&&age>=0&&age<duration;});},[pins,selectedCategoryFilter,timeFilter]);
   const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
+  
   const routeOrderedPins=useMemo(()=>{
     if(!routeMode||!routeInfo||!routeLine)return filteredListPins.map(pin=>({pin,routeOrder:null as number|null,routeDistance:null as number|null}));
     return filteredListPins
@@ -228,9 +192,11 @@ export default function App() {
       .sort((a,b)=>a.position.alongRouteMeters-b.position.alongRouteMeters)
       .map((item,index)=>({pin:item.pin,routeOrder:index+1,routeDistance:item.position.alongRouteMeters}));
   },[filteredListPins,routeMode,routeInfo,routeLine]);
+  
   const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
+
   const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
     const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
     if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}
@@ -260,9 +226,11 @@ export default function App() {
       lastSyncAtRef.current=new Date().toISOString();
     }catch(error){setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});console.warn('Pin yükleme hatası:',error);}
   },[canSeePins]);
+
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{const hintTimeout=window.setTimeout(()=>setVoicePinHintVisible(false),3000);return()=>window.clearTimeout(hintTimeout);},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
+
   // Once per day, remove Storage objects belonging to pins already moved to the archive.
   useEffect(()=>{
     const userId=session?.user?.id;
@@ -272,10 +240,7 @@ export default function App() {
     try{
       const lastRun=Number(window.localStorage.getItem(cleanupKey)||0);
       if(Number.isFinite(lastRun)&&lastRun>0&&now-lastRun<24*60*60*1000)return;
-    }catch(error){
-      console.warn('Fotoğraf temizliği için localStorage okunamadı:',error);
-      return;
-    }
+    }catch(error){ console.warn('Fotoğraf temizliği için localStorage okunamadı:',error); return; }
     let cancelled=false;
     const cleanupOldPhotos=async()=>{
       const cutoff=new Date(now-24*60*60*1000).toISOString();
@@ -306,32 +271,46 @@ export default function App() {
         console.log('Eski pin fotoğrafı temizliği tamamlandı.',{archivedPins:archivedIds.length,removedPaths:removedCount});
       }
     };
-    void cleanupOldPhotos().catch(error=>{
-      console.warn('Eski pin fotoğrafları temizlenemedi; sonraki açılışta yeniden denenecek:',error);
-    });
+    void cleanupOldPhotos().catch(error=>{ console.warn('Eski pin fotoğrafları temizlenemedi; sonraki açılışta yeniden denenecek:',error); });
     return()=>{cancelled=true;};
   },[session?.user?.id]);
-  // Keep the latest loadPins callback available to the interval without stale closures.
+
   const loadPinsRef=useRef(loadPins);
   useEffect(()=>{loadPinsRef.current=loadPins;},[loadPins]);
   useEffect(()=>{void loadPins();},[loadPins]);
+
+  // Poll silently every 10 seconds while the user is signed in.
+  useEffect(()=>{
+    if(!session?.user?.id)return;
+    const intervalId=window.setInterval(()=>{
+      if(document.visibilityState==='visible'){
+        void loadPinsRef.current({silent:true,incremental:true});
+      }
+    },10000);
+    const handleVisibilityChange=()=>{
+      if(document.visibilityState==='visible'){
+        void loadPinsRef.current({silent:true,incremental:true});
+      }
+    };
+    document.addEventListener('visibilitychange',handleVisibilityChange);
+    return()=>{
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange',handleVisibilityChange);
+    };
+  },[session?.user?.id]);
+
   useEffect(()=>{
     if(!routeMode||!routeStart||!routeEnd)return;
     const controller=new AbortController();
-    setRouteLoading(true);
-    setRouteError(null);
-    setRouteLine(null);
-    setRouteInfo(null);
-    const [startLat,startLng]=routeStart;
-    const [endLat,endLng]=routeEnd;
+    setRouteLoading(true); setRouteError(null); setRouteLine(null); setRouteInfo(null);
+    const [startLat,startLng]=routeStart; const [endLat,endLng]=routeEnd;
     const calculate=async()=>{
       try{
         const response=await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json','Accept':'application/geo+json, application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
         const result=await response.json().catch(()=>null) as {features?:Array<{geometry?:{coordinates?:number[][]};properties?:{summary?:{distance?:number;duration?:number}}}>;error?:{message?:string}|string;message?:string}|null;
         if(!response.ok){const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`ORS HTTP ${response.status}`;throw new Error(message);}
         if(controller.signal.aborted)return;
-        const feature=result?.features?.[0];
-        const coordinates=feature?.geometry?.coordinates;
+        const feature=result?.features?.[0]; const coordinates=feature?.geometry?.coordinates;
         if(!feature||!coordinates||coordinates.length<2)throw new Error('ORS geçerli bir rota döndürmedi.');
         const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const summary=feature.properties?.summary;
@@ -348,16 +327,11 @@ export default function App() {
     return()=>controller.abort();
   },[routeMode,routeStart,routeEnd,pins]);
 
-
   // Fetch list addresses sequentially and cache successful results by pin ID.
   useEffect(()=>{
     if(!pins.length)return;
-    let cancelled=false;
-    let delayTimer:number|undefined;
-    const controller=new AbortController();
-    const waitOneSecond=()=>new Promise<void>(resolve=>{
-      delayTimer=window.setTimeout(()=>{delayTimer=undefined;resolve();},1000);
-    });
+    let cancelled=false; let delayTimer:number|undefined; const controller=new AbortController();
+    const waitOneSecond=()=>new Promise<void>(resolve=>{ delayTimer=window.setTimeout(()=>{delayTimer=undefined;resolve();},1000); });
     const fetchAddressesSequentially=async()=>{
       for(let index=0;index<pins.length;index++){
         if(cancelled)break;
@@ -377,99 +351,20 @@ export default function App() {
           const parts:string[]=[];
           const add=(value:string|undefined)=>{if(value&&!parts.includes(value))parts.push(value);};
           if(neighbourhood)add(/mahallesi$/i.test(neighbourhood)?neighbourhood:`${neighbourhood} Mahallesi`);
-          add(road);
-          add(district);
-          if(town!==district)add(town);
+          add(road); add(district); if(town!==district)add(town);
           const formatted=parts.length?parts.join(', '):result.display_name?.trim();
           if(formatted){
             pinAddressesRef.current={...pinAddressesRef.current,[pin.id]:formatted};
             setPinAddresses(current=>current[pin.id]?current:{...current,[pin.id]:formatted});
           }
-        }catch(error){
-          if(cancelled||(error instanceof DOMException&&error.name==='AbortError'))break;
-          console.warn('Pin adresi alınamadı:',pin.id,error);
-        }
+        }catch(error){ if(cancelled||(error instanceof DOMException&&error.name==='AbortError'))break; console.warn('Pin adresi alınamadı:',pin.id,error); }
         if(index<pins.length-1&&!cancelled)await waitOneSecond();
       }
     };
     void fetchAddressesSequentially();
     return()=>{cancelled=true;controller.abort();if(delayTimer!==undefined)window.clearTimeout(delayTimer);};
   },[pins]);
-  // Realtime is the primary synchronization path for pins and their photos.
-  useEffect(()=>{
-    if(!supabase||!session?.user)return;
-    const channel=supabase.channel('realtime-pins')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pins'},payload=>{
-        const incoming={...(payload.new as unknown as Omit<Pin,'pin_photos'>),pin_photos:[]} as Pin;
-        // Realtime events must obey the same 24-hour window as the initial query.
-        if(!incoming.created_at||new Date(incoming.created_at).getTime()<Date.now()-24*60*60*1000)return;
-        
-        setPins(current=>{
-          if(current.some(pin=>pin.id===incoming.id))return current;
-          return [incoming,...current].sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
-        });
-        console.log("Realtime: Yeni pin alındı.",incoming.id);
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'pins'},payload=>{
-        const deletedId=String((payload.old as {id?:string}).id??'');
-        if(!deletedId)return;
-        setPins(current=>current.filter(pin=>pin.id!==deletedId));
-        setSelected(current=>current?.id===deletedId?null:current);
-        console.log("Realtime: Pin silindi.",deletedId);
-      })
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'pin_photos'},payload=>{
-        const photo=payload.new as unknown as PinPhoto & {pin_id?:string};
-        if(!photo?.id||!photo.pin_id)return;
-        setPins(current=>current.map(pin=>{
-          if(pin.id!==photo.pin_id||(pin.pin_photos??[]).some(item=>item.id===photo.id))return pin;
-          return {...pin,pin_photos:[...(pin.pin_photos??[]),{id:photo.id,storage_path:photo.storage_path,public_url:photo.public_url,sort_order:photo.sort_order}].sort((a,b)=>a.sort_order-b.sort_order)};
-        }));
-        setSelected(current=>{
-          if(!current||current.id!==photo.pin_id||(current.pin_photos??[]).some(item=>item.id===photo.id))return current;
-          return {...current,pin_photos:[...(current.pin_photos??[]),{id:photo.id,storage_path:photo.storage_path,public_url:photo.public_url,sort_order:photo.sort_order}].sort((a,b)=>a.sort_order-b.sort_order)};
-        });
-        void ensurePhotoUrls([photo.storage_path]);
-        console.log("Realtime: Pin fotoğrafı alındı.",photo.id);
-      })
-      .subscribe(status=>{
-        console.log("Realtime abonelik durumu:",status);
-      });
-    return()=>{void supabase?.removeChannel(channel);};
-  },[session?.user?.id,ensurePhotoUrls]);
 
-  // Poll only as a fallback, and only while the page is visible.
-  useEffect(()=>{
-    if(!session?.user?.id)return;
-    let intervalId:number|undefined;
-    const stopPolling=()=>{
-      if(intervalId!==undefined){window.clearInterval(intervalId);intervalId=undefined;console.log("Yedek polling durduruldu.");}
-    };
-    const startPolling=()=>{
-      if(document.visibilityState!=='visible'||intervalId!==undefined)return;
-      console.log("Yedek polling başladı: Her 60 saniyede bir; yalnızca görünür alanın yeni pinleri sorgulanır.");
-      intervalId=window.setInterval(()=>{
-        if(document.visibilityState==='visible'){
-          console.log("Yedek polling: Veri çekiliyor...");
-          void loadPinsRef.current({silent:true,incremental:true});
-        }
-      },60000);
-    };
-    const handleVisibilityChange=()=>{
-      if(document.visibilityState==='visible'){
-        console.log("Uygulama öne geldi, veriler yenileniyor...");
-        void loadPinsRef.current({silent:true,incremental:true});
-        startPolling();
-      }else{
-        stopPolling();
-      }
-    };
-    startPolling();
-    document.addEventListener('visibilitychange',handleVisibilityChange);
-    return()=>{
-      stopPolling();
-      document.removeEventListener('visibilitychange',handleVisibilityChange);
-    };
-  },[session?.user?.id]);
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);
   useEffect(()=>{let cancelled=false;async function runSearch(){const q=debouncedQuery.trim();if(!q){setSearchResultIds(null);return;}if(!supabase||!canSeePins){setSearchResultIds([]);return;}const {data,error}=await supabase.rpc('pins_search',{q});if(cancelled)return;if(error){setSearchResultIds([]);setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});return;}setSearchResultIds((data??[]).map((row:{id:string})=>row.id));}void runSearch();return()=>{cancelled=true;};},[debouncedQuery,canSeePins]);
@@ -480,7 +375,38 @@ export default function App() {
 
   async function submitAuth(e:FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);setNotice(null);try{if(authMode==='signup'){const {error}=await supabase.auth.signUp({email,password});if(error)throw error;setNotice({kind:'success',text:'Kayıt oluşturuldu. E-posta doğrulaması açıksa gelen kutunu kontrol et; hesabın pending durumunda başlar.'});}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;setAuthOpen(false);setNotice({kind:'success',text:'Giriş yapıldı.'});}}catch(err){const message=err instanceof Error?err.message:'';setNotice({kind:'error',text:authMode==='login'&&/invalid login credentials|invalid_credentials/i.test(message)?'E-posta veya şifre hatalı. Lütfen tekrar deneyin veya yeni kayıt olun.':message||'İşlem başarısız.'});}finally{setBusy(false);}}
   async function activateAccount(e:FormEvent){e.preventDefault();if(!supabase||!pending)return;const code=referenceCode.trim();if(!code){setNotice({kind:'error',text:'Lütfen referans kodunuzu girin.'});return;}setBusy(true);setNotice(null);try{const {error}=await supabase.rpc('redeem_reference_code',{p_code:code});if(error){const message=error.message||'';if(/geçersiz|kullanılmış|devre dışı|invalid|redeemed|disabled/i.test(message))throw new Error('Geçersiz veya kullanılmış kod.');throw error;}setReferenceCode('');setProfile(current=>current?{...current,status:'active'}:current);setAuthOpen(false);setNotice({kind:'success',text:'Hesabınız aktifleştirildi!'});if(session?.user)await loadProfile(session.user.id);}catch(err){const message=err instanceof Error?err.message:'';setNotice({kind:'error',text:/geçersiz|kullanılmış|devre dışı|invalid|redeemed|disabled|kod geçersiz/i.test(message)?'Geçersiz veya kullanılmış kod.':message||'Kod doğrulanamadı. Lütfen tekrar deneyin.'});}finally{setBusy(false);}}
-  async function addPin(e:FormEvent){e.preventDefault();if(!supabase||!session?.user||!canAdd||!draftPosition)return;if(files.length>3){setNotice({kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'});return;}setBusy(true);setNotice(null);const paths:string[]=[];try{const photoRows:{storage_path:string;public_url:string;sort_order:number}[]=[];for(let i=0;i<files.length;i++){const blob=await compressPhoto(files[i]);const path=`${session.user.id}/${crypto.randomUUID()}.jpg`;const {error}=await supabase.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});if(error)throw error;paths.push(path);const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);photoRows.push({storage_path:path,public_url:data.publicUrl,sort_order:i});}const {error}=await supabase.rpc('create_pin_with_photos',{p_lat:draftPosition[0],p_lng:draftPosition[1],p_description:description.trim(),p_category:category,p_photos:photoRows});if(error)throw error;setDescription('');setCategory('KIRMIZI');setFiles([]);setDraftPosition(null);const input=document.getElementById('photo-input') as HTMLInputElement|null;if(input)input.value='';setNotice({kind:'success',text:'Konum başarıyla kaydedildi.'});await loadPins();}catch(err){if(paths.length)await supabase.storage.from('pin-photos').remove(paths);const errorMessage=err&&typeof err==='object'&&'message'in err?String((err as {message?:unknown}).message??''):err instanceof Error?err.message:'';setNotice({kind:'error',text:/Açıklamanızda uygun olmayan ifadeler/i.test(errorMessage)?'Açıklamanızda uygun olmayan bir ifade tespit edildi.':errorMessage||'Konum eklenemedi.'});}finally{setBusy(false);}}
+
+  async function addPin(e:FormEvent){
+    e.preventDefault();
+    if(!supabase||!session?.user||!canAdd||!draftPosition)return;
+    if(files.length>3){ setNotice({kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}); return; }
+    setBusy(true); setNotice(null);
+    const paths:string[]=[];
+    try{
+      const photoRows:{storage_path:string;public_url:string;sort_order:number}[]=[];
+      for(let i=0;i<files.length;i++){
+        const blob=await compressPhoto(files[i]);
+        const path=`${session.user.id}/${crypto.randomUUID()}.jpg`;
+        const {error}=await supabase.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});
+        if(error)throw error;
+        paths.push(path);
+        const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
+        photoRows.push({storage_path:path,public_url:data.publicUrl,sort_order:i});
+      }
+      const {error}=await supabase.rpc('create_pin_with_photos',{ p_lat:draftPosition[0], p_lng:draftPosition[1], p_description:description.trim(), p_category:category, p_photos:photoRows });
+      if(error)throw error;
+      
+      setDescription(''); setCategory('KIRMIZI'); setFiles([]); setDraftPosition(null);
+      const input=document.getElementById('photo-input') as HTMLInputElement|null; if(input)input.value='';
+      setNotice({kind:'success',text:'Konum başarıyla kaydedildi.'});
+      await loadPins();
+    }catch(err){
+      if(paths.length)await supabase.storage.from('pin-photos').remove(paths);
+      const errorMessage=err&&typeof err==='object'&&'message'in err?String((err as {message?:unknown}).message??''):err instanceof Error?err.message:'';
+      setNotice({kind:'error',text:/Açıklamanızda uygun olmayan ifadeler/i.test(errorMessage)?'Açıklamanızda uygun olmayan bir ifade tespit edildi.':errorMessage||'Konum eklenemedi.'});
+    }finally{ setBusy(false); }
+  }
+
   async function deleteSelectedPin(){
     if(!supabase||!selected||!canDeleteSelected||busy)return;
     if(!window.confirm("Bu noktayı silmek istediğinize emin misiniz?"))return;
@@ -506,23 +432,29 @@ export default function App() {
   async function openInviteCodes(){setProfileMenuOpen(false);setInviteOpen(true);await loadInviteCodes();}
   async function createInviteCode(){if(!supabase||!session?.user||!active)return;setBusy(true);setNotice(null);try{const {data,error}=await supabase.rpc('create_invite_code');if(error)throw error;const result=Array.isArray(data)?data[0]:data;const code=typeof result==='string'?result:result?.code;if(!code)throw new Error('Kod oluşturuldu ancak kod bilgisi alınamadı. SQL kurulumunu kontrol edin.');const row:InviteCode={id:typeof result==='object'&&result?.id?result.id:code,code,created_at:new Date().toISOString(),redeemed_at:null,is_enabled:true};setInviteCodes(current=>[row,...current]);setNotice({kind:'success',text:'Kod başarıyla oluşturuldu!'});}catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Davet kodu oluşturulamadı.'});}finally{setBusy(false);}}
   async function copyInviteCode(item:InviteCode){if(!item.code){setNotice({kind:'info',text:'Bu kod eski şemada yalnızca hash olarak saklandığı için tekrar görüntülenemiyor. Yeni kod üretebilirsin.'});return;}try{await navigator.clipboard.writeText(item.code);setCopiedCodeId(item.id);setNotice({kind:'success',text:'Davet kodu panoya kopyalandı.'});window.setTimeout(()=>setCopiedCodeId(current=>current===item.id?null:current),1800);}catch{setNotice({kind:'error',text:'Panoya kopyalanamadı. Tarayıcı izinlerini kontrol et.'});}}
-  function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
+  
+  function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
+  
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
   function normalizeVoicePinText(value:string):string{return value.toLocaleLowerCase('tr-TR').replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c').replace(/İ/g,'i');}
+  
   function parseVoicePinCommand(transcript:string):string|null{
     const normalized=normalizeVoicePinText(transcript).trim().replace(/\s+/g,' ');
     const color='(?:mavi(?:ler)?|yesil(?:ler)?|gri|griler|siyah|sivil(?:ler)?|kirmizi|hepsi|tumu)';
-    const valid=new RegExp(`^(?:konumuma\\s+(?:${color}\\s+)?(?:isaret|pin)\\s+koy|buraya\\s+(?:${color}\\s+)?isaret\\s+koy|(?:${color}\\s+)?isaret\\s+koy)$`);
+    const action='(?:isaret|pin|nokta)';
+    const verb='(?:koy|ekle|birak)';
+    const valid=new RegExp(`^(?:(?:konumuma|buraya)\\s+)?(?:${color}\\s+)?(?:${action}\\s+)?${verb}$`);
     if(!valid.test(normalized))return null;
     const categories:Array<{pattern:RegExp;value:string}>=[
-      {pattern:/\\b(?:mavi|maviler)\\b/,value:'MAVİ'},
-      {pattern:/\\b(?:yesil|yesiller)\\b/,value:'YEŞİL'},
-      {pattern:/\\b(?:gri|griler|siyah|sivil|siviller)\\b/,value:'GRİ'},
-      {pattern:/\\b(?:kirmizi|hepsi|tumu)\\b/,value:'KIRMIZI'},
+      {pattern:/\b(?:mavi|maviler)\b/,value:'MAVİ'},
+      {pattern:/\b(?:yesil|yesiller)\b/,value:'YEŞİL'},
+      {pattern:/\b(?:gri|griler|siyah|sivil|siviller)\b/,value:'GRİ'},
+      {pattern:/\b(?:kirmizi|hepsi|tumu)\b/,value:'KIRMIZI'},
     ];
     const matches=categories.map(item=>({index:normalized.search(item.pattern),value:item.value})).filter(item=>item.index>=0).sort((a,b)=>a.index-b.index);
     return matches[0]?.value??'KIRMIZI';
   }
+  
   function addVoicePinAtCurrentLocation(parsedCategory:string){
     if(!navigator.geolocation){setNotice({kind:'error',text:'Konum alınamadı. Lütfen tarayıcıdan konum izni verin.'});return;}
     navigator.geolocation.getCurrentPosition(position=>{
@@ -536,6 +468,7 @@ export default function App() {
       setNotice({kind:'success',text:'📍 Konumunuz alındı. Açıklama ekleyip kaydedebilirsiniz.'});
     },()=>setNotice({kind:'error',text:'Konum alınamadı. Lütfen tarayıcıdan konum izni verin.'}),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
+  
   function startVoicePinCommand(){
     setVoicePinHintVisible(false);
     if(voicePinListening){voicePinRecognitionRef.current?.stop();return;}
@@ -550,14 +483,17 @@ export default function App() {
     recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
     recognition.onstart=()=>{
       setVoicePinListening(true);
-      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},5000);
+      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},8000);
     };
     recognition.onresult=(event:any)=>{
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
       handled=true;
       if(!transcript){setNotice({kind:'error',text:"Komut anlaşılamadı. Örnek: 'Konumuma mavi işaret koy'"});return;}
       const parsedCategory=parseVoicePinCommand(transcript);
-      if(!parsedCategory){setNotice({kind:'error',text:"Komut anlaşılamadı. Örnek: 'Konumuma mavi işaret koy'"});return;}
+      if(!parsedCategory){
+        setNotice({kind:'error',text:`Komut anlaşılamadı: "${transcript}". Lütfen "Konumuma mavi işaret koy" gibi söyleyin.`});
+        return;
+      }
       addVoicePinAtCurrentLocation(parsedCategory);
       try{recognition.stop();}catch{}
     };
@@ -576,21 +512,80 @@ export default function App() {
     voicePinRecognitionRef.current=recognition;
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}
   }
+  
   useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
   function locateUser(useForDraft=false){if(locating)return;if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}setLocating(true);navigator.geolocation.getCurrentPosition(position=>{const coords:[number,number]=[position.coords.latitude,position.coords.longitude];setUserPosition(coords);if(useForDraft){setDraftPosition(coords);setSelected(null);}else{setSelected(null);if(draftPosition)setDraftPosition(coords);}setNotice(null);setLocating(false);},()=>{setNotice({kind:'error',text:locationErrorText});setLocating(false);},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
   function openAddPinAt(initialCoords:{lat:number;lng:number}){setDraftPosition([initialCoords.lat,initialCoords.lng]);setSelected(null);setLightboxIndex(null);}
+  
   const center:[number,number]=[41.0082,28.9784];
+
   return <main className="app-shell">
     <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><MapPin size={21}/></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">{session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''} ${pending?'pending-status':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{pending?'Onay bekliyor':active?'Aktif üye':'Hesap devre dışı'}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{session.user?.user_metadata?.name||session.user?.user_metadata?.full_name||session.user?.email?.split('@')[0]||'üye'}</strong></p>{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
+    
     {!isConfigured&&<div className="setup-banner"><strong>Kurulum gerekiyor:</strong> .env dosyasına Supabase URL ve anahtarını ekle; README.md içindeki SQL kurulumunu tamamla.</div>}
     {notice&&<div className={`notice ${notice.kind}`} role="status"><span>{notice.text}</span><button onClick={()=>setNotice(null)} aria-label="Bildirimi kapat"><X size={16}/></button></div>}
-    <section className="workspace"><div className="map-frame"><div className="map-toolbar"><div className="place-search-wrap"><div className="searchbox place-searchbox"><Search size={17}/><input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>{speechSupported&&<button type="button" className={`voice-button place-voice-button ${listeningField==='placeQuery'?'is-listening':''}`} onClick={()=>startListening('placeQuery',setPlaceQuery)} aria-label={listeningField==='placeQuery'?'Dinlemeyi durdur':'Sesli arama'} title={listeningField==='placeQuery'?'Dinleniyor...':'Sesli arama'}><Mic size={16}/></button>}{placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}{placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}</div>{placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">{placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}</div>}</div></div>
-      <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e) => console.warn("TomTom Tile Hatası:", e) }}/>}<MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>setPlaceDropdownOpen(false)} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/><ViewportWatcher onBoundsChange={setViewportBounds}/><FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/><FlyTo position={!selected&&searchPlace?[Number(searchPlace.lat),Number(searchPlace.lon)]:null} zoom={16}/><FlyTo position={userPosition} zoom={16}/><ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}/>{draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}{!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}{userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}{routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}{routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}{routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}</MapContainer><div className="map-action-left-group">{canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}{speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örnek: “Konumuma mavi işaret koy”</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komutla pin ekle" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komutla pin ekle'}>{voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}<button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button></div><div className="map-action-right-group"><button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>{tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>Trafik</span></button>}</div>
-      {!canSeePins&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}</div>
-      <aside className="side-panel">{pending?<div className="panel-content onboarding-panel"><div className="onboarding-icon"><ShieldCheck size={25}/></div><p className="eyebrow">SON BİR ADIM</p><h2>Hesabını Etkinleştir</h2><p className="onboarding-copy">Paylaşılan noktaları görmek ve yeni konum eklemek için sana verilen referans kodunu gir.</p><form onSubmit={activateAccount} className="onboarding-form"><label className="field-label" htmlFor="reference-code-panel">Referans kodunuz</label><input id="reference-code-panel" value={referenceCode} onChange={e=>setReferenceCode(e.target.value)} required autoComplete="off" placeholder="Referans Kodunuzu Girin (Örn: IST-XXXXXX)"/><button className="primary-button full-width" disabled={busy||!referenceCode.trim()}>{busy?'Onaylanıyor...':'Kodu Onayla'}</button></form><p className="onboarding-footnote">Kodun yoksa sana davet gönderen kişiden isteyebilirsin.</p></div>:selected&&!routeMode?<div className="panel-content"><div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span><h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{selected.description||'Açıklama eklenmemiş.'}</p><div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>{selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}</div><div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div><p className="coordinates selected-coordinates">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p><a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer">Yol tarifi</a>{canDeleteSelected&&<button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deleteSelectedPin()}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button>}</div>:draftPosition&&canAdd&&!routeMode?<form className="panel-content" onSubmit={addPin}><div className="panel-heading"><div><p className="eyebrow">YENİ PAYLAŞIM</p><h2>Konum ekle</h2></div><button type="button" className="icon-button" onClick={()=>setDraftPosition(null)} aria-label="Konum ekleme formunu kapat"><X size={18}/></button></div><div className="draft-coordinates-row"><p className="coordinates">{draftPosition[0].toFixed(5)}, {draftPosition[1].toFixed(5)}</p><button type="button" className="use-location-button" onClick={()=>locateUser(true)} disabled={locating} title="GPS konumunu kullan">{locating?<LoaderCircle className="gps-spinner" size={15}/>:<LocateFixed size={15}/>}<span>{locating?'Konum alınıyor…':'Konumumu Kullan'}</span></button></div><p className="draft-location-hint">📍 Konumu değiştirmek için haritada başka bir noktaya tıklayabilir veya yandaki GPS butonunu kullanabilirsiniz.</p><label className="field-label" htmlFor="category">Kategori</label><select id="category" className="category-select" value={category} onChange={e=>setCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="GRİ">GRİ</option></select><label className="field-label" htmlFor="description">Açıklama</label><div className={`voice-textarea-wrap ${speechSupported?'voice-supported':''}`}><textarea id="description" className={speechSupported?'voice-enabled-input':''} value={description} onChange={e=>setDescription(e.target.value)} maxLength={5000} placeholder={listeningField==='description'?'Dinleniyor...':'Bu konum hakkında ne paylaşmak istersin?'} rows={3}/>{hasProfanity&&<p role="alert" style={{color:"#dc2626",fontSize:"13px",margin:"6px 0 0"}}>⚠️ Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}{speechSupported&&<button type="button" className={`voice-button textarea-voice-button ${listeningField==='description'?'is-listening':''}`} onClick={()=>startListening('description',setDescription)} aria-label={listeningField==='description'?'Dinlemeyi durdur':'Açıklamaya sesli giriş'} title={listeningField==='description'?'Dinleniyor...':'Sesli giriş'}><Mic size={16}/></button>}</div><label className="field-label" htmlFor="photo-input">Fotoğraflar <span>İsteğe bağlı · En fazla 3 adet</span></label><label className="upload-box" htmlFor="photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Görsel dosyası · dosya başına en fazla 12 MB</small><input id="photo-input" type="file" accept="image/*" capture="environment" multiple onChange={e=>{const selectedFiles=Array.from(e.target.files??[]);setFiles(selectedFiles);setNotice(selectedFiles.length>3?{kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}:null);}}/></label>{files.length>0&&<div className="file-list">{files.map((file,i)=><div key={`${file.name}-${i}`}><span>{file.name}</span><button type="button" onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Dosyayı kaldır"><X size={14}/></button></div>)}</div>}<button className="primary-button full-width" disabled={busy||files.length>3||hasProfanity}>{busy?'Kaydediliyor…':'Konumu kaydet'}</button><p className="info-text" style={{fontSize:"12px",color:"#94a3b8",marginTop:"10px",textAlign:"center"}}>Bilgilendirme: Paylaşımlarınız haritada 24 saat boyunca görünür kalır.</p></form> :<div className="empty-panel"><div className="panel-top-controls">{routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır. Bir durağa dokunarak haritada konumuna git.</p>}</section>}<div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>{!showFilterOptions?<><button type="button" className="category-filter-button selected" style={{backgroundColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,borderColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,color:selectedCategoryFilter==='GRİ'?'#111827':'#fff'}} onClick={()=>setShowFilterOptions(true)} aria-expanded="false" aria-label={`Seçili filtre: ${selectedCategoryFilter}. Filtre seçeneklerini aç`}>{selectedCategoryFilter}</button><button type="button" className="filter-toggle-button" onClick={()=>setShowFilterOptions(true)} aria-label="Filtre seçeneklerini aç" title="Filtre seçenekleri"><SlidersHorizontal size={16}/></button></>:['Tümü','YEŞİL','MAVİ','KIRMIZI','GRİ'].map(filter=><button key={filter} type="button" className={`category-filter-button ${selectedCategoryFilter===filter?'selected':''}`} style={selectedCategoryFilter===filter?{backgroundColor:categoryFilterColors[filter],borderColor:categoryFilterColors[filter],color:filter==='GRİ'?'#111827':'#fff'}:undefined} aria-pressed={selectedCategoryFilter===filter} onClick={()=>{setSelectedCategoryFilter(filter);setShowFilterOptions(false);}}>{filter}</button>)}</div><label className="time-filter-control" aria-label="Zaman filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><Clock size={15} aria-hidden="true"/><select value={timeFilter} onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()} onChange={event=>setTimeFilter(event.target.value)} aria-label="Pinleri zamana göre filtrele"><option value="all">Tümü (24 Saat)</option><option value="1m">Son 1 Dakika</option><option value="15m">Son 15 Dakika</option><option value="30m">Son 30 Dakika</option><option value="1h">Son 1 Saat</option><option value="6h">Son 6 Saat</option><option value="12h">Son 12 Saat</option></select></label></div><div className="pin-searchbox"><Search size={15}/><input className={speechSupported?'voice-enabled-input':''} value={query} onChange={e=>setQuery(e.target.value)} placeholder={listeningField==='query'?'Dinleniyor...':'Açıklamalarda ara...'} aria-label="Açıklamalarda ara"/>{speechSupported&&<button type="button" className={`voice-button pin-voice-button ${listeningField==='query'?'is-listening':''}`} onClick={()=>startListening('query',setQuery)} aria-label={listeningField==='query'?'Dinlemeyi durdur':'Sesli pin araması'} title={listeningField==='query'?'Dinleniyor...':'Sesli arama'}><Mic size={15}/></button>}{query&&<button className="search-clear" type="button" onClick={()=>{setQuery('');setDebouncedQuery('');setSearchResultIds(null);}} aria-label="Pin aramasını temizle"><X size={14}/></button>}</div>{routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}</div>{filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı. Başka bir güzergâh deneyebilirsin.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin. Üyelik etkinleşince paylaşılan noktalar görünür.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))}/>:<span className="mini-pin"><MapPin size={16}/></span>}</span><span className="pin-list-copy"><strong title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} başlangıçtan · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small></span></button>;})}</div>}{!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}</div>}<div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div></aside></section>
+    
+    <section className="workspace">
+      <div className="map-frame">
+        <div className="map-toolbar">
+          <div className="place-search-wrap">
+            <div className="searchbox place-searchbox">
+              <Search size={17}/>
+              <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
+              {speechSupported&&<button type="button" className={`voice-button place-voice-button ${listeningField==='placeQuery'?'is-listening':''}`} onClick={()=>startListening('placeQuery',setPlaceQuery)} aria-label={listeningField==='placeQuery'?'Dinlemeyi durdur':'Sesli arama'} title={listeningField==='placeQuery'?'Dinleniyor...':'Sesli arama'}><Mic size={16}/></button>}
+              {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
+              {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
+            </div>
+            {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
+              {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
+            </div>}
+          </div>
+        </div>
+        
+        <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map">
+          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+          {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e) => console.warn("TomTom Tile Hatası:", e) }}/>}
+          <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>setPlaceDropdownOpen(false)} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+          <ViewportWatcher onBoundsChange={setViewportBounds}/>
+          <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
+          <FlyTo position={!selected&&searchPlace?[Number(searchPlace.lat),Number(searchPlace.lon)]:null} zoom={16}/>
+          <FlyTo position={userPosition} zoom={16}/>
+          <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}/>
+          {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
+          {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
+          {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
+          {routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}
+          {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
+          {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
+        </MapContainer>
+        
+        <div className="map-action-left-group">
+          {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
+          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örnek: “Konumuma mavi işaret koy”</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komutla pin ekle" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komutla pin ekle'}>{voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
+          <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
+        </div>
+        
+        <div className="map-action-right-group">
+          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>
+          {tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>Trafik</span></button>}
+        </div>
+        
+        {!canSeePins&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
+      </div>
+      
+      <aside className="side-panel">
+        {pending?<div className="panel-content onboarding-panel"><div className="onboarding-icon"><ShieldCheck size={25}/></div><p className="eyebrow">SON BİR ADIM</p><h2>Hesabını Etkinleştir</h2><p className="onboarding-copy">Paylaşılan noktaları görmek ve yeni konum eklemek için sana verilen referans kodunu gir.</p><form onSubmit={activateAccount} className="onboarding-form"><label className="field-label" htmlFor="reference-code-panel">Referans kodunuz</label><input id="reference-code-panel" value={referenceCode} onChange={e=>setReferenceCode(e.target.value)} required autoComplete="off" placeholder="Referans Kodunuzu Girin (Örn: IST-XXXXXX)"/><button className="primary-button full-width" disabled={busy||!referenceCode.trim()}>{busy?'Onaylanıyor...':'Kodu Onayla'}</button></form><p className="onboarding-footnote">Kodun yoksa sana davet gönderen kişiden isteyebilirsin.</p></div>
+        :selected&&!routeMode?<div className="panel-content"><div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span><h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{selected.description||'Açıklama eklenmemiş.'}</p><div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>{selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}</div><div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div><p className="coordinates selected-coordinates">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p><a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer">Yol tarifi</a>{canDeleteSelected&&<button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deleteSelectedPin()}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button>}</div>
+        :draftPosition&&canAdd&&!routeMode?<form className="panel-content" onSubmit={addPin}><div className="panel-heading"><div><p className="eyebrow">YENİ PAYLAŞIM</p><h2>Konum ekle</h2></div><button type="button" className="icon-button" onClick={()=>setDraftPosition(null)} aria-label="Konum ekleme formunu kapat"><X size={18}/></button></div><div className="draft-coordinates-row"><p className="coordinates">{draftPosition[0].toFixed(5)}, {draftPosition[1].toFixed(5)}</p><button type="button" className="use-location-button" onClick={()=>locateUser(true)} disabled={locating} title="GPS konumunu kullan">{locating?<LoaderCircle className="gps-spinner" size={15}/>:<LocateFixed size={15}/>}<span>{locating?'Konum alınıyor…':'Konumumu Kullan'}</span></button></div><p className="draft-location-hint">📍 Konumu değiştirmek için haritada başka bir noktaya tıklayabilir veya yandaki GPS butonunu kullanabilirsiniz.</p><label className="field-label" htmlFor="category">Kategori</label><select id="category" className="category-select" value={category} onChange={e=>setCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="GRİ">GRİ</option></select><label className="field-label" htmlFor="description">Açıklama</label><div className={`voice-textarea-wrap ${speechSupported?'voice-supported':''}`}><textarea id="description" className={speechSupported?'voice-enabled-input':''} value={description} onChange={e=>setDescription(e.target.value)} maxLength={5000} placeholder={listeningField==='description'?'Dinleniyor...':'Bu konum hakkında ne paylaşmak istersin?'} rows={3}/>{hasProfanity&&<p role="alert" style={{color:"#dc2626",fontSize:"13px",margin:"6px 0 0"}}>⚠️ Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}{speechSupported&&<button type="button" className={`voice-button textarea-voice-button ${listeningField==='description'?'is-listening':''}`} onClick={()=>startListening('description',setDescription)} aria-label={listeningField==='description'?'Dinlemeyi durdur':'Açıklamaya sesli giriş'} title={listeningField==='description'?'Dinleniyor...':'Sesli giriş'}><Mic size={16}/></button>}</div><label className="field-label" htmlFor="photo-input">Fotoğraflar <span>İsteğe bağlı · En fazla 3 adet</span></label><label className="upload-box" htmlFor="photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Görsel dosyası · dosya başına en fazla 12 MB</small><input id="photo-input" type="file" accept="image/*" capture="environment" multiple onChange={e=>{const selectedFiles=Array.from(e.target.files??[]);setFiles(selectedFiles);setNotice(selectedFiles.length>3?{kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}:null);}}/></label>{files.length>0&&<div className="file-list">{files.map((file,i)=><div key={`${file.name}-${i}`}><span>{file.name}</span><button type="button" onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Dosyayı kaldır"><X size={14}/></button></div>)}</div>}<button className="primary-button full-width" disabled={busy||files.length>3||hasProfanity}>{busy?'Kaydediliyor…':'Konumu kaydet'}</button><p className="info-text" style={{fontSize:"12px",color:"#94a3b8",marginTop:"10px",textAlign:"center"}}>Bilgilendirme: Paylaşımlarınız haritada 24 saat boyunca görünür kalır.</p></form>
+        :<div className="empty-panel"><div className="panel-top-controls">{routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır. Bir durağa dokunarak haritada konumuna git.</p>}</section>}<div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>{!showFilterOptions?<><button type="button" className="category-filter-button selected" style={{backgroundColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,borderColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,color:selectedCategoryFilter==='GRİ'?'#111827':'#fff'}} onClick={()=>setShowFilterOptions(true)} aria-expanded="false" aria-label={`Seçili filtre: ${selectedCategoryFilter}. Filtre seçeneklerini aç`}>{selectedCategoryFilter}</button><button type="button" className="filter-toggle-button" onClick={()=>setShowFilterOptions(true)} aria-label="Filtre seçeneklerini aç" title="Filtre seçenekleri"><SlidersHorizontal size={16}/></button></>:['Tümü','YEŞİL','MAVİ','KIRMIZI','GRİ'].map(filter=><button key={filter} type="button" className={`category-filter-button ${selectedCategoryFilter===filter?'selected':''}`} style={selectedCategoryFilter===filter?{backgroundColor:categoryFilterColors[filter],borderColor:categoryFilterColors[filter],color:filter==='GRİ'?'#111827':'#fff'}:undefined} aria-pressed={selectedCategoryFilter===filter} onClick={()=>{setSelectedCategoryFilter(filter);setShowFilterOptions(false);}}>{filter}</button>)}</div><label className="time-filter-control" aria-label="Zaman filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><Clock size={15} aria-hidden="true"/><select value={timeFilter} onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()} onChange={event=>setTimeFilter(event.target.value)} aria-label="Pinleri zamana göre filtrele"><option value="all">Tümü (24 Saat)</option><option value="1m">Son 1 Dakika</option><option value="15m">Son 15 Dakika</option><option value="30m">Son 30 Dakika</option><option value="1h">Son 1 Saat</option><option value="6h">Son 6 Saat</option><option value="12h">Son 12 Saat</option></select></label></div><div className="pin-searchbox"><Search size={15}/><input className={speechSupported?'voice-enabled-input':''} value={query} onChange={e=>setQuery(e.target.value)} placeholder={listeningField==='query'?'Dinleniyor...':'Açıklamalarda ara...'} aria-label="Açıklamalarda ara"/>{speechSupported&&<button type="button" className={`voice-button pin-voice-button ${listeningField==='query'?'is-listening':''}`} onClick={()=>startListening('query',setQuery)} aria-label={listeningField==='query'?'Dinlemeyi durdur':'Sesli pin araması'} title={listeningField==='query'?'Dinleniyor...':'Sesli arama'}><Mic size={15}/></button>}{query&&<button className="search-clear" type="button" onClick={()=>{setQuery('');setDebouncedQuery('');setSearchResultIds(null);}} aria-label="Pin aramasını temizle"><X size={14}/></button>}</div>{routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}</div>{filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı. Başka bir güzergâh deneyebilirsin.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin. Üyelik etkinleşince paylaşılan noktalar görünür.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))}/>:<span className="mini-pin"><MapPin size={16}/></span>}</span><span className="pin-list-copy"><strong title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} başlangıçtan · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small></span></button>;})}</div>}{!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}</div>}<div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div></aside>
+    </section>
+    
     {inviteOpen&&<div className="modal-backdrop invite-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setInviteOpen(false);}}><section className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title"><div className="modal-head"><div><p className="eyebrow">TOPLULUĞA DAVET</p><h2 id="invite-modal-title">Davet Kodlarım</h2></div><button type="button" className="icon-button" onClick={()=>setInviteOpen(false)} aria-label="Davet kodlarını kapat"><X size={18}/></button></div><p className="invite-intro">Kodlarını arkadaşlarınla paylaş. Her kod yalnızca bir hesap tarafından kullanılabilir.</p><button type="button" className="primary-button full-width invite-create" disabled={busy||!active||(profile?.role!=='admin'&&inviteCodes.length>=3)} onClick={()=>void createInviteCode()}><Plus size={17}/>{busy?'İşleniyor…':'Yeni Davet Kodu Üret'}</button>{profile?.role!=='admin'&&inviteCodes.length>=3&&<p className="invite-limit">Davet kodu limitinize ulaştınız.</p>}<div className="invite-list">{inviteCodes.length===0&&!busy?<div className="invite-empty">Henüz davet kodun yok. Yeni bir kod oluşturabilirsin.</div>:inviteCodes.map(item=><div className="invite-row" key={item.id}><div className="invite-code-info"><strong>{item.code||'Önceden oluşturulmuş davet kodu'}</strong><small>{new Date(item.created_at).toLocaleDateString('tr-TR')} · {item.redeemed_at?'Kullanıldı':item.is_enabled?'Kullanılabilir':'Devre dışı'}</small></div>{item.code&&!item.redeemed_at&&item.is_enabled&&<button type="button" className="copy-code-button" onClick={()=>void copyInviteCode(item)} aria-label="Davet kodunu kopyala" title="Kopyala">{copiedCodeId===item.id?<Check size={17}/>:<Copy size={17}/>}<span>{copiedCodeId===item.id?'Kopyalandı':'Kopyala'}</span></button>}</div>)}</div><p className="invite-footnote">Eski kodlar veritabanında yalnızca hash olarak saklanıyorsa tekrar görüntülenemez; yeni oluşturulan kodlar listeden kopyalanabilir.</p></section></div>}
+    
     {lightboxIndex!==null&&selected&&selectedPhotos.length>0&&<div className="lightbox-backdrop" role="dialog" aria-modal="true" aria-label="Fotoğraf görüntüleyici" onTouchStart={e=>{(e.currentTarget as HTMLDivElement).dataset.touchX=String(e.touches[0].clientX);}} onTouchEnd={e=>{const start=Number((e.currentTarget as HTMLDivElement).dataset.touchX??0);const delta=e.changedTouches[0].clientX-start;if(Math.abs(delta)>45)setLightboxIndex(index=>index===null?null:delta<0?(index+1)%selectedPhotos.length:(index-1+selectedPhotos.length)%selectedPhotos.length);}} onMouseDown={e=>{if(e.target===e.currentTarget)setLightboxIndex(null);}}><button type="button" className="lightbox-close" onClick={()=>setLightboxIndex(null)} aria-label="Fotoğraf görüntüleyiciyi kapat"><X size={24}/></button>{selectedPhotos.length>1&&<button type="button" className="lightbox-nav lightbox-prev" onClick={()=>setLightboxIndex(index=>index===null?null:(index-1+selectedPhotos.length)%selectedPhotos.length)} aria-label="Önceki fotoğraf"><ChevronLeft size={30}/></button>}<img className="lightbox-image" src={photoUrls[selectedPhotos[lightboxIndex].storage_path]||''} alt={`Fotoğraf ${lightboxIndex+1} / ${selectedPhotos.length}`} loading="lazy" decoding="async"/>{selectedPhotos.length>1&&<button type="button" className="lightbox-nav lightbox-next" onClick={()=>setLightboxIndex(index=>index===null?null:(index+1)%selectedPhotos.length)} aria-label="Sonraki fotoğraf"><ChevronRight size={30}/></button>}<div className="lightbox-counter">{lightboxIndex+1} / {selectedPhotos.length}</div></div>}
+    
     <footer><span>AYTAR</span><span>Harita verisi © OpenStreetMap katkıcıları</span><span>Ücretsiz açık kaynak bileşenlerle geliştirildi</span></footer>
+    
     {authOpen&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAuthOpen(false);}}><div className="auth-modal"><div className="modal-head"><div><p className="eyebrow">{authMode==='login'?'TEKRAR HOŞ GELDİN':'TOPLULUĞA KATIL'}</p><h2>{authMode==='login'?'Giriş yap':'Hesap oluştur'}</h2></div><button className="icon-button" onClick={()=>setAuthOpen(false)} aria-label="Kapat"><X size={18}/></button></div><form onSubmit={submitAuth} className="auth-form"><label className="field-label" htmlFor="email">E-posta</label><input id="email" type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="ornek@eposta.com"/><label className="field-label" htmlFor="password">Şifre <span>en az 8 karakter</span></label><input id="password" type="password" minLength={8} required autoComplete={authMode==='login'?'current-password':'new-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="En az 8 karakter"/><button className="primary-button full-width" disabled={busy}>{busy?'İşleniyor…':authMode==='login'?'Giriş yap':'Kayıt ol'}</button></form><button className="text-button" onClick={()=>setAuthMode(authMode==='login'?'signup':'login')}>{authMode==='login'?'Hesabın yok mu? Kayıt ol':'Zaten hesabın var mı? Giriş yap'}</button>{pending&&<form onSubmit={activateAccount} className="activation-form"><div className="activation-note"><ShieldCheck size={18}/><span>Hesabın <strong>pending</strong> durumunda. Referans kodunu girerek etkinleştir.</span></div><label className="field-label" htmlFor="reference-code">Referans kodu</label><input id="reference-code" value={referenceCode} onChange={e=>setReferenceCode(e.target.value)} required placeholder="Örn. IST-AB12CD"/><button className="secondary-button full-width" disabled={busy||!referenceCode.trim()}>{busy?'Onaylanıyor...':'Kodu Onayla'}</button></form>}{!session&&<p className="modal-privacy">Kayıt sonrası hesabın geçerli referans kodu girilene kadar pending kalır.</p>}</div></div>}
   </main>;
 }
