@@ -2153,3 +2153,32 @@ select option { background: var(--surface); color: var(--text-dark); }
   .pin-list-meta .pin-score-badge { padding: 2px 6px; font-size: 10px; }
   .pin-list-item.route-stop-item .pin-list-left { margin-left: 8px; }
 }
+
+
+/* Category-specific colors for pin-list placeholders without photos. */
+.pin-list-left .mini-pin {
+  color: #9ca3af;
+  background-color: rgba(156, 163, 175, 0.1);
+  border: 1px solid #9ca3af;
+  border-radius: 9px;
+}
+.pin-list-left .mini-pin.category-yesil {
+  color: #1e8e55;
+  background-color: rgba(30, 142, 85, 0.1);
+  border-color: #1e8e55;
+}
+.pin-list-left .mini-pin.category-mavi {
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+.pin-list-left .mini-pin.category-kirmizi {
+  color: #d64545;
+  background-color: rgba(214, 69, 69, 0.1);
+  border-color: #d64545;
+}
+.pin-list-left .mini-pin.category-gri {
+  color: #9ca3af;
+  background-color: rgba(156, 163, 175, 0.1);
+  border-color: #9ca3af;
+}

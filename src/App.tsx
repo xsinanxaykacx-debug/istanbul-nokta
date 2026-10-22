@@ -132,7 +132,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
 function LazyPinThumbnail({ path, url, onVisible, onError }: { path:string; url?:string; onVisible:(paths:string[])=>void; onError:()=>void }) {
   const ref=useRef<HTMLSpanElement|null>(null);
   useEffect(()=>{const element=ref.current;if(!element)return;let done=false;const load=()=>{if(done)return;done=true;onVisible([path]);};if(typeof IntersectionObserver==='undefined'){load();return;}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){load();observer.disconnect();}},{rootMargin:'100px'});observer.observe(element);return()=>observer.disconnect();},[path,onVisible]);
-  return <span ref={ref} className="pin-thumb-image-slot">{url?<img src={url} alt="" loading="lazy" decoding="async" onError={onError}/>:<span className="mini-pin"><MapPin size={16}/></span>}</span>;
+  return <span ref={ref} className="pin-thumb-image-slot">{url?<img src={url} alt="" loading="lazy" decoding="async" onError={onError}/>:<span className={`mini-pin ${categoryClass(pin.category)}`}><MapPin size={16}/></span>}</span>;
 }
 
 export default function App() {
