@@ -1,3 +1,6 @@
+declare const process: any;
+declare const Buffer: any;
+
 type VercelRequest = { method?: string; body?: unknown };
 type VercelResponse = { setHeader(name: string, value: string): void; status(code: number): VercelResponse; json(body: unknown): VercelResponse; send(body: string): VercelResponse };
 
@@ -15,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'ORS API key is missing' });
   }
 
-  const body = req.body;
+  const body = req.body as any;
   if (!body || typeof body !== 'object' || !Array.isArray(body.coordinates) || body.coordinates.length !== 2) {
     return res.status(400).json({ error: 'Invalid route request body' });
   }
