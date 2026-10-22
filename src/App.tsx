@@ -438,26 +438,33 @@ export default function App() {
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
   function normalizeVoicePinText(value:string):string{return value.toLocaleLowerCase('tr-TR').replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c').replace(/İ/g,'i');}
   
-    function parseVoicePinCommand(transcript:string):string|null{
+      function parseVoicePinCommand(transcript:string):{category:string|null, shouldSave:boolean}|null{
     const normalized=normalizeVoicePinText(transcript).trim().replace(/\s+/g,' ');
     
-    // Komutun geçerli olup olmadığını anlamak için kelime kontrolü
-    // "pin", "işaret", "nokta", "konuma", "buraya" gibi kelimeler var mı?
-    const hasPinKeyword = /\b(pin|isaret|nokta|konum|buraya|konuma|konumuma)\b/.test(normalized);
-    // "koy", "ekle", "bırak" gibi eylemler var mı?
-    const hasActionVerb = /\b(koy|ekle|birak|olustur)\b/.test(normalized);
+    // Cümlede "kaydet" kelimesi geçiyor mu?
+    const hasSaveKeyword = /\b(kaydet)\b/.test(normalized);
     
-    // Eğer ne eylem ne de pin kelimesi geçmiyorsa, komut değildir.
+    // Cümlede pin ile ilgili bir kelime var mı?
+    const hasPinKeyword = /\b(pin|isaret|nokta|konum|buraya|konuma|konumuma)\b/.test(normalized);
+    const hasActionVerb = /\b(koy|ekle|birak|yerlestir|isaretle|olustur)\b/.test(normalized);
+    
+    // Sadece "Kaydet" dendiyse (başka bir şey yoksa)
+    if (hasSaveKeyword && !hasPinKeyword && !hasActionVerb) {
+      return { category: null, shouldSave: true };
+    }
+    
+    // Pin ekleme komutu değilse null dön
     if (!hasPinKeyword && !hasActionVerb) return null;
     
-    // Kategoriyi (rengi) bul
-    if (/\b(mavi|maviler)\b/.test(normalized)) return 'MAVİ';
-    if (/\b(yesil|yesiller)\b/.test(normalized)) return 'YEŞİL';
-    if (/\b(gri|griler|siyah|sivil|siviller)\b/.test(normalized)) return 'GRİ';
-    if (/\b(kirmizi|hepsi|tumu)\b/.test(normalized)) return 'KIRMIZI';
+    // Rengi bul
+    let category = 'KIRMIZI';
+    if (/\b(mavi|maviler)\b/.test(normalized)) category = 'MAVİ';
+    else if (/\b(yesil|yesiller)\b/.test(normalized)) category = 'YEŞİL';
+    else if (/\b(gri|griler|siyah|sivil|siviller)\b/.test(normalized)) category = 'GRİ';
+    else if (/\b(kirmizi|hepsi|tumu)\b/.test(normalized)) category = 'KIRMIZI';
     
-    // Eğer pin eklenecekse ama renk söylenmediyse varsayılan KIRMIZI
-    return 'KIRMIZI';
+    // Hem pin ekleme var hem de kaydet var mı?
+    return { category, shouldSave: hasSaveKeyword };
   }
   
   function addVoicePinAtCurrentLocation(parsedCategory:string){
