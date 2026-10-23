@@ -609,7 +609,6 @@ export default function App() {
       
       const lowerText = transcript.toLocaleLowerCase('tr-TR');
 
-      // YENİ: Katman değiştirme komutları
       if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(lowerText)) {
         setShowHeatmap(true); setShowTraffic(false); setNotice({kind:'success', text:'Isı haritası açıldı.'}); try{recognition.stop();}catch{} return;
       }
@@ -623,7 +622,6 @@ export default function App() {
         setShowTraffic(false); setNotice({kind:'success', text:'Trafik katmanı kapatıldı.'}); try{recognition.stop();}catch{} return;
       }
 
-      // YENİ: Rota oluşturma komutu
       const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
       if (routeMatch && routeMatch[1]) {
         const targetName = routeMatch[1].trim();
@@ -705,19 +703,17 @@ export default function App() {
     
     <section className="workspace">
       <div className="map-frame">
-        <div className="map-toolbar">
-          <div className="place-search-wrap">
-            <div className="searchbox place-searchbox">
-              <Search size={17}/>
-              <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
-              {speechSupported&&<button type="button" className={`voice-button place-voice-button ${listeningField==='placeQuery'?'is-listening':''}`} onClick={()=>startListening('placeQuery',setPlaceQuery)} aria-label={listeningField==='placeQuery'?'Dinlemeyi durdur':'Sesli arama'} title={listeningField==='placeQuery'?'Dinleniyor...':'Sesli arama'}><Mic size={16}/></button>}
-              {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
-              {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
-            </div>
-            {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
-              {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
-            </div>}
+        <div className="place-search-wrap">
+          <div className="searchbox place-searchbox">
+            <Search size={17}/>
+            <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
+            {speechSupported&&<button type="button" className={`voice-button place-voice-button ${listeningField==='placeQuery'?'is-listening':''}`} onClick={()=>startListening('placeQuery',setPlaceQuery)} aria-label={listeningField==='placeQuery'?'Dinlemeyi durdur':'Sesli arama'} title={listeningField==='placeQuery'?'Dinleniyor...':'Sesli arama'}><Mic size={16}/></button>}
+            {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
+            {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
           </div>
+          {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
+            {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
+          </div>}
         </div>
         
         <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map">
