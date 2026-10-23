@@ -698,7 +698,11 @@ export default function App() {
         setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
         return;
       }
-      await executeVoiceCommand(command);
+      try {
+        await executeVoiceCommand(command);
+      } catch {
+        setNotice({kind:'error',text:'Sesli komut çalıştırılırken bir hata oluştu.'});
+      }
       try{recognition.stop();}catch{}
     };
     recognition.onerror=(event:any)=>{
