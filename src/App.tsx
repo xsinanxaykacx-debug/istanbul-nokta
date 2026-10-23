@@ -569,13 +569,13 @@ export default function App() {
     }
 
     const categoryWords=[
-      {pattern:/\b(?:mavi|maviler)\b/,value:'MAVİ'},
-      {pattern:/\b(?:yeşil|yeşiller)\b/,value:'YEŞİL'},
-      {pattern:/\b(?:kırmızı|kırmızılar)\b/,value:'KIRMIZI'},
-      {pattern:/\b(?:gri|griler)\b/,value:'GRİ'}
+      {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
+      {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
+      {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
+      {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
     ];
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
-    if(matchedCategory&&/\b(?:göster|filtrele|sadece)\b/.test(normalized)){
+    if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
       return { type: 'FILTER', category: matchedCategory };
     }
 
@@ -644,7 +644,7 @@ export default function App() {
         setCategory(command.category);
         setSelectedCategoryFilter(command.category);
         setShowFilterOptions(false);
-        setNotice({kind:'success',text:`\${command.category} işaretleri gösteriliyor.`});
+        setNotice({kind:'success',text:`${command.category} işaretleri gösteriliyor.`});
         return;
       case 'ROUTE':
         setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
