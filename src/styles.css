@@ -2216,3 +2216,141 @@ select option { background: var(--surface); color: var(--text-dark); }
   color: #0f172a;
   border: 1px solid #cbd5e1;
 }
+/* =========================================
+   GÜNDÜZ MODU (LIGHT THEME) DÜZELTMELERİ
+   ========================================= */
+
+/* Genel arka plan ve yazı rengi */
+.app-shell.light-theme {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Üst bar */
+.app-shell.light-theme .topbar {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.app-shell.light-theme .topbar .brand strong,
+.app-shell.light-theme .topbar .brand small {
+  color: #0f172a !important;
+}
+
+/* Sağ Panel (Side Panel) */
+.app-shell.light-theme .side-panel {
+  background-color: #ffffff !important;
+  border-left: 1px solid #e2e8f0 !important;
+}
+
+.app-shell.light-theme .panel-content h2,
+.app-shell.light-theme .panel-content h3,
+.app-shell.light-theme .panel-heading h2,
+.app-shell.light-theme .panel-heading .eyebrow {
+  color: #0f172a !important;
+}
+
+.app-shell.light-theme .pin-title,
+.app-shell.light-theme .pin-description,
+.app-shell.light-theme .pin-date,
+.app-shell.light-theme .pin-list-title {
+  color: #334155 !important;
+}
+
+/* Form Elemanları (Input, Select, Textarea) */
+.app-shell.light-theme input,
+.app-shell.light-theme textarea,
+.app-shell.light-theme select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.app-shell.light-theme input::placeholder,
+.app-shell.light-theme textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Butonlar */
+.app-shell.light-theme .secondary-button {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+.app-shell.light-theme .secondary-button:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.app-shell.light-theme .delete-pin-button {
+  background-color: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+}
+
+/* Filtre Menüsü ve Arama Kutuları */
+.app-shell.light-theme .panel-filters,
+.app-shell.light-theme .pin-searchbox,
+.app-shell.light-theme .time-filter-control,
+.app-shell.light-theme .place-searchbox {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.app-shell.light-theme .category-filter-button {
+  border-color: #cbd5e1 !important;
+}
+
+/* Pin Listesi */
+.app-shell.light-theme .pin-list-item {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.app-shell.light-theme .pin-list-item:hover {
+  background-color: #f8fafc !important;
+}
+.app-shell.light-theme .pin-list-meta small {
+  color: #64748b !important;
+}
+
+/* Modallar (Admin Paneli, Giriş, Davet) */
+.app-shell.light-theme .invite-modal,
+.app-shell.light-theme .auth-modal {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.app-shell.light-theme .modal-head h2,
+.app-shell.light-theme .modal-head .eyebrow {
+  color: #0f172a !important;
+}
+
+/* Admin Panelindeki Kullanıcı Satırları */
+.app-shell.light-theme .admin-user-row {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Harita Araç Çubuğu (Arama Barı) */
+.app-shell.light-theme .map-toolbar .searchbox {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+.app-shell.light-theme .map-toolbar input {
+  color: #0f172a !important;
+}
+
+/* Alt Bilgi (Footer) */
+.app-shell.light-theme footer {
+  background-color: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+/* Haritanın kendisini açık temada normal göster (filtreyi kaldır) */
+.app-shell.light-theme .map .leaflet-layer,
+.app-shell.light-theme .map .leaflet-control-zoom-in,
+.app-shell.light-theme .map .leaflet-control-zoom-out,
+.app-shell.light-theme .map .leaflet-control-attribution {
+  filter: none !important;
+}
