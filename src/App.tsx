@@ -649,7 +649,7 @@ export default function App() {
     const searchMatch = normalized.match(/^(.*?)\s*(?:ara|bul|göster|konumuna git)$/);
     if (searchMatch && searchMatch[1].trim() && !/\brota\b/.test(normalized)) {
       const query = searchMatch[1].trim()
-        .replace(/(?:n[ıiuü]|(?<=[aeıioöuü])y[ıiuü]|[ıiuü]|ne|na|ye|ya|e|a)$/u, '')
+        .replace(/(?:n[ıiuü]|[ıiuü]|ne|na|ye|ya|e|a)$/u, '')
         .trim();
       if (query) return { type: 'SEARCH_PLACE', query };
     }
