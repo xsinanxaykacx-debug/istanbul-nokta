@@ -97,10 +97,12 @@ function HeatmapLayer({ pins }: { pins: Pin[] }) {
     if (!pins || pins.length === 0) return;
     const points = pins.map(p => [p.lat, p.lng, 1]);
     const heat = (L as any).heatLayer(points, {
-      radius: 25, blur: 15, maxZoom: 15,
+      radius: 35, 
+      blur: 20, 
+      maxZoom: 15,
+      minOpacity: 0.6,
       gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
-    });
-    heat.addTo(map);
+    }).addTo(map);
     return () => { map.removeLayer(heat); };
   }, [map, pins]);
   return null;
