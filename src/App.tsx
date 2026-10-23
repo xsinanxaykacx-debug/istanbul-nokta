@@ -205,7 +205,7 @@ export default function App() {
 
   useEffect(() => {
     async function initLLM() {
-            if (!(navigator as any).gpu) { console.warn("Tarayıcınız WebGPU desteklemiyor."); return; }
+      if (!(navigator as any).gpu) { console.warn("Tarayıcınız WebGPU desteklemiyor."); return; }
       setLlmLoading(true);
       try {
         const engine = await CreateMLCEngine("Qwen2.5-0.5B-Instruct-q4f16_1-MLC", { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) });
@@ -630,21 +630,14 @@ export default function App() {
         if (mapRef.current) { command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut(); setNotice({ kind: 'success', text: command.action === 'in' ? 'Yakınlaştırıldı.' : 'Uzaklaştırıldı.' }); } return;
       case 'CLEAR_ROUTE': setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null); setNotice({ kind: 'success', text: 'Rota temizlendi.' }); return;
       case 'THEME': setIsDarkMode(command.mode === 'dark'); setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' }); return;
-            case 'SEARCH_PLACE':
+      case 'SEARCH_PLACE':
         setNotice({ kind: 'info', text: `"${command.query}" aranıyor...` });
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(command.query)}&countrycodes=tr&limit=1`);
           const data = await res.json();
-          if (data && data.length > 0) { 
-            const place = data[0]; 
-            setPlaceQuery(''); // BURASI DEĞİŞTİ: Kutuyu boş bırak
-            setSearchPlace(place); 
-            if (mapRef.current) mapRef.current.flyTo([parseFloat(place.lat), parseFloat(place.lon)], 16); 
-            setNotice({ kind: 'success', text: `"${command.query}" bulundu.` }); 
-          } 
+          if (data && data.length > 0) { const place = data[0]; setPlaceQuery(''); setSearchPlace(place); if (mapRef.current) mapRef.current.flyTo([parseFloat(place.lat), parseFloat(place.lon)], 16); setNotice({ kind: 'success', text: `"${command.query}" bulundu.` }); } 
           else setNotice({ kind: 'error', text: `"${command.query}" bulunamadı.` });
-        } catch { setNotice({ kind: 'error', text: 'Arama sırasında hata oluştu.' }); } 
-        return;
+        } catch { setNotice({ kind: 'error', text: 'Arama sırasında hata oluştu.' }); } return;
       case 'LOCATE': addVoicePinAtCurrentLocation(command.category,false); return;
       case 'CREATE_PIN':
         if(command.useCurrentLocation) addVoicePinAtCurrentLocation(command.category,true);
@@ -712,7 +705,7 @@ export default function App() {
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı.'});}
   }
     useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
-    function locateUser(useForDraft=false){
+  function locateUser(useForDraft=false){
     if(locating)return;
     if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}
     setLocating(true);
@@ -761,7 +754,7 @@ export default function App() {
     <section className="workspace">
       <div className="map-frame">
         
-                <div style={{
+        <div style={{
           position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
           display: 'flex', alignItems: 'center', gap: '2px',
           background: 'var(--surface)', border: '1px solid var(--border-color)',
@@ -808,9 +801,23 @@ export default function App() {
         {!is3D && (
           <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {showHeatmap && <HeatmapLayer pins={filteredPins} />}
+            {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
-            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}}                                 {is3D && (
+            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+            <ViewportWatcher onBoundsChange={setViewportBounds}/>
+            <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
+            <FlyTo position={userPosition} zoom={16}/>
+            <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{ if(bulkSelectMode)setBulkSelectedPins(prev=>prev.includes(pin.id)?prev.filter(id=>id!==pin.id):[...prev,pin.id]); else {setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);} }} />
+            {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
+            {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
+            {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
+            {routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}
+            {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
+            {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
+          </MapContainer>
+        )}
+
+        {is3D && (
           <Map3D 
             pins={filteredPins} 
             onMapClick={(lat: number, lng: number) => {
@@ -829,31 +836,7 @@ export default function App() {
                 setSelected(null);
               }
             }}
-            onPinSelect={(pin) => { setSelected(pin); setDraftPosition(null); }}
-            userPosition={userPosition} 
-            flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [selected.lng, selected.lat] : null) }
-            routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
-            showTraffic={showTraffic} showHeatmap={showHeatmap} tomtomApiKey={tomtomApiKey}
-          />
-        )}
-            <ViewportWatcher onBoundsChange={setViewportBounds}/>
-            <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
-            <FlyTo position={userPosition} zoom={16}/>
-            <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{ if(bulkSelectMode)setBulkSelectedPins(prev=>prev.includes(pin.id)?prev.filter(id=>id!==pin.id):[...prev,pin.id]); else {setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);} }} />
-            {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
-            {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
-            {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
-            {routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}
-            {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
-            {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
-          </MapContainer>
-        )}
-
-        {is3D && (
-          <Map3D 
-            pins={visiblePins} 
-            onMapClick={(lat, lng) => { setDraftPosition([lat, lng]); setSelected(null); }}
-            onPinSelect={(pin) => { setSelected(pin); setDraftPosition(null); }}
+            onPinSelect={(pin: any) => { setSelected(pin); setDraftPosition(null); }}
             userPosition={userPosition} 
             flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [selected.lng, selected.lat] : null) }
             routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}

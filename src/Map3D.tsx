@@ -3,7 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Map3DProps {
   pins: any[];
-  onMapClick: (lat: number, lng: number) => void;
+  onMapClick: (lat: number, lng: number) => void; // DÜZELTİLEN YER
   onPinSelect: (pin: any) => void;
   userPosition: [number, number] | null;
   flyToCoords: [number, number] | null;
@@ -24,7 +24,6 @@ export default function Map3D({
   const markers = useRef<any[]>([]);
   const routeMarkers = useRef<any[]>([]);
 
-  // Haritayı Başlatma
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
@@ -74,7 +73,7 @@ export default function Map3D({
     markers.current = [];
 
     pins.forEach(pin => {
-      if (!pin.lat || !pin.lng) return; // NULL kontrolü
+      if (!pin.lat || !pin.lng) return;
 
       const color = pin.category === 'YEŞİL' ? '#1e8e55' : 
                     pin.category === 'MAVİ' ? '#3b82f6' : 
@@ -118,7 +117,7 @@ export default function Map3D({
     }
   }, [pins, userPosition]);
 
-  // Rota Çizgisi ve Noktaları
+  // Rota Çizgisi
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
     if (!map.current || !maplibregl) return;
@@ -160,7 +159,7 @@ export default function Map3D({
     }
   }, [routeLine, routeStart, routeEnd]);
 
-  // TRAFİK KATMANI
+  // Trafik Katmanı
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
     if (!map.current || !maplibregl) return;
@@ -182,18 +181,8 @@ export default function Map3D({
       });
     }
   }, [showTraffic, tomtomApiKey]);
-  // Konum alındığında 3D haritayı oraya uçur
-  useEffect(() => {
-    if (map.current && userPosition) {
-      map.current.flyTo({
-        center: [userPosition[1], userPosition[0]], // MapLibre lng, lat bekler
-        zoom: 16,
-        pitch: 60,
-        duration: 1500
-      });
-    }
-  }, [userPosition]);
-  // ISI HARİTASI KATMANI
+
+  // Isı Haritası Katmanı
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
     if (!map.current || !maplibregl) return;
@@ -202,7 +191,6 @@ export default function Map3D({
     if (map.current.getSource('heatmap-source')) map.current.removeSource('heatmap-source');
 
     if (showHeatmap && pins.length > 0) {
-      // Pinleri GeoJSON formatına çevir
       const geojson = {
         type: 'FeatureCollection',
         features: pins.filter(p => p.lat && p.lng).map(p => ({
