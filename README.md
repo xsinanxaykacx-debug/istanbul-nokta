@@ -10,6 +10,18 @@
 - OpenStreetMap standart tile sunucusu ücretsizdir ama sınırsız kullanım garantisi yoktur. Attribution gösterin, tile'ları toplu indirmeyin ve kullanım politikasına uyun.
 - Dolayısıyla başlangıç hedefi 0 TL'dir; üçüncü tarafların ücretsiz planları/limitleri garanti edilmez.
 
+## Ayrıntılı 2B harita katmanı (isteğe bağlı)
+
+Varsayılan harita mevcut OpenStreetMap katmanını kullanmaya devam eder. Daha belirgin yol hiyerarşisi, sokak etiketleri ve yüksek yakınlaştırmada bina ayrıntıları için isteğe bağlı CARTO Voyager raster katmanı eklenebilir.
+
+1. [CARTO Basemaps API key](https://carto.com/basemaps/apikey/) sayfasından bir anahtar alın.
+2. Yerel `.env` dosyasına `VITE_CARTO_BASEMAP_KEY=ANAHTARINIZ` satırını ekleyin.
+3. Netlify kullanıyorsanız aynı değişkeni site ayarlarında Environment variables bölümüne ekleyip yeniden deploy edin.
+4. Anahtar tanımlanınca harita varsayılan olarak **CARTO Voyager** ile açılır. Haritanın sağ üstündeki katman seçicisinden **OpenStreetMap** standart katmanına geri dönebilirsiniz.
+5. Haritada `© OpenStreetMap contributors` ve `© CARTO` atıfları görünür tutulmalıdır.
+
+CARTO anahtarı tanımlanmazsa uygulama mevcut OpenStreetMap katmanını kullanır; uygulama açılmaya devam eder. CARTO kullanım kotası ve ticari kullanım koşulları değişebileceğinden [güncel şartları](https://carto.com/legal/basemap-terms/) kontrol edin. Bu katman normal harita görüntülemesi içindir; toplu karo indirme veya çevrimdışı arşivleme yapılmamalıdır.
+
 ## 1. Gerekenler
 
 Windows'a Node.js LTS kurun. Supabase'de ücretsiz bir proje açın.
