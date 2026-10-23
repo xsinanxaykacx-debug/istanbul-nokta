@@ -522,11 +522,13 @@ export default function App() {
       } else if (action === 'delete') {
         const report = adminReports.find(r => r.id === reportId);
         if (!report) return;
-        await supabase.rpc('delete_pin', { p_pin_id: report.pin_id });
+        if (report.pin_id) {
+          await supabase.rpc('delete_pin', { p_pin_id: report.pin_id });
+        }
         await supabase.from('pin_reports').delete().eq('pin_id', report.pin_id);
         setAdminReports(curr => curr.filter(r => r.pin_id !== report.pin_id));
         await loadPins();
-        setNotice({kind:'success', text:'Pin silindi ve rapor kapatıldı.'});
+        setNotice({kind:'success', text:'Rapor kapatıldı.'});
       }
     } catch (err) {
       setNotice({kind:'error', text:'İşlem başarısız.'});
@@ -830,10 +832,14 @@ export default function App() {
               {adminReports.length === 0 && <p style={{textAlign:'center'}}>Harika, rapor edilen pin yok!</p>}
               {adminReports.map((r) => (
                 <div key={r.id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
-                  <strong style={{ display: 'block', fontSize: '14px' }}>Şikayet Edilen Pin: {r.pins?.description?.slice(0,30) || 'Bilinmeyen'}...</strong>
+                  <strong style={{ display: 'block', fontSize: '14px' }}>
+                    Şikayet Edilen Pin: {r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Pin Silinmiş veya Erişilemiyor'}
+                  </strong>
                   <span style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Tarih: {new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>
+                    {r.pins && (
+                      <button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>
+                    )}
                     <button onClick={() => void resolveReport(r.id, 'ignore')} className="secondary-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Yoksay</button>
                   </div>
                 </div>
