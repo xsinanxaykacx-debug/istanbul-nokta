@@ -725,9 +725,9 @@ export default function App() {
       return { type: 'DELETE_PIN', target };
     }
 
-    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
-    if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
-      return { type: 'FILTER', category: matchedCategory };
+    const filterCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    if(filterCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
+      return { type: 'FILTER', category: filterCategory };
     }
 
     const searchMatch = normalized.match(/^(.*?)\s*(?:ara|bul|göster|konumuna git)$/);
