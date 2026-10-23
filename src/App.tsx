@@ -375,7 +375,22 @@ export default function App() {
     if(editPhotos.length+editFiles.length>3){setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});return;}
     setBusy(true);setNotice({kind:'info',text:'Değişiklikler kaydediliyor…'});
     const uploadedPaths:string[]=[];
+
     try{
+      // 1. ÖNCE PİN BİLGİLERİNİ GÜNCELLE (Renk ve Yazı)
+      const {error:pinError}=await supabase.from('pins').update({
+        description:editDescription.trim(),
+        category:editCategory
+      }).eq('id',selected.id);
+      
+      if(pinError)throw pinError;
+
+      // 2. STATE'İ HEMEN GÜNCELLE (Fotoğraf hatası olsa bile renk anında değişsin)
+      const updatedPinData = { ...selected, description: editDescription.trim(), category: editCategory };
+      setPins(current=>current.map(pin=>pin.id===selected.id ? updatedPinData : pin));
+      setSelected(updatedPinData);
+
+      // 3. FOTOĞRAF İŞLEMLERİNİ YAP
       const newPhotoRows:{pin_id:string;storage_path:string;public_url:string;sort_order:number}[]=[];
       for(let i=0;i<editFiles.length;i++){
         const blob=await compressPhoto(editFiles[i]);
@@ -386,23 +401,50 @@ export default function App() {
         const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
         newPhotoRows.push({pin_id:selected.id,storage_path:path,public_url:data.publicUrl,sort_order:editPhotos.length+i});
       }
-      const {error:pinError}=await supabase.from('pins').update({description:editDescription.trim(),category:editCategory}).eq('id',selected.id);
-      if(pinError)throw pinError;
+      
       const keptIds=new Set(editPhotos.map(photo=>photo.id));
       const removedPhotos=selectedPhotos.filter(photo=>!keptIds.has(photo.id));
-      if(removedPhotos.length){const {error:removeRowsError}=await supabase.from('pin_photos').delete().in('id',removedPhotos.map(photo=>photo.id));if(removeRowsError)throw removeRowsError;}
-      for(let i=0;i<editPhotos.length;i++){const {error:orderError}=await supabase.from('pin_photos').update({sort_order:i}).eq('id',editPhotos[i].id);if(orderError)throw orderError;}
-      if(newPhotoRows.length){const {error:insertError}=await supabase.from('pin_photos').insert(newPhotoRows);if(insertError)throw insertError;}
+      
+      if(removedPhotos.length){
+        const {error:removeRowsError}=await supabase.from('pin_photos').delete().in('id',removedPhotos.map(photo=>photo.id));
+        if(removeRowsError)throw removeRowsError;
+      }
+      
+      for(let i=0;i<editPhotos.length;i++){
+        const {error:orderError}=await supabase.from('pin_photos').update({sort_order:i}).eq('id',editPhotos[i].id);
+        if(orderError)throw orderError;
+      }
+      
+      if(newPhotoRows.length){
+        const {error:insertError}=await supabase.from('pin_photos').insert(newPhotoRows);
+        if(insertError)throw insertError;
+      }
+      
       let cleanupMessage='';
       const removedPaths=removedPhotos.map(photo=>photo.storage_path);
-      if(removedPaths.length){const {error:storageError}=await supabase.storage.from('pin-photos').remove(removedPaths);if(storageError)cleanupMessage=storageError.message;}
-      setEditPinMode(false);setEditFiles([]);
+      if(removedPaths.length){
+        const {error:storageError}=await supabase.storage.from('pin-photos').remove(removedPaths);
+        if(storageError)cleanupMessage=storageError.message;
+      }
+      
+      setEditPinMode(false);
+      setEditFiles([]);
       setNotice(cleanupMessage?{kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}:{kind:'success',text:'Değişiklikler kaydedildi.'});
       await loadPins();
-      const {data:refreshed,error:refreshError}=await supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)').eq('id',selected.id).maybeSingle();
-      if(!refreshError&&refreshed){const updated=refreshed as unknown as Pin;setSelected(updated);setPins(current=>current.map(pin=>pin.id===updated.id?updated:pin));}
-    }catch(err){if(uploadedPaths.length)await supabase.storage.from('pin-photos').remove(uploadedPaths);setNotice({kind:'error',text:err instanceof Error?err.message:'Pin değişiklikleri kaydedilemedi.'});}
-    finally{setBusy(false);}
+      
+    }catch(err){
+      if(uploadedPaths.length)await supabase.storage.from('pin-photos').remove(uploadedPaths);
+      
+      // Supabase hata mesajlarını doğru şekilde yakala
+      const errorMessage = err && typeof err === 'object' && 'message' in err 
+        ? String((err as any).message) 
+        : (err instanceof Error ? err.message : '');
+        
+      setNotice({kind:'error', text: errorMessage || 'Pin değişiklikleri kaydedilemedi. Lütfen tekrar deneyin.'});
+      await loadPins();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function togglePinVote(voteType:1|-1){
