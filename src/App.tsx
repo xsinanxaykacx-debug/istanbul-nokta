@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, LayersControl, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
+import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
+import Map3D from './Map3D';
 
 type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
@@ -48,7 +50,6 @@ const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
 const searchPlaceIcon = new L.DivIcon({ className:'search-place-marker', html:'<span class="search-place-dot"></span>', iconSize:[30,30], iconAnchor:[15,15] });
 const tomtomApiKey = import.meta.env.VITE_TOMTOM_API_KEY?.trim() ?? '';
-const cartoBasemapKey = import.meta.env.VITE_CARTO_BASEMAP_KEY?.trim() ?? '';
 const routeStartIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-start">A</span>', iconSize:[30,30], iconAnchor:[15,15] });
 const routeEndIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-end">B</span>', iconSize:[30,30], iconAnchor:[15,15] });
 
@@ -161,48 +162,17 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
-  const webLlmEngineRef=useRef<any>(null);
-  const webLlmReadyRef=useRef(false);
   const manualStopRef = useRef(false);
-  useEffect(() => {
-    let cancelled = false;
-    const loadWebLlm = async () => {
-      if (!('gpu' in navigator)) {
-        console.info('WebGPU kullanÄ±lamÄ±yor; sesli komutlarda mevcut regex ayrÄ±ÅŸtÄ±rÄ±cÄ±sÄ± kullanÄ±lacak.');
-        return;
-      }
-      try {
-        const moduleUrl = 'https://esm.sh/@mlc-ai/web-llm';
-        const webllm = await import(/* @vite-ignore */ moduleUrl);
-        const engine = await webllm.CreateMLCEngine('Qwen2.5-0.5B-Instruct-q4f16_1-MLC');
-        if (cancelled) {
-          await engine?.unload?.();
-          return;
-        }
-        webLlmEngineRef.current = engine;
-        webLlmReadyRef.current = true;
-        console.info('WebLLM sesli komut modeli hazÄ±r.');
-      } catch (error) {
-        webLlmReadyRef.current = false;
-        webLlmEngineRef.current = null;
-        console.warn('WebLLM yÃ¼klenemedi; mevcut regex sesli komut sistemi Ã§alÄ±ÅŸmaya devam edecek.', error);
-      }
-    };
-    void loadWebLlm();
-    return () => {
-      cancelled = true;
-      const engine = webLlmEngineRef.current;
-      webLlmEngineRef.current = null;
-      webLlmReadyRef.current = false;
-      if (engine?.unload) void engine.unload().catch(() => {});
-    };
-  }, []);
   const mapRef = useRef<L.Map | null>(null);
+
+  // WebLLM State
+  const [llmEngine, setLlmEngine] = useState<MLCEngine | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
 
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminProfiles, setAdminProfiles] = useState<any[]>([]);
@@ -233,6 +203,30 @@ export default function App() {
   const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
+
+  // WebLLM Model Yükleme
+  useEffect(() => {
+    async function initLLM() {
+      if (!navigator.gpu) {
+        console.warn("Tarayıcınız WebGPU desteklemiyor. Yapay zeka modeli yüklenemeyecek.");
+        return;
+      }
+      setLlmLoading(true);
+      try {
+        const engine = await CreateMLCEngine(
+          "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+          { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) }
+        );
+        setLlmEngine(engine);
+        console.log("Yapay Zeka (LLM) hazır!");
+      } catch (e) {
+        console.error("LLM yüklenirken hata oluştu:", e);
+      } finally {
+        setLlmLoading(false);
+      }
+    }
+    initLLM();
+  }, []);
 
   const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
     const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
@@ -704,7 +698,7 @@ export default function App() {
     | { type: 'CHANGE_CATEGORY'; category: string }
     | { type: 'MIC_CONTROL'; target: 'search' | 'command' | 'off' };
 
-  function parseVoicePinCommandRegex(transcript:string):VoiceCommand|null{
+  async function parseVoicePinCommand(transcript:string):Promise<VoiceCommand|null>{
     const normalized=transcript
       .toLocaleLowerCase('tr-TR')
       .replace(/['’‘]/g,'')
@@ -712,16 +706,6 @@ export default function App() {
       .replace(/\s+/g,' ')
       .trim();
     if(!normalized)return null;
-
-    // Tema komutları: genel arama eşleşmesinden önce çalışmalı.
-    if (/\b(?:gündüz|aydınlık|açık)\b/.test(normalized) &&
-        /\b(?:tema|mod|görünüm|görünümüne|ekran)\b/.test(normalized)) {
-      return { type: 'THEME', mode: 'light' };
-    }
-    if (/\b(?:gece|karanlık|koyu)\b/.test(normalized) &&
-        /\b(?:tema|mod|görünüm|görünümüne|ekran)\b/.test(normalized)) {
-      return { type: 'THEME', mode: 'dark' };
-    }
 
     if (/komut\s*dinle|mikrofonu\s*aç|mikrofonu\s*aktif\s*et|beni\s*dinle|komut\s*mikrofonu/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'command' };
@@ -824,6 +808,40 @@ export default function App() {
        return { type: 'SEARCH_PLACE', query: normalized };
     }
 
+    // --- YAPAY ZEKA (WEBLLM) FALLBACK ---
+    if (llmEngine) {
+      try {
+        const prompt = `Sen bir harita asistanısın. Kullanıcının cümlesini şu kategorilerden birine ayır: 
+        TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ, BILINMIYOR.
+        Sadece kategori adını büyük harfle döndür. 
+        Kullanıcı Cümlesi: "${transcript}"`;
+
+        const reply = await llmEngine.chat.completions.create({
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.1,
+          max_tokens: 20,
+        });
+        
+        const resultText = reply.choices[0]?.message?.content?.trim() || "";
+
+        if (resultText.includes("TRAFFIC_ACIK")) return { type: 'TRAFFIC', enabled: true };
+        if (resultText.includes("TRAFFIC_KAPALI")) return { type: 'TRAFFIC', enabled: false };
+        if (resultText.includes("ZOOM_IN")) return { type: 'ZOOM', action: 'in' };
+        if (resultText.includes("ZOOM_OUT")) return { type: 'ZOOM', action: 'out' };
+        if (resultText.includes("TEMA_GECE")) return { type: 'THEME', mode: 'dark' };
+        if (resultText.includes("TEMA_GUNDUZ")) return { type: 'THEME', mode: 'light' };
+        if (resultText.includes("PIN_SIL")) return { type: 'DELETE_PIN', target: 'selected' };
+        if (resultText.includes("ROTA")) {
+            return { type: 'ROUTE', destination: transcript };
+        }
+        if (resultText.includes("ARAMA")) {
+            return { type: 'SEARCH_PLACE', query: transcript };
+        }
+      } catch (err) {
+        console.error("LLM analiz hatası:", err);
+      }
+    }
+
     return null;
   }
 
@@ -895,13 +913,7 @@ export default function App() {
           const data = await res.json();
           if (data && data.length > 0) {
             const place = data[0];
-            setQuery('');
-            setDebouncedQuery('');
-            setSearchResultIds(null);
-            setPlaceQuery('');
-            setPlaceResults([]);
-            setPlaceSearched(false);
-            setPlaceDropdownOpen(false);
+            setPlaceQuery(command.query);
             setSearchPlace(place);
             if (mapRef.current) {
               mapRef.current.flyTo([parseFloat(place.lat), parseFloat(place.lon)], 16);
@@ -999,46 +1011,7 @@ export default function App() {
     },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
 
-  async function parseVoicePinCommand(transcript:string):Promise<VoiceCommand|null>{
-  const regexCommand=parseVoicePinCommandRegex(transcript);
-  if(regexCommand) return regexCommand;
-  const engine=webLlmEngineRef.current;
-  if(!webLlmReadyRef.current||!engine) return null;
-  try {
-    const response=await engine.chat.completions.create({
-      messages:[
-        {role:'system',content:'Sen bir harita asistanÄ±sÄ±n. KullanÄ±cÄ±nÄ±n cÃ¼mlesini ÅŸu komutlardan birine eÅŸle: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ. Sadece komut adÄ±nÄ± dÃ¶ndÃ¼r.'},
-        {role:'user',content:`CÃ¼mle: ${transcript}`}
-      ],
-      temperature:0,
-      max_tokens:16
-    });
-    const answer=String(response?.choices?.[0]?.message?.content??'').trim().toLocaleUpperCase('en-US').replace(/[^A-Z_]/g,'');
-    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
-    switch(answer){
-      case 'TRAFFIC_ACIK': return {type:'TRAFFIC',enabled:true};
-      case 'TRAFFIC_KAPALI': return {type:'TRAFFIC',enabled:false};
-      case 'ROTA': {
-        const destination=normalized.replace(/\b(?:bana|lÃ¼tfen|rota|oluÅŸtur|Ã§iz|Ã§izer misin|gitmek istiyorum|yol tarifi|gÃ¶tÃ¼r|gider misin)\b/g,' ').replace(/\s+/g,' ').trim();
-        return destination?{type:'ROUTE',destination}:null;
-      }
-      case 'ARAMA': {
-        const query=normalized.replace(/\b(?:bana|lÃ¼tfen|ara|arama yap|bul|bulur musun|gÃ¶ster|konumu bul|yerini bul|ara lÃ¼tfen)\b/g,' ').replace(/\s+/g,' ').trim();
-        return query?{type:'SEARCH_PLACE',query}:null;
-      }
-      case 'PIN_SIL': return {type:'DELETE_PIN',target:/(?:konumum|konumuma|konumumdaki|buradaki|yakÄ±nÄ±mdaki|yakÄ±nÄ±mda)/.test(normalized)?'nearest':'selected'};
-      case 'ZOOM_IN': return {type:'ZOOM',action:'in'};
-      case 'ZOOM_OUT': return {type:'ZOOM',action:'out'};
-      case 'TEMA_GECE': return {type:'THEME',mode:'dark'};
-      case 'TEMA_GUNDUZ': return {type:'THEME',mode:'light'};
-      default: return null;
-    }
-  } catch(error) {
-    console.warn('WebLLM komutu Ã§Ã¶zemedi; regex sonucu null olarak bÄ±rakÄ±lÄ±yor.',error);
-    return null;
-  }
-}
-function startVoicePinCommand(){
+  async function startVoicePinCommand(){
     setVoicePinHintVisible(false);
     if(voicePinListening){manualStopRef.current = true; voicePinRecognitionRef.current?.stop(); return;}
     if(!canAdd){setNotice({kind:'info',text:'Sesli pin eklemek için hesabını etkinleştirmen veya giriş yapman gerekiyor.'});setAuthOpen(true);return;}
@@ -1060,7 +1033,7 @@ function startVoicePinCommand(){
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
       if(!transcript){setNotice({kind:'error',text:'Sesli komut algılanamadı. Tekrar deneyin.'});return;}
 
-      const command=await parseVoicePinCommand(transcript);
+      const command = await parseVoicePinCommand(transcript);
       if(!command){
         setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
         return;
@@ -1105,6 +1078,7 @@ function startVoicePinCommand(){
       <button type="button" className="icon-button" onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
         {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
       </button>
+      {llmLoading && <span style={{fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px', marginRight: '10px'}}><BrainCircuit size={14} className="gps-spinner"/> YZ Yükleniyor...</span>}
       {session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{profile?.username || (active?'Aktif üye':'Hesap devre dışı')}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{profile?.username || session.user?.email?.split('@')[0] || 'üye'}</strong></p>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
     
     {!isConfigured&&<div className="setup-banner"><strong>Kurulum gerekiyor:</strong> .env dosyasına Supabase URL ve anahtarını ekle; README.md içindeki SQL kurulumunu tamamla.</div>}
@@ -1112,95 +1086,93 @@ function startVoicePinCommand(){
     
     <section className="workspace">
       <div className="map-frame">
-        <div className="place-search-wrap">
-          <div className="searchbox place-searchbox">
-            <Search size={17}/>
-            <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
-            {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
-            {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
-          </div>
-          {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
-            {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);if(mapRef.current)mapRef.current.flyTo([Number(result.lat),Number(result.lon)],16);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
-          </div>}
-        </div>
-        
-        <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
-          {cartoBasemapKey ? (
-            <LayersControl position="topright">
-              <LayersControl.BaseLayer checked name="CARTO Voyager">
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                  url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(cartoBasemapKey)}`}
-                  subdomains="abcd"
-                  maxZoom={20}
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="OpenStreetMap">
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  maxZoom={19}
-                />
-              </LayersControl.BaseLayer>
-            </LayersControl>
-          ) : (
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={19}
-            />
-          )}
-          {showHeatmap && <HeatmapLayer pins={visiblePins} />}
-          {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e: any) => console.warn("TomTom Tile Hatası:", e) }}/>}
-          <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
-          <ViewportWatcher onBoundsChange={setViewportBounds}/>
-          <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
-          <FlyTo position={userPosition} zoom={16}/>
-          <ClusteredPins 
-            pins={canSeePins?visiblePins:[]} 
-            selectedId={selected?.id??null} 
-            isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} 
-            onSelect={pin=>{
-              if (bulkSelectMode) {
-                setBulkSelectedPins(prev => prev.includes(pin.id) ? prev.filter(id => id !== pin.id) : [...prev, pin.id]);
-              } else {
-                setSelected(pin); setSearchPlace(null); setDraftPosition(null); setLightboxIndex(null);
-              }
-            }}
-          />
-          {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
-          {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
-          {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
-          {routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}
-          {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
-          {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
-        </MapContainer>
-        
-        <div className="map-action-left-group">
-          {profile?.role === 'admin' && (
-            <button 
-              className={`map-add-button ${bulkSelectMode ? 'is-active' : ''}`} 
-              style={{ backgroundColor: bulkSelectMode ? '#ef4444' : undefined, color: '#fff' }}
-              onClick={() => {
-                setBulkSelectMode(!bulkSelectMode);
-                setBulkSelectedPins([]);
-              }}
-            >
-              <Check size={17}/> <span>{bulkSelectMode ? 'Seçimi İptal Et' : 'Toplu Seç'}</span>
-            </button>
-          )}
-          {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
-          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
-          <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
-        </div>
-        
-        <div className="map-action-right-group">
-          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>
-          <button type="button" className={`traffic-button ${showHeatmap ? 'is-active' : ''}`} onClick={()=>setShowHeatmap(current=>!current)} aria-pressed={showHeatmap} aria-label={showHeatmap?'Isı haritasını kapat':'Isı haritasını aç'} title={showHeatmap?'Isı haritasını kapat':'Isı Haritası'}><Flame size={17}/><span>Isı Haritası</span></button>
-          {tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>Trafik</span></button>}
-        </div>
-        
-        {!canSeePins&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
+        <button 
+          onClick={() => setIs3D(!is3D)}
+          style={{
+            position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
+            padding: '8px 15px', borderRadius: '8px', border: '1px solid var(--border-color)',
+            background: 'var(--surface)', color: 'var(--text-dark)', fontWeight: 'bold', cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }}
+        >
+          {is3D ? '2D Görünüm' : '3D Görünüm'}
+        </button>
+
+        {!is3D && (
+          <>
+            <div className="place-search-wrap">
+              <div className="searchbox place-searchbox">
+                <Search size={17}/>
+                <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
+                {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
+                {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
+              </div>
+              {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
+                {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);if(mapRef.current)mapRef.current.flyTo([Number(result.lat),Number(result.lon)],16);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
+              </div>}
+            </div>
+
+            <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {showHeatmap && <HeatmapLayer pins={visiblePins} />}
+              {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e: any) => console.warn("TomTom Tile Hatası:", e) }}/>}
+              <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+              <ViewportWatcher onBoundsChange={setViewportBounds}/>
+              <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
+              <FlyTo position={userPosition} zoom={16}/>
+              <ClusteredPins 
+                pins={canSeePins?visiblePins:[]} 
+                selectedId={selected?.id??null} 
+                isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} 
+                onSelect={pin=>{
+                  if (bulkSelectMode) {
+                    setBulkSelectedPins(prev => prev.includes(pin.id) ? prev.filter(id => id !== pin.id) : [...prev, pin.id]);
+                  } else {
+                    setSelected(pin); setSearchPlace(null); setDraftPosition(null); setLightboxIndex(null);
+                  }
+                }}
+              />
+              {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
+              {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
+              {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
+              {routeLine&&<Polyline positions={routeLine} pathOptions={{color:'#2684ff',weight:5,opacity:0.9}}/>}
+              {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
+              {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
+            </MapContainer>
+          </>
+        )}
+
+        {is3D && <Map3D />}
+
+        {!is3D && (
+          <>
+            <div className="map-action-left-group">
+               {profile?.role === 'admin' && (
+                <button 
+                  className={`map-add-button ${bulkSelectMode ? 'is-active' : ''}`} 
+                  style={{ backgroundColor: bulkSelectMode ? '#ef4444' : undefined, color: '#fff' }}
+                  onClick={() => { setBulkSelectMode(!bulkSelectMode); setBulkSelectedPins([]); }}
+                >
+                  <Check size={17}/> <span>{bulkSelectMode ? 'Seçimi İptal Et' : 'Toplu Seç'}</span>
+                </button>
+              )}
+              {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
+              {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
+              <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
+            </div>
+            
+            <div className="map-action-right-group">
+              <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>
+              <button type="button" className={`traffic-button ${showHeatmap ? 'is-active' : ''}`} onClick={()=>setShowHeatmap(current=>!current)} aria-pressed={showHeatmap} aria-label={showHeatmap?'Isı haritasını kapat':'Isı haritasını aç'} title={showHeatmap?'Isı haritasını kapat':'Isı Haritası'}><Flame size={17}/><span>Isı Haritası</span></button>
+              {tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>Trafik</span></button>}
+            </div>
+          </>
+        )}
+
+        {!canSeePins&&!is3D&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
       </div>
       
       <aside className="side-panel">
