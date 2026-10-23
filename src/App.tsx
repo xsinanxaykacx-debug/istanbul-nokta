@@ -548,37 +548,37 @@ export default function App() {
     | { type: 'ROUTE'; destination: string };
 
   function parseVoicePinCommand(transcript:string):VoiceCommand|null{
-    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\\s+/g,' ').trim();
+    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
     if(!normalized)return null;
 
-    if (/(?:ısı|isi)(?:\\s*haritas[ıi])?\\s*(?:aç|göster|aktif)/.test(normalized)) {
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: true };
     }
-    if (/(?:ısı|isi)(?:\\s*haritas[ıi])?\\s*(?:kapat|gizle)/.test(normalized)) {
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: false };
     }
-    if (/trafik(?:i|i)?\\s*(?:aç|göster|aktif)/.test(normalized)) {
+    if (/trafik(?:i|i)?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: true };
     }
-    if (/trafik(?:i|i)?\\s*(?:kapat|gizle)/.test(normalized)) {
+    if (/trafik(?:i|i)?\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: false };
     }
 
-    const routeMatch = normalized.match(/(?:konumumdan|buradan|mevcut konumumdan)?\\s*(.*?)\\s*(?:e|a|ya|ye)\\s+rota\\s+oluştur/);
+    const routeMatch = normalized.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
     if (routeMatch && routeMatch[1]) {
       return { type: 'ROUTE', destination: routeMatch[1].trim() };
     }
 
-    const hasSave=/(?:^|\\s)kaydet(?=$|\\s)/.test(normalized);
+    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
     const categoryWords=[
-      {pattern:/((?:^|\\s)(?:mavi|maviler)(?=$|\\s))/,value:'MAVİ'},
-      {pattern:/((?:^|\\s)(?:yeşil|yeşiller)(?=$|\\s))/,value:'YEŞİL'},
-      {pattern:/((?:^|\\s)(?:kırmızı|kırmızılar)(?=$|\\s))/,value:'KIRMIZI'},
-      {pattern:/((?:^|\\s)(?:gri|griler)(?=$|\\s))/,value:'GRİ'}
+      {pattern:/((?:^|\s)(?:mavi|maviler)(?=$|\s))/,value:'MAVİ'},
+      {pattern:/((?:^|\s)(?:yeşil|yeşiller)(?=$|\s))/,value:'YEŞİL'},
+      {pattern:/((?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s))/,value:'KIRMIZI'},
+      {pattern:/((?:^|\s)(?:gri|griler)(?=$|\s))/,value:'GRİ'}
     ];
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
-    const hasPinKeyword=/((?:^|\\s)(?:pin|işaret|işareti|nokta)(?=$|\\s))/.test(normalized);
-    const useCurrentLocation=/((?:^|\\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\\s))/.test(normalized);
+    const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(normalized);
+    const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(normalized);
 
     if(hasSave&&!matchedCategory&&!hasPinKeyword)return { type: 'SAVE' };
     if(matchedCategory&&hasPinKeyword){
