@@ -2355,3 +2355,12 @@ select option { background: var(--surface); color: var(--text-dark); }
     max-width: none !important;
   }
 }
+/* MapLibre'nin sol üstteki zoom/pusula butonlarını arama çubuğunun altına it */
+.maplibregl-ctrl-top-left {
+  margin-top: 70px !important;
+}
+
+/* Arama çubuğunun haritanın en üstünde kalmasını sağla */
+.place-search-wrap {
+  z-index: 1000 !important;
+}

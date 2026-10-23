@@ -81,3 +81,7 @@ KURALLAR:
 - npm run build hatasız çalışmalı
 - Supabase null kontrolünü her zaman yap
 - TypeScript strict modda çalışıyor (noUnusedLocals aktif)
+
+
+
+
