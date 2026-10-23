@@ -570,16 +570,16 @@ export default function App() {
       return { type: 'ROUTE', destination: routeMatch[1].trim() };
     }
 
-    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(lowerText);
+    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
     const categoryWords=[
       {pattern:/((?:^|\s)(?:mavi|maviler)(?=$|\s))/,value:'MAVİ'},
       {pattern:/((?:^|\s)(?:yeşil|yeşiller)(?=$|\s))/,value:'YEŞİL'},
       {pattern:/((?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s))/,value:'KIRMIZI'},
       {pattern:/((?:^|\s)(?:gri|griler)(?=$|\s))/,value:'GRİ'}
     ];
-    const matchedCategory=categoryWords.find(item=>item.pattern.test(lowerText))?.value;
-    const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(lowerText);
-    const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(lowerText);
+    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(normalized);
+    const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(normalized);
 
     if(hasSave&&!matchedCategory&&!hasPinKeyword)return { type: 'SAVE' };
     if(matchedCategory&&hasPinKeyword){
