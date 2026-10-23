@@ -561,10 +561,10 @@ export default function App() {
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: false };
     }
-    if (/trafik(?:i)?\s*(?:aç|göster|aktif)/.test(normalized)) {
+    if (/traf(?:ik|iği)\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: true };
     }
-    if (/trafik(?:i)?\s*(?:kapat|gizle)/.test(normalized)) {
+    if (/traf(?:ik|iği)\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: false };
     }
 
