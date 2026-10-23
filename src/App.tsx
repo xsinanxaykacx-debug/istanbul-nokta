@@ -165,6 +165,7 @@ export default function App() {
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
+  const mapRef = useRef<L.Map | null>(null);
 
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminProfiles, setAdminProfiles] = useState<any[]>([]);
@@ -174,7 +175,6 @@ export default function App() {
   
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [bulkSelectedPins, setBulkSelectedPins] = useState<string[]>([]);
-  const mapRef = useRef<L.Map | null>(null);
 
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
   useEffect(() => { draftPositionRef.current = draftPosition; }, [draftPosition]);
@@ -618,7 +618,36 @@ export default function App() {
     }
   }
   
-  function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
+  function startListening(field:string,setValue:SpeechSetter){
+    if(!speechSupported)return;
+    if(listeningField===field){recognitionRef.current?.stop();return;}
+    recognitionRef.current?.stop();
+    const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};
+    const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;
+    if(!Recognition){setSpeechSupported(false);return;}
+    const recognition=new Recognition();
+    let recognizedText='';let recognizedFullText='';
+    recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
+    recognition.onstart=()=>setListeningField(field);
+    recognition.onresult=(event:any)=>{
+      const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
+      if(!transcript)return;
+      recognizedText=transcript;
+      
+      if (field === 'placeQuery') {
+        setValue(transcript);
+      } else {
+        setValue(current=>{
+          recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;
+          return recognizedFullText;
+        });
+      }
+    };
+    recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};
+    recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};
+    recognitionRef.current=recognition;
+    try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}
+  }
   
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
   type VoiceCommand =
@@ -647,7 +676,6 @@ export default function App() {
       .trim();
     if(!normalized)return null;
 
-    // ARAYÜZ VE MİKROFON KONTROLLERİ
     if (/(?:sesli|sesle|ses ile)\s*arama|aramayı\s*başlat|arama\s*mikrofonu|adres\s*ara|mekan\s*ara|yer\s*ara/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'search' };
     }
@@ -657,11 +685,10 @@ export default function App() {
     if (/mikrofonu\s*kapat|dinlemeyi\s*durdur|sus|kapat\s*mikrofonu|mikrofonu\s*kapa/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'off' };
     }
-    if (/(?:aramayı temizle|arama temizle|aramayı sil|aramayı kaldır|filtreleri temizle)/.test(normalized)) {
+    if (/(?:aramayı|arama|filtreleri)\s*(?:temizle|sil|kaldır)|^temizle$|^sil$/.test(normalized)) {
       return { type: 'CLEAR_SEARCH' };
     }
 
-    // HARİTA KONTROLLERİ
     if (/(?:yakınlaş|yaklaştır|zoom yap|büyüt|yaklaş)/.test(normalized)) {
       return { type: 'ZOOM', action: 'in' };
     }
@@ -678,7 +705,6 @@ export default function App() {
       return { type: 'THEME', mode: 'light' };
     }
 
-    // HARİTA KATMANLARI
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: true };
     }
@@ -692,37 +718,34 @@ export default function App() {
       return { type: 'TRAFFIC', enabled: false };
     }
 
-    // SİLME
     if (/(?:sil|kaldır|yok et|temizle)/.test(normalized)) {
       return { type: 'DELETE_PIN', target: /konum|konumum|burada|yakınımda/.test(normalized) ? 'nearest' : 'selected' };
     }
 
-    // RENK DEĞİŞTİRME
     const categoryWords=[
       {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
       {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
       {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
       {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
     ];
-    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    if (/(?:tümü|hepsi|tümünü|hepsini|tüm pinler|filtreleri kaldır|filtreyi kaldır)/.test(normalized)) {
+      return { type: 'FILTER', category: 'Tümü' };
+    }    
+const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
     
     if(matchedCategory && /(?:değiştir|yap|dönüştür)/.test(normalized)) {
       return { type: 'CHANGE_CATEGORY', category: matchedCategory };
     }
 
-    // FİLTRELEME
     if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
       return { type: 'FILTER', category: matchedCategory };
     }
 
-    // ROTA VE ARAMA
     const routeIntent=/(?:\brota\b|\bgit\b|\bgitmek\b|\byol\s+tarifi\b|\bnasıl\s+giderim\b|\bulaşım\b)/.test(normalized);
     const searchIntent=/(?:\bara\b|\bbul\b|\bgöster\b|\bkonumuna\s+git\b)/.test(normalized);
     const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
-    const lastWord=normalized.split(' ').pop()??'';
-    const destinationOnly=!routeIntent&&!hasSave&&!searchIntent&&/(?:ne|na|ye|ya|e|a)$/.test(lastWord);
 
-    if(routeIntent||destinationOnly){
+    if(routeIntent){
       const destination=normalized
         .replace(/\b(?:mevcut\s+konumumdan|konumumdan|buradan|lütfen|bana)\b/g,' ')
         .replace(/\b(?:yol\s+tarifi|nasıl\s+giderim|ulaşım|gitmek|git|rota|oluştur|olustur|çiz|ciz|gitmek\s+istiyorum)\b/g,' ')
@@ -741,7 +764,6 @@ export default function App() {
       }
     }
 
-    // PİN EKLEME
     const hasPinKeyword=/\b(?:pin|işaret|işaretleri|işareti|nokta)\b/.test(normalized);
     const useCurrentLocation=/\b(?:konum|konuma|konumuma|konumumda|gps)\b/.test(normalized);
 
@@ -752,6 +774,11 @@ export default function App() {
         : { type: 'LOCATE', category: matchedCategory };
     }
     if(hasSave)return { type: 'SAVE' };
+    
+    if (normalized.split(' ').length <= 4) {
+       return { type: 'SEARCH_PLACE', query: normalized };
+    }
+
     return null;
   }
 
@@ -762,10 +789,7 @@ export default function App() {
           recognitionRef.current?.stop();
           voicePinRecognitionRef.current?.stop();
           setNotice({ kind: 'info', text: 'Mikrofon kapatıldı.' });
-        } else if (command.target === 'search') {
-          setNotice({ kind: 'success', text: 'Arama için dinliyorum...' });
-          setTimeout(() => { startListening('placeQuery', setPlaceQuery); }, 500);
-        } else if (command.target === 'command') {
+        } else {
           setNotice({ kind: 'success', text: 'Komutlarınızı dinliyorum...' });
           setTimeout(() => { startVoicePinCommand(); }, 500);
         }
@@ -787,7 +811,7 @@ export default function App() {
             let minDistance = Infinity;
             pins.forEach(pin => {
               const d = haversineMeters(userCoord, [pin.lat, pin.lng]);
-              if (d < minDistance && d <= 50) { // 50 metre yarıçap
+              if (d < minDistance && d <= 50) {
                 minDistance = d;
                 nearestPin = pin;
               }
@@ -993,7 +1017,6 @@ export default function App() {
           <div className="searchbox place-searchbox">
             <Search size={17}/>
             <input className={speechSupported?'voice-enabled-input':''} value={placeQuery} onFocus={()=>{if(placeQuery.trim())setPlaceDropdownOpen(true);}} onChange={e=>{setPlaceQuery(e.target.value);setPlaceDropdownOpen(true);}} placeholder={listeningField==='placeQuery'?'Dinleniyor...':'Mekan veya adres ara... (Örn: Galata Kulesi)'} aria-label="Mekan veya adres ara"/>
-            {speechSupported&&<button type="button" className={`voice-button place-voice-button ${listeningField==='placeQuery'?'is-listening':''}`} onClick={()=>startListening('placeQuery',setPlaceQuery)} aria-label={listeningField==='placeQuery'?'Dinlemeyi durdur':'Sesli arama'} title={listeningField==='placeQuery'?'Dinleniyor...':'Sesli arama'}><Mic size={16}/></button>}
             {placeLoading&&<LoaderCircle className="gps-spinner place-search-spinner" size={17}/>}
             {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
           </div>
