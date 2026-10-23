@@ -546,7 +546,9 @@ export default function App() {
     | { type: 'TRAFFIC'; enabled: boolean }
     | { type: 'HEATMAP'; enabled: boolean }
     | { type: 'FILTER'; category: string }
-      function parseVoicePinCommand(transcript:string):VoiceCommand|null{
+    | { type: 'ROUTE'; destination: string };
+
+  function parseVoicePinCommand(transcript:string):VoiceCommand|null{
     const normalized=transcript
       .toLocaleLowerCase('tr-TR')
       .replace(/['’‘]/g,'')
