@@ -129,7 +129,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   })}</>;
 }
 
-function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:string; url?:string; onVisible:(paths:string[])=>void; onError:()=>void; category: string }) {
+function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:string; url?:string; onVisible:(paths:string[])=>void; onError:()=>void; category: string | null }) {
   const ref=useRef<HTMLSpanElement|null>(null);
   useEffect(()=>{const element=ref.current;if(!element)return;let done=false;const load=()=>{if(done)return;done=true;onVisible([path]);};if(typeof IntersectionObserver==='undefined'){load();return;}const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){load();observer.disconnect();}},{rootMargin:'100px'});observer.observe(element);return()=>observer.disconnect();},[path,onVisible]);
   return <span ref={ref} className="pin-thumb-image-slot">
