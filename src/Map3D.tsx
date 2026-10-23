@@ -3,7 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Map3DProps {
   pins: any[];
-  onMapClick: (lat: number, lng: number) => void; // DÜZELTİLEN YER
+  onMapClick: (lat: number, lng: number) => void;
   onPinSelect: (pin: any) => void;
   userPosition: [number, number] | null;
   flyToCoords: [number, number] | null;
@@ -73,7 +73,8 @@ export default function Map3D({
     markers.current = [];
 
     pins.forEach(pin => {
-      if (!pin.lat || !pin.lng) return;
+      // SIKI KONTROL: Lat ve Lng geçerli bir sayı mı?
+      if (typeof pin.lat !== 'number' || typeof pin.lng !== 'number' || isNaN(pin.lat) || isNaN(pin.lng)) return;
 
       const color = pin.category === 'YEŞİL' ? '#1e8e55' : 
                     pin.category === 'MAVİ' ? '#3b82f6' : 
@@ -100,7 +101,7 @@ export default function Map3D({
       markers.current.push(marker);
     });
 
-    if (userPosition && userPosition[0] && userPosition[1]) {
+    if (userPosition && typeof userPosition[0] === 'number' && typeof userPosition[1] === 'number' && !isNaN(userPosition[0]) && !isNaN(userPosition[1])) {
       const userEl = document.createElement('div');
       userEl.style.width = '16px';
       userEl.style.height = '16px';
@@ -127,31 +128,43 @@ export default function Map3D({
     routeMarkers.current.forEach(m => m.remove());
     routeMarkers.current = [];
 
+    // SIKI KONTROL: Rota çizgisi geçerli mi?
     if (routeLine && routeLine.length > 0) {
-      const coordinates = routeLine.map(coord => [coord[1], coord[0]]);
+      const validCoords = routeLine
+        .filter(c => typeof c[0] === 'number' && typeof c[1] === 'number' && !isNaN(c[0]) && !isNaN(c[1]))
+        .map(c => [c[1], c[0]]);
 
-      map.current.addSource('route-source', {
-        type: 'geojson',
-        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coordinates } }
-      });
+      if (validCoords.length > 1) {
+        try {
+          map.current.addSource('route-source', {
+            type: 'geojson',
+            data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: validCoords } }
+          });
 
-      map.current.addLayer({
-        id: 'route-layer', type: 'line', source: 'route-source',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#2684ff', 'line-width': 6, 'line-opacity': 0.8 }
-      });
+          map.current.addLayer({
+            id: 'route-layer', type: 'line', source: 'route-source',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#2684ff', 'line-width': 6, 'line-opacity': 0.8 }
+          });
 
-      const bounds = coordinates.reduce((acc: any, coord: any) => acc.extend(coord), new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
-      map.current.fitBounds(bounds, { padding: 50 });
+          const bounds = validCoords.reduce((acc: any, coord: any) => acc.extend(coord), new maplibregl.LngLatBounds(validCoords[0], validCoords[0]));
+          map.current.fitBounds(bounds, { padding: 50 });
+        } catch (err) {
+          console.error("Rota çizilirken hata:", err);
+        }
+      }
     }
 
-    if (routeStart) {
+    // SIKI KONTROL: A Noktası geçerli mi?
+    if (routeStart && typeof routeStart[0] === 'number' && typeof routeStart[1] === 'number' && !isNaN(routeStart[0]) && !isNaN(routeStart[1])) {
       const startEl = document.createElement('div');
       startEl.innerText = 'A';
       startEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background-color:#16a34a;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)';
       routeMarkers.current.push(new maplibregl.Marker({ element: startEl }).setLngLat([routeStart[1], routeStart[0]]).addTo(map.current));
     }
-    if (routeEnd) {
+    
+    // SIKI KONTROL: B Noktası geçerli mi?
+    if (routeEnd && typeof routeEnd[0] === 'number' && typeof routeEnd[1] === 'number' && !isNaN(routeEnd[0]) && !isNaN(routeEnd[1])) {
       const endEl = document.createElement('div');
       endEl.innerText = 'B';
       endEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background-color:#dc2626;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)';
@@ -191,36 +204,40 @@ export default function Map3D({
     if (map.current.getSource('heatmap-source')) map.current.removeSource('heatmap-source');
 
     if (showHeatmap && pins.length > 0) {
-      const geojson = {
-        type: 'FeatureCollection',
-        features: pins.filter(p => p.lat && p.lng).map(p => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-          properties: {}
-        }))
-      };
+      const validPins = pins.filter(p => typeof p.lat === 'number' && typeof p.lng === 'number' && !isNaN(p.lat) && !isNaN(p.lng));
+      
+      if (validPins.length > 0) {
+        const geojson = {
+          type: 'FeatureCollection',
+          features: validPins.map(p => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+            properties: {}
+          }))
+        };
 
-      map.current.addSource('heatmap-source', { type: 'geojson', data: geojson });
-      map.current.addLayer({
-        id: 'heatmap-layer',
-        type: 'heatmap',
-        source: 'heatmap-source',
-        paint: {
-          'heatmap-weight': 1,
-          'heatmap-intensity': 1,
-          'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(0,0,255,0)', 0.4, 'blue', 0.6, 'cyan', 0.7, 'lime', 0.8, 'yellow', 1, 'red'
-          ],
-          'heatmap-radius': 30
-        }
-      });
+        map.current.addSource('heatmap-source', { type: 'geojson', data: geojson });
+        map.current.addLayer({
+          id: 'heatmap-layer',
+          type: 'heatmap',
+          source: 'heatmap-source',
+          paint: {
+            'heatmap-weight': 1,
+            'heatmap-intensity': 1,
+            'heatmap-color': [
+              'interpolate', ['linear'], ['heatmap-density'],
+              0, 'rgba(0,0,255,0)', 0.4, 'blue', 0.6, 'cyan', 0.7, 'lime', 0.8, 'yellow', 1, 'red'
+            ],
+            'heatmap-radius': 30
+          }
+        });
+      }
     }
   }, [showHeatmap, pins]);
 
-  // FlyTo
+  // FlyTo (Kamera Uçuşu)
   useEffect(() => {
-    if (map.current && flyToCoords && flyToCoords[0] && flyToCoords[1]) {
+    if (map.current && flyToCoords && typeof flyToCoords[0] === 'number' && typeof flyToCoords[1] === 'number' && !isNaN(flyToCoords[0]) && !isNaN(flyToCoords[1])) {
       map.current.flyTo({ center: flyToCoords, zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
     }
   }, [flyToCoords]);

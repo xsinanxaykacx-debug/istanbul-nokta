@@ -838,7 +838,7 @@ export default function App() {
             }}
             onPinSelect={(pin: any) => { setSelected(pin); setDraftPosition(null); }}
             userPosition={userPosition} 
-            flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [selected.lng, selected.lat] : null) }
+            flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [Number(selected.lng), Number(selected.lat)] : null) }
             routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
             showTraffic={showTraffic} showHeatmap={showHeatmap} tomtomApiKey={tomtomApiKey}
           />
