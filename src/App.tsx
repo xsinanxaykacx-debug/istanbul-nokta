@@ -761,17 +761,37 @@ export default function App() {
     <section className="workspace">
       <div className="map-frame">
         
-        <button 
-          onClick={() => setIs3D(!is3D)}
-          style={{
-            position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
-            padding: '8px 15px', borderRadius: '8px', border: '1px solid var(--border-color)',
-            background: 'var(--surface)', color: 'var(--text-dark)', fontWeight: 'bold', cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-          }}
-        >
-          {is3D ? '2D Görünüm' : '3D Görünüm'}
-        </button>
+                <div style={{
+          position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
+          display: 'flex', alignItems: 'center', gap: '2px',
+          background: 'var(--surface)', border: '1px solid var(--border-color)',
+          padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        }}>
+          <button 
+            onClick={() => setIs3D(false)}
+            style={{
+              padding: '6px 14px', borderRadius: '999px', border: 'none',
+              background: !is3D ? '#3b82f6' : 'transparent',
+              color: !is3D ? '#fff' : 'var(--text-muted)',
+              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
+              fontSize: '12px'
+            }}
+          >
+            2D
+          </button>
+          <button 
+            onClick={() => setIs3D(true)}
+            style={{
+              padding: '6px 14px', borderRadius: '999px', border: 'none',
+              background: is3D ? '#ef4444' : 'transparent',
+              color: is3D ? '#fff' : 'var(--text-muted)',
+              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
+              fontSize: '12px'
+            }}
+          >
+            3D
+          </button>
+        </div>
 
         <div className="place-search-wrap">
           <div className="searchbox place-searchbox">
