@@ -469,15 +469,82 @@ export default function App() {
     }
   }
 
-  async function deleteSelectedPin(){
-    if(!supabase||!selected||!canDeleteSelected||busy)return; if(!window.confirm("Bu noktayı silmek istediğinize emin misiniz?"))return; setBusy(true);setNotice(null);
-    try{ const pinId=selected.id; const {data:paths,error}=await supabase.rpc('delete_pin',{p_pin_id:pinId}); if(error)throw error; let storageCleanupError:string|null=null;
-      if(Array.isArray(paths)&&paths.length){ const {error:removeError}=await supabase.storage.from('pin-photos').remove(paths as string[]); if(removeError)storageCleanupError=removeError.message; }
-      setPins(current=>current.filter(pin=>pin.id!==pinId)); setSelected(null);setLightboxIndex(null);
-      if(storageCleanupError){setNotice({kind:'error',text:`Nokta veritabanından silindi ancak fotoğraf dosyalarının temizlenmesi başarısız oldu: ${storageCleanupError}`});} else{setNotice({kind:'success',text:'Nokta ve fotoğrafları silindi.'});}
-    }catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Nokta silinemedi.'});} finally{setBusy(false);}
+  async function deletePinById(pinId: string, isNearestSearch = false): Promise<void> {
+    if (!supabase || busy) return;
+    const pin = pins.find(item => item.id === pinId);
+    if (!pin) {
+      setNotice({kind:'error',text:'Silinecek pin bulunamadı.'});
+      return;
+    }
+    const canDeletePin = !!session?.user?.id && (pin.owner_id === session.user.id || profile?.role === 'admin');
+    if (!canDeletePin) {
+      setNotice({kind:'error',text:'Bu pini silme yetkiniz yok.'});
+      return;
+    }
+    const confirmText = isNearestSearch
+      ? `Size 50 metre içindeki "${pinTitle(pin)}" pinini silmek istiyor musunuz?`
+      : 'Bu noktayı silmek istediğinize emin misiniz?';
+    if (!window.confirm(confirmText)) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const {data:paths,error}=await supabase.rpc('delete_pin',{p_pin_id:pinId});
+      if(error)throw error;
+      let storageCleanupError:string|null=null;
+      if(Array.isArray(paths)&&paths.length){
+        const {error:removeError}=await supabase.storage.from('pin-photos').remove(paths as string[]);
+        if(removeError)storageCleanupError=removeError.message;
+      }
+      setPins(current=>current.filter(item=>item.id!==pinId));
+      setSelected(current=>current?.id===pinId?null:current);
+      setLightboxIndex(null);
+      if(storageCleanupError){
+        setNotice({kind:'error',text:`Pin silindi ancak fotoğraf dosyalarının temizlenmesi başarısız oldu: ${storageCleanupError}`});
+      }else{
+        setNotice({kind:'success',text:'Pin ve fotoğrafları silindi.'});
+      }
+    }catch(err){
+      setNotice({kind:'error',text:err instanceof Error?err.message:'Pin silinemedi.'});
+    }finally{
+      setBusy(false);
+    }
   }
-  
+
+  async function deleteSelectedPin(){
+    if(!selected||!canDeleteSelected||busy)return;
+    await deletePinById(selected.id);
+  }
+
+  async function changeSelectedPinCategory(newCategory: string): Promise<void> {
+    if (!selected) {
+      setNotice({kind:'error',text:'Rengini değiştirmek için önce bir pin seçin.'});
+      return;
+    }
+    if (!supabase || busy) {
+      setNotice({kind:'error',text:'Pin güncellenemedi. Lütfen bağlantınızı kontrol edin.'});
+      return;
+    }
+    const pinId = selected.id;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const {data,error}=await supabase.from('pins')
+        .update({category:newCategory})
+        .eq('id',pinId)
+        .select('id,category')
+        .maybeSingle();
+      if(error)throw error;
+      if(!data)throw new Error('Bu pinin rengini değiştirme yetkiniz yok.');
+      setSelected(current=>current?.id===pinId?{...current,category:newCategory}:current);
+      setPins(current=>current.map(pin=>pin.id===pinId?{...pin,category:newCategory}:pin));
+      setNotice({kind:'success',text:`Seçili pinin rengi ${newCategory} olarak değiştirildi.`});
+    }catch(err){
+      setNotice({kind:'error',text:err instanceof Error?err.message:'Pin rengi değiştirilemedi.'});
+    }finally{
+      setBusy(false);
+    }
+  }
+
   async function deleteBulkPins() {
     if(!supabase || bulkSelectedPins.length === 0 || busy) return;
     if(!window.confirm(`${bulkSelectedPins.length} adet noktayı silmek istediğinize emin misiniz?`)) return;
@@ -653,7 +720,7 @@ export default function App() {
       return { type: 'CHANGE_CATEGORY', category: matchedCategory };
     }
 
-    if (/(?:sil(?:me|in|mek)?|kaldır(?:ma|ın|mak)?|yok\\s+et(?:me|mek)?|temizle(?:me|yin|mek)?)/u.test(normalized)) {
+    if (/(?:sil(?:me|in|mek)?|kaldır(?:ma|ın|mak)?|yok\s+et(?:me|mek)?|temizle(?:me|yin|mek)?)/u.test(normalized)) {
       const target = /(?:konum|konumum|burada|yakınımda)/.test(normalized) ? 'nearest' : 'selected';
       return { type: 'DELETE_PIN', target };
     }
