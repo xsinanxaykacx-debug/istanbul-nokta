@@ -3,51 +3,33 @@
 type VercelRequest = { method?: string; body?: unknown };
 type VercelResponse = { setHeader(name: string, value: string): void; status(code: number): VercelResponse; json(body: unknown): VercelResponse; send(body: string): VercelResponse };
 
-const ORS_URL = 'https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson';
-const MAX_BODY_BYTES = 32 * 1024;
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.ORS_API_KEY?.trim();
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ORS API key is missing' });
-  }
-
-  const body = req.body;
-  if (!body || typeof body !== 'object' || !Array.isArray(body.coordinates) || body.coordinates.length !== 2) {
+  const body = req.body as any;
+  if (!body || !Array.isArray(body.coordinates) || body.coordinates.length !== 2) {
     return res.status(400).json({ error: 'Invalid route request body' });
   }
-  for (const coordinate of body.coordinates) {
-    if (!Array.isArray(coordinate) || coordinate.length !== 2 || !coordinate.every((value: unknown) => typeof value === 'number' && Number.isFinite(value))) {
-      return res.status(400).json({ error: 'Coordinates must be finite [longitude, latitude] pairs' });
-    }
-    const [lng, lat] = coordinate as number[];
-    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-      return res.status(400).json({ error: 'Coordinates are outside valid geographic bounds' });
-    }
-  }
 
-  const serializedBody = JSON.stringify(body);
-  if (Buffer.byteLength(serializedBody, 'utf8') > MAX_BODY_BYTES) {
-    return res.status(413).json({ error: 'Route request is too large' });
-  }
+  const [start, end] = body.coordinates;
+  // Daha stabil olan genel OSRM sunucusunu kullanıyoruz.
+  const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${start[0]},${start[1]};${end[0]},${end[1]}?overview=full&geometries=geojson`;
 
   try {
-    const orsResponse = await fetch(`${ORS_URL}?api_key=${encodeURIComponent(apiKey)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/geo+json, application/json' },
-      body: serializedBody,
-    });
-    const responseText = await orsResponse.text();
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Content-Type', orsResponse.headers.get('content-type') || 'application/json; charset=utf-8');
-    return res.status(orsResponse.status).send(responseText);
+    const osrmResponse = await fetch(url);
+    if (!osrmResponse.ok) {
+      // OSRM'den gelen hata mesajını konsola yazdıralım ki sorunu görebilelim.
+      const errorText = await osrmResponse.text();
+      console.error('OSRM Error Response:', osrmResponse.status, errorText);
+      return res.status(osrmResponse.status).json({ error: `OSRM HTTP ${osrmResponse.status}: ${errorText}` });
+    }
+    const data = await osrmResponse.json();
+    return res.status(200).json(data);
   } catch (error) {
-    console.error('ORS proxy request failed:', error);
-    return res.status(502).json({ error: 'ORS request failed' });
+    console.error('OSRM proxy request failed:', error);
+    return res.status(502).json({ error: 'Route request failed' });
   }
 }

@@ -245,14 +245,14 @@ export default function App() {
     const [startLat,startLng]=routeStart; const [endLat,endLng]=routeEnd;
     const calculate=async()=>{
       try{
-        const response=await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json','Accept':'application/geo+json, application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
-        const result=await response.json().catch(()=>null) as {features?:Array<{geometry?:{coordinates?:number[][]};properties?:{summary?:{distance?:number;duration?:number}}}>;error?:{message?:string}|string;message?:string}|null;
-        if(!response.ok){const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`ORS HTTP ${response.status}`;throw new Error(message);}
-        if(controller.signal.aborted)return; const feature=result?.features?.[0]; const coordinates=feature?.geometry?.coordinates;
-        if(!feature||!coordinates||coordinates.length<2)throw new Error('ORS geçerli bir rota döndürmedi.');
-        const line=coordinates.map(point=>[point[1],point[0]] as [number,number]); const summary=feature.properties?.summary;
+                const response=await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
+        const result=await response.json().catch(()=>null) as {routes?:Array<{geometry?:{coordinates?:number[][]};distance?:number;duration?:number}>;error?:{message?:string}|string;message?:string}|null;
+        if(!response.ok){const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`OSRM HTTP ${response.status}`;throw new Error(message);}
+        if(controller.signal.aborted)return; const route=result?.routes?.[0]; const coordinates=route?.geometry?.coordinates;
+        if(!route||!coordinates||coordinates.length<2)throw new Error('OSRM geçerli bir rota döndürmedi.');
+        const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,line).distanceMeters<=100).map(pin=>pin.id);
-        setRouteLine(line); setRouteInfo({distance:formatRouteDistance(summary?.distance??0),duration:formatRouteDuration(summary?.duration??0),pinsOnRoute});
+        setRouteLine(line); setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
       }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, ORS API anahtarını kontrol edin.'); }
       finally{if(!controller.signal.aborted)setRouteLoading(false);}
     };
