@@ -583,7 +583,7 @@ export default function App() {
 
     const routeIntent=/(?:\brota\b|\bgit\b|\bgitmek\b|\byol\s+tarifi\b|\bnasıl\s+giderim\b|\bulaşım\b)/.test(normalized);
     const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
-    const lastWord=normalized.split(' ').at(-1)??'';
+    const lastWord=normalized.split(' ').pop()??'';
     const destinationOnly=!routeIntent&&!hasSave&&/(?:ne|na|ye|ya|e|a)$/.test(lastWord);
 
     if(routeIntent||destinationOnly){
