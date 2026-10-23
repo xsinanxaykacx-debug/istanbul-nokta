@@ -595,7 +595,10 @@ export default function App() {
     | { type: 'ZOOM'; action: 'in' | 'out' }
     | { type: 'SEARCH_PLACE'; query: string }
     | { type: 'CLEAR_ROUTE' }
-    | { type: 'THEME'; mode: 'dark' | 'light' };
+    | { type: 'THEME'; mode: 'dark' | 'light' }
+    | { type: 'DELETE_PIN'; target: 'selected' | 'nearest' }
+    | { type: 'CLEAR_SEARCH' }
+    | { type: 'CHANGE_CATEGORY'; category: string };
 
   function parseVoicePinCommand(transcript:string):VoiceCommand|null{
     const normalized=transcript
@@ -628,6 +631,9 @@ export default function App() {
     if (/(?:rota temizle|rotayı temizle|rotayı iptal et|rotayı kapat)/.test(normalized)) {
       return { type: 'CLEAR_ROUTE' };
     }
+    if (/(?:aramayı temizle|arama temizle|aramayı sil|aramayı kaldır|filtreleri temizle)/.test(normalized)) {
+      return { type: 'CLEAR_SEARCH' };
+    }
     if (/(?:gece modu|karanlık mod|siyah tema)/.test(normalized)) {
       return { type: 'THEME', mode: 'dark' };
     }
@@ -641,6 +647,17 @@ export default function App() {
       {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
       {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
     ];
+    const categoryMatches = categoryWords.filter(item=>item.pattern.test(normalized));
+    const matchedCategory=categoryMatches[categoryMatches.length-1]?.value;
+    if (matchedCategory && /(?:değiştir|yap|dönüştür)/.test(normalized)) {
+      return { type: 'CHANGE_CATEGORY', category: matchedCategory };
+    }
+
+    if (/(?:sil(?:me|in|mek)?|kaldır(?:ma|ın|mak)?|yok\\s+et(?:me|mek)?|temizle(?:me|yin|mek)?)/u.test(normalized)) {
+      const target = /(?:konum|konumum|burada|yakınımda)/.test(normalized) ? 'nearest' : 'selected';
+      return { type: 'DELETE_PIN', target };
+    }
+
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
     if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
       return { type: 'FILTER', category: matchedCategory };
