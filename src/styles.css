@@ -2173,3 +2173,46 @@ select option { background: var(--surface); color: var(--text-dark); }
 .leaflet-popup-tip {
   filter: none !important;
 }
+/* Açık Tema (Gündüz Modu) */
+.app-shell.light-theme {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.app-shell.light-theme .topbar,
+.app-shell.light-theme .side-panel,
+.app-shell.light-theme .map-toolbar,
+.app-shell.light-theme .profile-dropdown {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.app-shell.light-theme input,
+.app-shell.light-theme textarea,
+.app-shell.light-theme select {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Açık temada haritanın rengini düzelt (Koyu filtreyi kaldır) */
+.app-shell.light-theme .map .leaflet-layer,
+.app-shell.light-theme .map .leaflet-control-zoom-in,
+.app-shell.light-theme .map .leaflet-control-zoom-out,
+.app-shell.light-theme .map .leaflet-control-attribution {
+  filter: none !important;
+}
+
+.app-shell.light-theme .pin-list-item,
+.app-shell.light-theme .empty-panel {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+}
+
+/* Admin paneli de açık temada düzgün görünsün */
+.app-shell.light-theme .invite-modal {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
