@@ -460,11 +460,16 @@ export default function App() {
     }
   }
 
-  async function reportPin(pinId: string) {
+  async function reportPin(pinId: string, pinDesc: string, pinCat: string | null) {
     if(!supabase || !session?.user) return;
     if(!window.confirm("Bu pini uygunsuz içerik nedeniyle rapor etmek istiyor musunuz?")) return;
     try {
-      const { error } = await supabase.from('pin_reports').insert({ pin_id: pinId, reporter_id: session.user.id });
+      const { error } = await supabase.from('pin_reports').insert({ 
+        pin_id: pinId, 
+        reporter_id: session.user.id,
+        pin_description: pinDesc,
+        pin_category: pinCat 
+      });
       if (error) throw error;
       setNotice({ kind: 'success', text: 'Raporunuz yöneticiye iletildi. Teşekkürler.' });
     } catch (err) {
@@ -776,7 +781,7 @@ export default function App() {
                   type="button" 
                   className="secondary-button" 
                   style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} 
-                  onClick={() => void reportPin(selected.id)}
+                  onClick={() => void reportPin(selected.id, selected.description, selected.category)}
                 >
                   <ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et
                 </button>
@@ -833,11 +838,11 @@ export default function App() {
               {adminReports.map((r) => (
                 <div key={r.id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                   <strong style={{ display: 'block', fontSize: '14px' }}>
-                    Şikayet Edilen Pin: {r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Pin Silinmiş veya Erişilemiyor'}
+                    Şikayet Edilen Pin: {r.pin_description ? `${r.pin_description.slice(0,30)}...` : (r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Açıklama Yok')}
                   </strong>
                   <span style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Tarih: {new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {r.pins && (
+                    {r.pin_id && (
                       <button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>
                     )}
                     <button onClick={() => void resolveReport(r.id, 'ignore')} className="secondary-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Yoksay</button>
