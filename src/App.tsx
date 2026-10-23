@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, LayersControl, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
 import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X } from 'lucide-react';
@@ -48,6 +48,7 @@ const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
 const searchPlaceIcon = new L.DivIcon({ className:'search-place-marker', html:'<span class="search-place-dot"></span>', iconSize:[30,30], iconAnchor:[15,15] });
 const tomtomApiKey = import.meta.env.VITE_TOMTOM_API_KEY?.trim() ?? '';
+const cartoBasemapKey = import.meta.env.VITE_CARTO_BASEMAP_KEY?.trim() ?? '';
 const routeStartIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-start">A</span>', iconSize:[30,30], iconAnchor:[15,15] });
 const routeEndIcon = new L.DivIcon({ className:'route-marker-wrap', html:'<span class="route-marker route-marker-end">B</span>', iconSize:[30,30], iconAnchor:[15,15] });
 
@@ -1124,10 +1125,31 @@ function startVoicePinCommand(){
         </div>
         
         <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          {cartoBasemapKey ? (
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="CARTO Voyager">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(cartoBasemapKey)}`}
+                  subdomains="abcd"
+                  maxZoom={20}
+                />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="OpenStreetMap">
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  maxZoom={19}
+                />
+              </LayersControl.BaseLayer>
+            </LayersControl>
+          ) : (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
+            />
+          )}
           {showHeatmap && <HeatmapLayer pins={visiblePins} />}
           {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e: any) => console.warn("TomTom Tile Hatası:", e) }}/>}
           <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
