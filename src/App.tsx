@@ -90,7 +90,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
-// YENİ: Isı Haritası Katmanı Bileşeni
+// ISI HARİTASI BİLEŞENİ
 function HeatmapLayer({ pins }: { pins: Pin[] }) {
   const map = useMap();
   useEffect(() => {
@@ -433,7 +433,7 @@ export default function App() {
       if(storageCleanupError){setNotice({kind:'error',text:`Nokta veritabanından silindi ancak fotoğraf dosyalarının temizlenmesi başarısız oldu: ${storageCleanupError}`});} else{setNotice({kind:'success',text:'Nokta ve fotoğrafları silindi.'});}
     }catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Nokta silinemedi.'});} finally{setBusy(false);}
   }
-
+  
   async function deleteBulkPins() {
     if(!supabase || bulkSelectedPins.length === 0 || busy) return;
     if(!window.confirm(`${bulkSelectedPins.length} adet noktayı silmek istediğinize emin misiniz?`)) return;
@@ -452,8 +452,9 @@ export default function App() {
       setBulkSelectedPins([]);
       setBulkSelectMode(false);
       setNotice({ kind: 'success', text: `${bulkSelectedPins.length} nokta başarıyla silindi.` });
-    } catch (err) {
-      setNotice({ kind: 'error', text: err instanceof Error ? err.message : 'Toplu silme başarısız.' });
+    } catch (err: any) {
+      console.error("Toplu silme hatası:", err);
+      setNotice({ kind: 'error', text: err?.message || err?.details || 'Toplu silme başarısız. Lütfen konsolu kontrol edin.' });
     } finally {
       setBusy(false);
     }
@@ -505,6 +506,7 @@ export default function App() {
       if (error) throw error;
       setAdminProfiles(current => current.map(p => p.id === userId ? { ...p, status: newStatus } : p));
       setNotice({ kind: 'success', text: 'Kullanıcı durumu güncellendi.' });
+      await loadPins(); // Banlananın pinleri gizlensin diye haritayı güncelle
     } catch (err) {
       setNotice({ kind: 'error', text: 'İşlem başarısız.' });
     }
@@ -518,7 +520,6 @@ export default function App() {
         setAdminReports(curr => curr.filter(r => r.id !== reportId));
         setNotice({kind:'success', text:'Rapor yoksayıldı.'});
       } else if (action === 'delete') {
-        // Rapor edilen pini bul ve sil
         const report = adminReports.find(r => r.id === reportId);
         if (!report) return;
         await supabase.rpc('delete_pin', { p_pin_id: report.pin_id });
