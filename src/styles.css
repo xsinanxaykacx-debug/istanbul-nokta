@@ -2371,3 +2371,27 @@ select option { background: var(--surface); color: var(--text-dark); }
     max-width: calc(100% - 40px) !important;
   }
 }
+/* Arama çubuğunu ve sarmalayıcısını kesin olarak sınırla */
+.map-toolbar {
+  display: flex !important;
+  justify-content: flex-start !important;
+}
+
+.map-toolbar .place-search-wrap {
+  width: 100% !important;
+  max-width: 450px !important;
+  flex: 0 1 450px !important; /* Flexbox kullanılıyorsa uzamasını engeller */
+}
+
+.map-toolbar .place-searchbox {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Mobilde tam genişlik */
+@media (max-width: 768px) {
+  .map-toolbar .place-search-wrap {
+    max-width: calc(100% - 20px) !important;
+    flex: 1 1 auto !important;
+  }
+}
