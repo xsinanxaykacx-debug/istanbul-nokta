@@ -810,7 +810,10 @@ export default function App() {
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={filteredPins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
-            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}}                         onMapClick={(lat: number, lng: number) => {
+            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}}                                 {is3D && (
+          <Map3D 
+            pins={filteredPins} 
+            onMapClick={(lat: number, lng: number) => {
               if (routeMode) {
                 if (!routeStart) {
                   setRouteStart([lat, lng]);
@@ -825,7 +828,14 @@ export default function App() {
                 setDraftPosition([lat, lng]);
                 setSelected(null);
               }
-            }} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+            }}
+            onPinSelect={(pin) => { setSelected(pin); setDraftPosition(null); }}
+            userPosition={userPosition} 
+            flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [selected.lng, selected.lat] : null) }
+            routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
+            showTraffic={showTraffic} showHeatmap={showHeatmap} tomtomApiKey={tomtomApiKey}
+          />
+        )}
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
             <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
             <FlyTo position={userPosition} zoom={16}/>
