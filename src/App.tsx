@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'leaflet';
+// @ts-ignore
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, UserRound, X } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 
-type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin' };
+type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
 type PinPhoto = { id: string; storage_path: string; public_url: string; sort_order: number };
 type PinVote = { vote_type: number; user_id: string };
@@ -97,10 +98,7 @@ function HeatmapLayer({ pins }: { pins: Pin[] }) {
     if (!pins || pins.length === 0) return;
     const points = pins.map(p => [p.lat, p.lng, 1]);
     const heat = (L as any).heatLayer(points, {
-      radius: 35, 
-      blur: 20, 
-      maxZoom: 15,
-      minOpacity: 0.6,
+      radius: 35, blur: 20, maxZoom: 15, minOpacity: 0.6,
       gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
     }).addTo(map);
     return () => { map.removeLayer(heat); };
@@ -163,7 +161,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
@@ -197,7 +195,7 @@ export default function App() {
   
   const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
-  const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
+  const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
   const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
     const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
@@ -467,10 +465,7 @@ export default function App() {
     if(!window.confirm("Bu pini uygunsuz içerik nedeniyle rapor etmek istiyor musunuz?")) return;
     try {
       const { error } = await supabase.from('pin_reports').insert({ 
-        pin_id: pinId, 
-        reporter_id: session.user.id,
-        pin_description: pinDesc,
-        pin_category: pinCat 
+        pin_id: pinId, reporter_id: session.user.id, pin_description: pinDesc, pin_category: pinCat 
       });
       if (error) throw error;
       setNotice({ kind: 'success', text: 'Raporunuz yöneticiye iletildi. Teşekkürler.' });
@@ -592,7 +587,7 @@ export default function App() {
     },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
 
-  function startVoicePinCommand(){
+  async function startVoicePinCommand(){
     setVoicePinHintVisible(false);
     if(voicePinListening){voicePinRecognitionRef.current?.stop();return;}
     if(!canAdd){setNotice({kind:'info',text:'Sesli pin eklemek için hesabını etkinleştirmen veya giriş yapman gerekiyor.'});setAuthOpen(true);return;}
@@ -608,13 +603,60 @@ export default function App() {
       setVoicePinListening(true);
       voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},8000);
     };
-    recognition.onresult=(event:any)=>{
+    recognition.onresult=async (event:any)=>{
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
       handled=true;
       if(!transcript){setNotice({kind:'error',text:'Sesli komut algılanamadı. Tekrar deneyin.'});return;}
+      
+      const lowerText = transcript.toLocaleLowerCase('tr-TR');
+
+      // YENİ: Katman değiştirme komutları
+      if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+        setShowHeatmap(true); setShowTraffic(false); setNotice({kind:'success', text:'Isı haritası açıldı.'}); try{recognition.stop();}catch{} return;
+      }
+      if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(lowerText)) {
+        setShowHeatmap(false); setNotice({kind:'success', text:'Isı haritası kapatıldı.'}); try{recognition.stop();}catch{} return;
+      }
+      if (/trafik(?:i|i)?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+        setShowTraffic(true); setShowHeatmap(false); setNotice({kind:'success', text:'Trafik katmanı açıldı.'}); try{recognition.stop();}catch{} return;
+      }
+      if (/trafik(?:i|i)?\s*(?:kapat|gizle)/.test(lowerText)) {
+        setShowTraffic(false); setNotice({kind:'success', text:'Trafik katmanı kapatıldı.'}); try{recognition.stop();}catch{} return;
+      }
+
+      // YENİ: Rota oluşturma komutu (örn: "konumumdan galata kulesine rota oluştur")
+      const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
+      if (routeMatch && routeMatch[1]) {
+        const targetName = routeMatch[1].trim();
+        setNotice({kind:'info', text:`"${targetName}" aranıyor ve rota hazırlanıyor...`});
+        try {
+          // Nominatim ile hedefi bul
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(targetName)}&countrycodes=tr&limit=1`);
+          const searchData = await res.json();
+          if (searchData && searchData.length > 0) {
+            const targetCoord: [number, number] = [parseFloat(searchData[0].lat), parseFloat(searchData[0].lon)];
+            // GPS'ten başlangıcı al
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(pos => {
+                setRouteStart([pos.coords.latitude, pos.coords.longitude]);
+                setRouteEnd(targetCoord);
+                setRouteMode(true);
+                setNotice({kind:'success', text:`"${targetName}" için rota oluşturuluyor.`});
+              }, () => setNotice({kind:'error', text:'Konumunuz alınamadı.'}));
+            }
+          } else {
+            setNotice({kind:'error', text:`"${targetName}" bulunamadı.`});
+          }
+        } catch (e) {
+          setNotice({kind:'error', text:'Rota oluşturulurken hata oluştu.'});
+        }
+        try{recognition.stop();}catch{} return;
+      }
+
+      // Eski Pin Ekleme komutları
       const parsed=parseVoicePinCommand(transcript);
       if(!parsed){
-        setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". “Konuma mavi pin ekle” veya “Kaydet” deyin.`});
+        setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
         return;
       }
       if(parsed==='SAVE'){
@@ -655,8 +697,12 @@ export default function App() {
   
   const center:[number,number]=[41.0082,28.9784];
 
-  return <main className="app-shell">
-    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><MapPin size={21}/></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">{session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{active?'Aktif üye':'Hesap devre dışı'}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{session.user?.user_metadata?.name||session.user?.user_metadata?.full_name||session.user?.email?.split('@')[0]||'üye'}</strong></p>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
+  return <main className={`app-shell ${isDarkMode ? '' : 'light-theme'}`}>
+    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><MapPin size={21}/></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
+      <button type="button" className="icon-button" onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
+        {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
+      </button>
+      {session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{profile?.username || (active?'Aktif üye':'Hesap devre dışı')}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{profile?.username || session.user?.email?.split('@')[0] || 'üye'}</strong></p>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
     
     {!isConfigured&&<div className="setup-banner"><strong>Kurulum gerekiyor:</strong> .env dosyasına Supabase URL ve anahtarını ekle; README.md içindeki SQL kurulumunu tamamla.</div>}
     {notice&&<div className={`notice ${notice.kind}`} role="status"><span>{notice.text}</span><button onClick={()=>setNotice(null)} aria-label="Bildirimi kapat"><X size={16}/></button></div>}
@@ -724,7 +770,7 @@ export default function App() {
             </button>
           )}
           {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
-          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örnek: “Konuma mavi işaret koy”</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komutla pin ekle" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komutla pin ekle'}>{voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
+          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç"</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
         </div>
         
@@ -771,6 +817,26 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
               <a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer" style={{ textAlign: 'center', width: '100%', display: 'block' }}>Yol tarifi</a>
               
+              {session?.user && (
+                <button 
+                  type="button" 
+                  className="primary-button" 
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px' }} 
+                  onClick={() => {
+                    if(navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(pos => {
+                        setRouteStart([pos.coords.latitude, pos.coords.longitude]);
+                        setRouteEnd([selected.lat, selected.lng]);
+                        setRouteMode(true);
+                        setSelected(null);
+                      }, () => setNotice({kind:'error', text:'Rota oluşturmak için konum izni gerekli.'}));
+                    }
+                  }}
+                >
+                  <Navigation size={16} style={{ marginRight: '8px' }}/> Buraya Rota Oluştur
+                </button>
+              )}
+
               {canDeleteSelected && (
                 <div className="pin-owner-actions">
                   <button type="button" className="secondary-button" disabled={busy} onClick={beginPinEdit}>Düzenle</button>
@@ -821,7 +887,7 @@ export default function App() {
               {adminProfiles.map((p) => (
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}>
                   <div>
-                    <strong style={{ display: 'block', fontSize: '14px' }}>Kullanıcı ID: {p.id.slice(0,8)}...</strong>
+                    <strong style={{ display: 'block', fontSize: '14px' }}>{p.username || `Kullanıcı: ${p.id.slice(0,8)}...`}</strong>
                     <span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>
                       Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}
                     </span>
