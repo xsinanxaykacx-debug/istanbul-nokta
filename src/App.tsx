@@ -545,41 +545,59 @@ export default function App() {
     | { type: 'SAVE' }
     | { type: 'TRAFFIC'; enabled: boolean }
     | { type: 'HEATMAP'; enabled: boolean }
-    | { type: 'ROUTE'; destination: string };
-
-  function parseVoicePinCommand(transcript:string):VoiceCommand|null{
-    const lowerText=transcript.toLocaleLowerCase('tr-TR');
-    const normalized=lowerText.replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+    | { type: 'FILTER'; category: string }
+      function parseVoicePinCommand(transcript:string):VoiceCommand|null{
+    const normalized=transcript
+      .toLocaleLowerCase('tr-TR')
+      .replace(/['’‘]/g,'')
+      .replace(/[^\p{L}\p{N}\s]/gu,' ')
+      .replace(/\s+/g,' ')
+      .trim();
     if(!normalized)return null;
 
-    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: true };
     }
-    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(lowerText)) {
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: false };
     }
-    if (/trafik(?:i|i)?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+    if (/trafik(?:i)?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: true };
     }
-    if (/trafik(?:i|i)?\s*(?:kapat|gizle)/.test(lowerText)) {
+    if (/trafik(?:i)?\s*(?:kapat|gizle)/.test(normalized)) {
       return { type: 'TRAFFIC', enabled: false };
     }
 
-    const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
-    if (routeMatch && routeMatch[1]) {
-      return { type: 'ROUTE', destination: routeMatch[1].trim() };
-    }
-
-    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
     const categoryWords=[
-      {pattern:/((?:^|\s)(?:mavi|maviler)(?=$|\s))/,value:'MAVİ'},
-      {pattern:/((?:^|\s)(?:yeşil|yeşiller)(?=$|\s))/,value:'YEŞİL'},
-      {pattern:/((?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s))/,value:'KIRMIZI'},
-      {pattern:/((?:^|\s)(?:gri|griler)(?=$|\s))/,value:'GRİ'}
+      {pattern:/\b(?:mavi|maviler)\b/,value:'MAVİ'},
+      {pattern:/\b(?:yeşil|yeşiller)\b/,value:'YEŞİL'},
+      {pattern:/\b(?:kırmızı|kırmızılar)\b/,value:'KIRMIZI'},
+      {pattern:/\b(?:gri|griler)\b/,value:'GRİ'}
     ];
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
-    const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(normalized);
-    const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(normalized);
+    if(matchedCategory&&/\b(?:göster|filtrele|sadece)\b/.test(normalized)){
+      return { type: 'FILTER', category: matchedCategory };
+    }
+
+    const routeIntent=/(?:\brota\b|\bgit\b|\bgitmek\b|\byol\s+tarifi\b|\bnasıl\s+giderim\b|\bulaşım\b)/.test(normalized);
+    const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
+    const lastWord=normalized.split(' ').at(-1)??'';
+    const destinationOnly=!routeIntent&&!hasSave&&/(?:ne|na|ye|ya|e|a)$/.test(lastWord);
+
+    if(routeIntent||destinationOnly){
+      const destination=normalized
+        .replace(/\b(?:mevcut\s+konumumdan|konumumdan|buradan|lütfen|bana)\b/g,' ')
+        .replace(/\b(?:yol\s+tarifi|nasıl\s+giderim|ulaşım|gitmek|git|rota|oluştur|olustur|çiz|ciz|gitmek\s+istiyorum)\b/g,' ')
+        .replace(/\s+/g,' ')
+        .trim();
+      const cleanedDestination=destination.replace(/(?:ne|na|ye|ya|e|a)$/,'').trim();
+      if(cleanedDestination){
+        return { type: 'ROUTE', destination: cleanedDestination };
+      }
+    }
+
+    const hasPinKeyword=/\b(?:pin|işaret|işaretleri|işareti|nokta)\b/.test(normalized);
+    const useCurrentLocation=/\b(?:konum|konuma|konumuma|konumumda|gps)\b/.test(normalized);
 
     if(hasSave&&!matchedCategory&&!hasPinKeyword)return { type: 'SAVE' };
     if(matchedCategory&&hasPinKeyword){
@@ -622,6 +640,12 @@ export default function App() {
         if(command.enabled)setShowTraffic(false);
         setNotice({kind:'success',text:command.enabled?'Isı haritası açıldı.':'Isı haritası kapatıldı.'});
         return;
+      case 'FILTER':
+        setCategory(command.category);
+        setSelectedCategoryFilter(command.category);
+        setShowFilterOptions(false);
+        setNotice({kind:'success',text:`\${command.category} işaretleri gösteriliyor.`});
+        return;
       case 'ROUTE':
         setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
         try {
@@ -642,6 +666,12 @@ export default function App() {
           }
         } catch {
           setNotice({kind:'error', text:'Rota oluşturulurken hata oluştu.'});
+        }
+        return;
+    }
+  }
+
+.'});
         }
         return;
     }
