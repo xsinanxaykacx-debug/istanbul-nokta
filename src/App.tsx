@@ -539,10 +539,37 @@ export default function App() {
   function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
   
   const locationErrorText='Konum izni gerekli veya konum alınamadı. Lütfen tarayıcı ayarlarınızdan izin verin.';
-  type ParsedVoicePinCommand = 'SAVE' | {category:string; signal:'PREPARE'|'SAVE'; useCurrentLocation:boolean};
-  function parseVoicePinCommand(transcript:string):ParsedVoicePinCommand|null{
-    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+  type VoiceCommand =
+    | { type: 'LOCATE'; category: string }
+    | { type: 'CREATE_PIN'; category: string; useCurrentLocation: boolean }
+    | { type: 'SAVE' }
+    | { type: 'TRAFFIC'; enabled: boolean }
+    | { type: 'HEATMAP'; enabled: boolean }
+    | { type: 'ROUTE'; destination: string };
+
+  function parseVoicePinCommand(transcript:string):VoiceCommand|null{
+    const lowerText=transcript.toLocaleLowerCase('tr-TR');
+    const normalized=lowerText.replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
     if(!normalized)return null;
+
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+      return { type: 'HEATMAP', enabled: true };
+    }
+    if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(lowerText)) {
+      return { type: 'HEATMAP', enabled: false };
+    }
+    if (/trafik(?:i|i)?\s*(?:aç|göster|aktif)/.test(lowerText)) {
+      return { type: 'TRAFFIC', enabled: true };
+    }
+    if (/trafik(?:i|i)?\s*(?:kapat|gizle)/.test(lowerText)) {
+      return { type: 'TRAFFIC', enabled: false };
+    }
+
+    const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
+    if (routeMatch && routeMatch[1]) {
+      return { type: 'ROUTE', destination: routeMatch[1].trim() };
+    }
+
     const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
     const categoryWords=[
       {pattern:/((?:^|\s)(?:mavi|maviler)(?=$|\s))/,value:'MAVİ'},
@@ -553,12 +580,71 @@ export default function App() {
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
     const hasPinKeyword=/((?:^|\s)(?:pin|işaret|işareti|nokta)(?=$|\s))/.test(normalized);
     const useCurrentLocation=/((?:^|\s)(?:konum|konuma|konumuma|konumumda|gps)(?=$|\s))/.test(normalized);
-    if(hasSave&&!matchedCategory&&!hasPinKeyword)return 'SAVE';
+
+    if(hasSave&&!matchedCategory&&!hasPinKeyword)return { type: 'SAVE' };
     if(matchedCategory&&hasPinKeyword){
-      return {category:matchedCategory,signal:hasSave?'SAVE':'PREPARE',useCurrentLocation};
+      return hasSave
+        ? { type: 'CREATE_PIN', category: matchedCategory, useCurrentLocation }
+        : { type: 'LOCATE', category: matchedCategory };
     }
-    if(hasSave)return 'SAVE';
+    if(hasSave)return { type: 'SAVE' };
     return null;
+  }
+
+  async function executeVoiceCommand(command:VoiceCommand):Promise<void>{
+    switch(command.type){
+      case 'LOCATE':
+        addVoicePinAtCurrentLocation(command.category,false);
+        return;
+      case 'CREATE_PIN':
+        if(command.useCurrentLocation){
+          addVoicePinAtCurrentLocation(command.category,true);
+        }else if(draftPosition){
+          void savePinDirectly(draftPosition,description,command.category,files);
+        }else{
+          setNotice({kind:'error',text:'Lütfen önce haritadan konum seçin veya “Konuma mavi pin ekle kaydet” diyerek GPS ile kaydedin.'});
+        }
+        return;
+      case 'SAVE':
+        if(!draftPosition){
+          setNotice({kind:'error',text:'Lütfen önce konum seçin.'});
+          return;
+        }
+        void savePinDirectly(draftPosition,description,category,files);
+        return;
+      case 'TRAFFIC':
+        setShowTraffic(command.enabled);
+        if(command.enabled)setShowHeatmap(false);
+        setNotice({kind:'success',text:command.enabled?'Trafik katmanı açıldı.':'Trafik katmanı kapatıldı.'});
+        return;
+      case 'HEATMAP':
+        setShowHeatmap(command.enabled);
+        if(command.enabled)setShowTraffic(false);
+        setNotice({kind:'success',text:command.enabled?'Isı haritası açıldı.':'Isı haritası kapatıldı.'});
+        return;
+      case 'ROUTE':
+        setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(command.destination)}&countrycodes=tr&limit=1`);
+          const searchData = await res.json();
+          if (searchData && searchData.length > 0) {
+            const targetCoord: [number, number] = [parseFloat(searchData[0].lat), parseFloat(searchData[0].lon)];
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(pos => {
+                setRouteStart([pos.coords.latitude, pos.coords.longitude]);
+                setRouteEnd(targetCoord);
+                setRouteMode(true);
+                setNotice({kind:'success', text:`"${command.destination}" için rota oluşturuluyor.`});
+              }, () => setNotice({kind:'error', text:'Konumunuz alınamadı.'}));
+            }
+          } else {
+            setNotice({kind:'error', text:`"${command.destination}" bulunamadı.`});
+          }
+        } catch {
+          setNotice({kind:'error', text:'Rota oluşturulurken hata oluştu.'});
+        }
+        return;
+    }
   }
 
   function addVoicePinAtCurrentLocation(parsedCategory:string,saveImmediately=false){
@@ -606,66 +692,16 @@ export default function App() {
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
       handled=true;
       if(!transcript){setNotice({kind:'error',text:'Sesli komut algılanamadı. Tekrar deneyin.'});return;}
-      
-      const lowerText = transcript.toLocaleLowerCase('tr-TR');
 
-      if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(lowerText)) {
-        setShowHeatmap(true); setShowTraffic(false); setNotice({kind:'success', text:'Isı haritası açıldı.'}); try{recognition.stop();}catch{} return;
-      }
-      if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(lowerText)) {
-        setShowHeatmap(false); setNotice({kind:'success', text:'Isı haritası kapatıldı.'}); try{recognition.stop();}catch{} return;
-      }
-      if (/trafik(?:i|i)?\s*(?:aç|göster|aktif)/.test(lowerText)) {
-        setShowTraffic(true); setShowHeatmap(false); setNotice({kind:'success', text:'Trafik katmanı açıldı.'}); try{recognition.stop();}catch{} return;
-      }
-      if (/trafik(?:i|i)?\s*(?:kapat|gizle)/.test(lowerText)) {
-        setShowTraffic(false); setNotice({kind:'success', text:'Trafik katmanı kapatıldı.'}); try{recognition.stop();}catch{} return;
-      }
-
-      const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
-      if (routeMatch && routeMatch[1]) {
-        const targetName = routeMatch[1].trim();
-        setNotice({kind:'info', text:`"${targetName}" aranıyor ve rota hazırlanıyor...`});
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(targetName)}&countrycodes=tr&limit=1`);
-          const searchData = await res.json();
-          if (searchData && searchData.length > 0) {
-            const targetCoord: [number, number] = [parseFloat(searchData[0].lat), parseFloat(searchData[0].lon)];
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(pos => {
-                setRouteStart([pos.coords.latitude, pos.coords.longitude]);
-                setRouteEnd(targetCoord);
-                setRouteMode(true);
-                setNotice({kind:'success', text:`"${targetName}" için rota oluşturuluyor.`});
-              }, () => setNotice({kind:'error', text:'Konumunuz alınamadı.'}));
-            }
-          } else {
-            setNotice({kind:'error', text:`"${targetName}" bulunamadı.`});
-          }
-        } catch (e) {
-          setNotice({kind:'error', text:'Rota oluşturulurken hata oluştu.'});
-        }
-        try{recognition.stop();}catch{} return;
-      }
-
-      const parsed=parseVoicePinCommand(transcript);
-      if(!parsed){
+      const command=parseVoicePinCommand(transcript);
+      if(!command){
         setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
         return;
       }
-      if(parsed==='SAVE'){
-        if(!draftPosition){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}
-        void savePinDirectly(draftPosition,description,category,files);
-      }else if(parsed.signal==='SAVE'){
-        if(parsed.useCurrentLocation){
-          addVoicePinAtCurrentLocation(parsed.category,true);
-        }else if(draftPosition){
-          void savePinDirectly(draftPosition,description,parsed.category,files);
-        }else{
-          setNotice({kind:'error',text:'Lütfen önce haritadan konum seçin veya “Konuma mavi pin ekle kaydet” diyerek GPS ile kaydedin.'});
-        }
-      }else{
-        addVoicePinAtCurrentLocation(parsed.category,false);
+      try {
+        await executeVoiceCommand(command);
+      } catch {
+        setNotice({kind:'error',text:'Sesli komut çalıştırılırken bir hata oluştu.'});
       }
       try{recognition.stop();}catch{}
     };
