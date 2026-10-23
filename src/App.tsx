@@ -810,7 +810,22 @@ export default function App() {
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={filteredPins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
-            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}}             onMapClick={(lat, lng) => {
+              if (routeMode) {
+                if (!routeStart) {
+                  setRouteStart([lat, lng]);
+                  setRouteEnd(null);
+                  setRouteLine(null);
+                  setRouteInfo(null);
+                  setRouteError(null);
+                } else {
+                  setRouteEnd([lat, lng]);
+                }
+              } else {
+                setDraftPosition([lat, lng]);
+                setSelected(null);
+              }
+            }} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
             <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
             <FlyTo position={userPosition} zoom={16}/>
