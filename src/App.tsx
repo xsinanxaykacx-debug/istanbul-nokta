@@ -850,6 +850,53 @@ export default function App() {
           setNotice({kind:'error',text:'Yer aranırken bir hata oluştu. Lütfen tekrar deneyin.'});
         }
         return;
+      case 'CLEAR_SEARCH':
+        setQuery('');
+        setDebouncedQuery('');
+        setSearchResultIds(null);
+        setPlaceQuery('');
+        setSearchPlace(null);
+        setPlaceResults([]);
+        setPlaceSearched(false);
+        setPlaceDropdownOpen(false);
+        setNotice({kind:'success',text:'Arama ve filtre sonuçları temizlendi.'});
+        return;
+      case 'CHANGE_CATEGORY':
+        await changeSelectedPinCategory(command.category);
+        return;
+      case 'DELETE_PIN':
+        if (command.target === 'selected') {
+          if (!selected) {
+            setNotice({kind:'error',text:'Silmek için önce bir pin seçin.'});
+            return;
+          }
+          await deletePinById(selected.id);
+          return;
+        }
+        if (!navigator.geolocation) {
+          setNotice({kind:'error',text:'Bu tarayıcı konum hizmetini desteklemiyor.'});
+          return;
+        }
+        setNotice({kind:'info',text:'Yakınınızdaki silinebilir pinler aranıyor…'});
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const currentLocation: [number,number] = [position.coords.latitude,position.coords.longitude];
+            const canDeletePin = (pin: Pin) => !!session?.user?.id && (pin.owner_id === session.user.id || profile?.role === 'admin');
+            const nearest = pins
+              .filter(canDeletePin)
+              .map(pin => ({pin,distance:haversineMeters(currentLocation,[pin.lat,pin.lng])}))
+              .filter(item => item.distance <= 50)
+              .sort((a,b) => a.distance-b.distance)[0];
+            if (!nearest) {
+              setNotice({kind:'error',text:'50 metre içinde silebileceğiniz bir pin bulunamadı.'});
+              return;
+            }
+            void deletePinById(nearest.pin.id,true);
+          },
+          () => setNotice({kind:'error',text:'Konumunuz alınamadı. Yakındaki pin silinemedi.'}),
+          {enableHighAccuracy:true,timeout:10000,maximumAge:0}
+        );
+        return;
       case 'ROUTE':
         setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
         try {
