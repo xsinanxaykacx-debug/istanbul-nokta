@@ -165,6 +165,42 @@ export default function App() {
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
+  const webLlmEngineRef=useRef<any>(null);
+  const webLlmReadyRef=useRef(false);
+  const manualStopRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    const loadWebLlm = async () => {
+      if (!('gpu' in navigator)) {
+        console.info('WebGPU kullanÄ±lamÄ±yor; sesli komutlarda mevcut regex ayrÄ±ÅŸtÄ±rÄ±cÄ±sÄ± kullanÄ±lacak.');
+        return;
+      }
+      try {
+        const moduleUrl = 'https://esm.sh/@mlc-ai/web-llm';
+        const webllm = await import(/* @vite-ignore */ moduleUrl);
+        const engine = await webllm.CreateMLCEngine('Qwen2.5-0.5B-Instruct-q4f16_1-MLC');
+        if (cancelled) {
+          await engine?.unload?.();
+          return;
+        }
+        webLlmEngineRef.current = engine;
+        webLlmReadyRef.current = true;
+        console.info('WebLLM sesli komut modeli hazÄ±r.');
+      } catch (error) {
+        webLlmReadyRef.current = false;
+        webLlmEngineRef.current = null;
+        console.warn('WebLLM yÃ¼klenemedi; mevcut regex sesli komut sistemi Ã§alÄ±ÅŸmaya devam edecek.', error);
+      }
+    };
+    void loadWebLlm();
+    return () => {
+      cancelled = true;
+      const engine = webLlmEngineRef.current;
+      webLlmEngineRef.current = null;
+      webLlmReadyRef.current = false;
+      if (engine?.unload) void engine.unload().catch(() => {});
+    };
+  }, []);
   const mapRef = useRef<L.Map | null>(null);
 
   const [adminOpen, setAdminOpen] = useState(false);
@@ -221,7 +257,7 @@ export default function App() {
   },[canSeePins]);
 
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
-  useEffect(()=>{const hintTimeout=window.setTimeout(()=>setVoicePinHintVisible(false),3000);return()=>window.clearTimeout(hintTimeout);},[]);
+  useEffect(()=>{const hintTimeout=window.setTimeout(()=>setVoicePinHintVisible(false),4000);return()=>window.clearTimeout(hintTimeout);},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
 
   useEffect(()=>{
@@ -667,7 +703,7 @@ export default function App() {
     | { type: 'CHANGE_CATEGORY'; category: string }
     | { type: 'MIC_CONTROL'; target: 'search' | 'command' | 'off' };
 
-  function parseVoicePinCommand(transcript:string):VoiceCommand|null{
+  function parseVoicePinCommandRegex(transcript:string):VoiceCommand|null{
     const normalized=transcript
       .toLocaleLowerCase('tr-TR')
       .replace(/['’‘]/g,'')
@@ -676,9 +712,16 @@ export default function App() {
       .trim();
     if(!normalized)return null;
 
-    if (/(?:sesli|sesle|ses ile)\s*arama|aramayı\s*başlat|arama\s*mikrofonu|adres\s*ara|mekan\s*ara|yer\s*ara/.test(normalized)) {
-      return { type: 'MIC_CONTROL', target: 'search' };
+    // Tema komutları: genel arama eşleşmesinden önce çalışmalı.
+    if (/\b(?:gündüz|aydınlık|açık)\b/.test(normalized) &&
+        /\b(?:tema|mod|görünüm|görünümüne|ekran)\b/.test(normalized)) {
+      return { type: 'THEME', mode: 'light' };
     }
+    if (/\b(?:gece|karanlık|koyu)\b/.test(normalized) &&
+        /\b(?:tema|mod|görünüm|görünümüne|ekran)\b/.test(normalized)) {
+      return { type: 'THEME', mode: 'dark' };
+    }
+
     if (/komut\s*dinle|mikrofonu\s*aç|mikrofonu\s*aktif\s*et|beni\s*dinle|komut\s*mikrofonu/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'command' };
     }
@@ -722,16 +765,17 @@ export default function App() {
       return { type: 'DELETE_PIN', target: /konum|konumum|burada|yakınımda/.test(normalized) ? 'nearest' : 'selected' };
     }
 
+    if (/(?:tümü|hepsi|tümünü|hepsini|tüm pinler|filtreleri kaldır|filtreyi kaldır)/.test(normalized)) {
+      return { type: 'FILTER', category: 'Tümü' };
+    }
+
     const categoryWords=[
       {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
       {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
       {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
       {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
     ];
-    if (/(?:tümü|hepsi|tümünü|hepsini|tüm pinler|filtreleri kaldır|filtreyi kaldır)/.test(normalized)) {
-      return { type: 'FILTER', category: 'Tümü' };
-    }    
-const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
     
     if(matchedCategory && /(?:değiştir|yap|dönüştür)/.test(normalized)) {
       return { type: 'CHANGE_CATEGORY', category: matchedCategory };
@@ -786,7 +830,9 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
     switch(command.type){
       case 'MIC_CONTROL':
         if (command.target === 'off') {
-          recognitionRef.current?.stop();
+          manualStopRef.current = true;
+          if (voicePinTimeoutRef.current !== undefined) window.clearTimeout(voicePinTimeoutRef.current);
+          voicePinTimeoutRef.current = undefined;
           voicePinRecognitionRef.current?.stop();
           setNotice({ kind: 'info', text: 'Mikrofon kapatıldı.' });
         } else {
@@ -848,7 +894,13 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
           const data = await res.json();
           if (data && data.length > 0) {
             const place = data[0];
-            setPlaceQuery(command.query);
+            setQuery('');
+            setDebouncedQuery('');
+            setSearchResultIds(null);
+            setPlaceQuery('');
+            setPlaceResults([]);
+            setPlaceSearched(false);
+            setPlaceDropdownOpen(false);
             setSearchPlace(place);
             if (mapRef.current) {
               mapRef.current.flyTo([parseFloat(place.lat), parseFloat(place.lon)], 16);
@@ -946,28 +998,68 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
     },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
   }
 
-  async function startVoicePinCommand(){
+  async function parseVoicePinCommand(transcript:string):Promise<VoiceCommand|null>{
+  const regexCommand=parseVoicePinCommandRegex(transcript);
+  if(regexCommand) return regexCommand;
+  const engine=webLlmEngineRef.current;
+  if(!webLlmReadyRef.current||!engine) return null;
+  try {
+    const response=await engine.chat.completions.create({
+      messages:[
+        {role:'system',content:'Sen bir harita asistanÄ±sÄ±n. KullanÄ±cÄ±nÄ±n cÃ¼mlesini ÅŸu komutlardan birine eÅŸle: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ. Sadece komut adÄ±nÄ± dÃ¶ndÃ¼r.'},
+        {role:'user',content:`CÃ¼mle: ${transcript}`}
+      ],
+      temperature:0,
+      max_tokens:16
+    });
+    const answer=String(response?.choices?.[0]?.message?.content??'').trim().toLocaleUpperCase('en-US').replace(/[^A-Z_]/g,'');
+    const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
+    switch(answer){
+      case 'TRAFFIC_ACIK': return {type:'TRAFFIC',enabled:true};
+      case 'TRAFFIC_KAPALI': return {type:'TRAFFIC',enabled:false};
+      case 'ROTA': {
+        const destination=normalized.replace(/\b(?:bana|lÃ¼tfen|rota|oluÅŸtur|Ã§iz|Ã§izer misin|gitmek istiyorum|yol tarifi|gÃ¶tÃ¼r|gider misin)\b/g,' ').replace(/\s+/g,' ').trim();
+        return destination?{type:'ROUTE',destination}:null;
+      }
+      case 'ARAMA': {
+        const query=normalized.replace(/\b(?:bana|lÃ¼tfen|ara|arama yap|bul|bulur musun|gÃ¶ster|konumu bul|yerini bul|ara lÃ¼tfen)\b/g,' ').replace(/\s+/g,' ').trim();
+        return query?{type:'SEARCH_PLACE',query}:null;
+      }
+      case 'PIN_SIL': return {type:'DELETE_PIN',target:/(?:konumum|konumuma|konumumdaki|buradaki|yakÄ±nÄ±mdaki|yakÄ±nÄ±mda)/.test(normalized)?'nearest':'selected'};
+      case 'ZOOM_IN': return {type:'ZOOM',action:'in'};
+      case 'ZOOM_OUT': return {type:'ZOOM',action:'out'};
+      case 'TEMA_GECE': return {type:'THEME',mode:'dark'};
+      case 'TEMA_GUNDUZ': return {type:'THEME',mode:'light'};
+      default: return null;
+    }
+  } catch(error) {
+    console.warn('WebLLM komutu Ã§Ã¶zemedi; regex sonucu null olarak bÄ±rakÄ±lÄ±yor.',error);
+    return null;
+  }
+}
+function startVoicePinCommand(){
     setVoicePinHintVisible(false);
-    if(voicePinListening){voicePinRecognitionRef.current?.stop();return;}
+    if(voicePinListening){manualStopRef.current = true; voicePinRecognitionRef.current?.stop(); return;}
     if(!canAdd){setNotice({kind:'info',text:'Sesli pin eklemek için hesabını etkinleştirmen veya giriş yapman gerekiyor.'});setAuthOpen(true);return;}
     const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};
     const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;
     if(!Recognition){setSpeechSupported(false);setNotice({kind:'error',text:'Bu tarayıcı sesli komutları desteklemiyor. Haritadan konum seçerek devam edebilirsin.'});return;}
+    
+    manualStopRef.current = false;
     voicePinRecognitionRef.current?.stop();
     if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);
     const recognition=new Recognition();
-    let handled=false;
+    
     recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
     recognition.onstart=()=>{
       setVoicePinListening(true);
-      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},15000);
+      voicePinTimeoutRef.current=window.setTimeout(()=>{try{manualStopRef.current = true; recognition.stop();}catch{}},60000);
     };
     recognition.onresult=async (event:any)=>{
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
-      handled=true;
       if(!transcript){setNotice({kind:'error',text:'Sesli komut algılanamadı. Tekrar deneyin.'});return;}
 
-      const command=parseVoicePinCommand(transcript);
+      const command=await parseVoicePinCommand(transcript);
       if(!command){
         setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
         return;
@@ -977,20 +1069,26 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
       } catch {
         setNotice({kind:'error',text:'Sesli komut çalıştırılırken bir hata oluştu.'});
       }
-      try{recognition.stop();}catch{}
     };
     recognition.onerror=(event:any)=>{
-      handled=true;
+      manualStopRef.current = true;
       if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi. Lütfen tarayıcıdan mikrofon izni verin.'});
       else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});
-      else if(event.error==='no-speech')setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 15 saniye içinde konuşun.'});
+      else if(event.error==='no-speech')setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin.'});
       else if(event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma başarısız oldu. Tekrar deneyin.'});
     };
     recognition.onend=()=>{
-      setVoicePinListening(false);
-      if(voicePinTimeoutRef.current!==undefined){window.clearTimeout(voicePinTimeoutRef.current);voicePinTimeoutRef.current=undefined;}
-      if(voicePinRecognitionRef.current===recognition)voicePinRecognitionRef.current=null;
-      if(!handled)setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 15 saniye içinde konuşun.'});
+      if (manualStopRef.current) {
+        setVoicePinListening(false);
+        if(voicePinTimeoutRef.current!==undefined){window.clearTimeout(voicePinTimeoutRef.current);voicePinTimeoutRef.current=undefined;}
+        if(voicePinRecognitionRef.current===recognition)voicePinRecognitionRef.current=null;
+      } else {
+        setTimeout(() => {
+          if (!manualStopRef.current && voicePinRecognitionRef.current === recognition) {
+            try { recognition.start(); } catch(e) {}
+          }
+        }, 500);
+      }
     };
     voicePinRecognitionRef.current=recognition;
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}
@@ -1021,7 +1119,7 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
             {placeQuery&&<button className="search-clear" type="button" onClick={()=>{setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);}} aria-label="Mekan aramasını temizle"><X size={15}/></button>}
           </div>
           {placeDropdownOpen&&placeQuery.trim()&&<div className="place-search-results" role="listbox">
-            {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
+            {placeLoading?<div className="place-search-status">Yerler aranıyor...</div>:placeResults.length>0?placeResults.map(result=><button type="button" className="place-search-result" role="option" key={result.place_id} onClick={()=>{setSearchPlace(result);setPlaceQuery('');setPlaceResults([]);setPlaceSearched(false);setPlaceDropdownOpen(false);setSelected(null);setDraftPosition(null);if(mapRef.current)mapRef.current.flyTo([Number(result.lat),Number(result.lon)],16);}}><MapPin size={16}/><span>{result.display_name.split(',').slice(0,3).join(',')}</span></button>):placeSearched?<div className="place-search-status">Sonuç bulunamadı</div>:null}
           </div>}
         </div>
         
@@ -1032,10 +1130,9 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
           />
           {showHeatmap && <HeatmapLayer pins={visiblePins} />}
           {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e: any) => console.warn("TomTom Tile Hatası:", e) }}/>}
-          <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>setPlaceDropdownOpen(false)} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+          <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
           <ViewportWatcher onBoundsChange={setViewportBounds}/>
           <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
-          <FlyTo position={!selected&&searchPlace?[Number(searchPlace.lat),Number(searchPlace.lon)]:null} zoom={16}/>
           <FlyTo position={userPosition} zoom={16}/>
           <ClusteredPins 
             pins={canSeePins?visiblePins:[]} 
@@ -1071,7 +1168,7 @@ const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.v
             </button>
           )}
           {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
-          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç"</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
+          {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
         </div>
         
