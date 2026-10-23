@@ -808,7 +808,7 @@ export default function App() {
         {!is3D && (
           <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {showHeatmap && <HeatmapLayer pins={visiblePins} />}
+            {showHeatmap && <HeatmapLayer pins={filteredPins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
             <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
