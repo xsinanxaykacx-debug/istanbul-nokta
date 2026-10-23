@@ -160,7 +160,6 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const mapRef = useRef<L.Map | null>(null);
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -175,6 +174,7 @@ export default function App() {
   
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [bulkSelectedPins, setBulkSelectedPins] = useState<string[]>([]);
+  const mapRef = useRef<L.Map | null>(null);
 
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
   useEffect(() => { draftPositionRef.current = draftPosition; }, [draftPosition]);
@@ -378,7 +378,6 @@ export default function App() {
     const uploadedPaths:string[]=[];
 
     try{
-      // 1. ÖNCE PİN BİLGİLERİNİ GÜNCELLE VE GERÇEKTEN GÜNCELLENDİĞİNİ DOĞRULA (.select() EKLENDİ)
       const { data: updatedData, error: pinError } = await supabase.from('pins').update({
         description: editDescription.trim(),
         category: editCategory
@@ -387,7 +386,10 @@ export default function App() {
       if(pinError) throw pinError;
       if (!updatedData || updatedData.length === 0) throw new Error('Pin güncellenemedi (Yetki hatası olabilir). Lütfen SQL politikalarını kontrol edin.');
 
-      // 2. FOTOĞRAF İŞLEMLERİNİ YAP
+      const updatedPinData = { ...selected, description: editDescription.trim(), category: editCategory };
+      setPins(current=>current.map(pin=>pin.id===selected.id ? updatedPinData : pin));
+      setSelected(updatedPinData);
+
       const newPhotoRows:{pin_id:string;storage_path:string;public_url:string;sort_order:number}[]=[];
       for(let i=0;i<editFiles.length;i++){
         const blob=await compressPhoto(editFiles[i]);
@@ -428,7 +430,6 @@ export default function App() {
       setEditFiles([]);
       setNotice(cleanupMessage?{kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}:{kind:'success',text:'Değişiklikler kaydedildi.'});
       
-      // Veritabanından son halini çekip state'i güncelle
       const {data:finalPin} = await supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)').eq('id', selected.id).single();
       if (finalPin) {
         setSelected(finalPin as unknown as Pin);
@@ -469,82 +470,51 @@ export default function App() {
     }
   }
 
-  async function deletePinById(pinId: string, isNearestSearch = false): Promise<void> {
-    if (!supabase || busy) return;
-    const pin = pins.find(item => item.id === pinId);
-    if (!pin) {
-      setNotice({kind:'error',text:'Silinecek pin bulunamadı.'});
-      return;
-    }
-    const canDeletePin = !!session?.user?.id && (pin.owner_id === session.user.id || profile?.role === 'admin');
-    if (!canDeletePin) {
-      setNotice({kind:'error',text:'Bu pini silme yetkiniz yok.'});
-      return;
-    }
-    const confirmText = isNearestSearch
-      ? `Size 50 metre içindeki "${pinTitle(pin)}" pinini silmek istiyor musunuz?`
-      : 'Bu noktayı silmek istediğinize emin misiniz?';
-    if (!window.confirm(confirmText)) return;
-    setBusy(true);
-    setNotice(null);
+  async function deletePinById(pinId: string) {
+    if(!supabase || busy) return;
+    if(!window.confirm("Bu noktayı silmek istediğinize emin misiniz?")) return;
+    setBusy(true); setNotice(null);
     try {
-      const {data:paths,error}=await supabase.rpc('delete_pin',{p_pin_id:pinId});
-      if(error)throw error;
-      let storageCleanupError:string|null=null;
-      if(Array.isArray(paths)&&paths.length){
-        const {error:removeError}=await supabase.storage.from('pin-photos').remove(paths as string[]);
-        if(removeError)storageCleanupError=removeError.message;
+      const { data: paths, error } = await supabase.rpc('delete_pin', { p_pin_id: pinId });
+      if (error) throw error;
+      let storageCleanupError: string | null = null;
+      if (Array.isArray(paths) && paths.length) {
+        const { error: removeError } = await supabase.storage.from('pin-photos').remove(paths as string[]);
+        if (removeError) storageCleanupError = removeError.message;
       }
-      setPins(current=>current.filter(item=>item.id!==pinId));
-      setSelected(current=>current?.id===pinId?null:current);
-      setLightboxIndex(null);
-      if(storageCleanupError){
-        setNotice({kind:'error',text:`Pin silindi ancak fotoğraf dosyalarının temizlenmesi başarısız oldu: ${storageCleanupError}`});
-      }else{
-        setNotice({kind:'success',text:'Pin ve fotoğrafları silindi.'});
+      setPins(current => current.filter(pin => pin.id !== pinId));
+      if (selected?.id === pinId) {
+        setSelected(null);
+        setLightboxIndex(null);
       }
-    }catch(err){
-      setNotice({kind:'error',text:err instanceof Error?err.message:'Pin silinemedi.'});
-    }finally{
+      if (storageCleanupError) {
+        setNotice({ kind: 'error', text: `Nokta veritabanından silindi ancak fotoğraf dosyalarının temizlenmesi başarısız oldu: ${storageCleanupError}` });
+      } else {
+        setNotice({ kind: 'success', text: 'Nokta ve fotoğrafları silindi.' });
+      }
+    } catch (err) {
+      setNotice({ kind: 'error', text: err instanceof Error ? err.message : 'Nokta silinemedi.' });
+    } finally {
       setBusy(false);
     }
   }
 
-  async function deleteSelectedPin(){
-    if(!selected||!canDeleteSelected||busy)return;
-    await deletePinById(selected.id);
-  }
-
-  async function changeSelectedPinCategory(newCategory: string): Promise<void> {
-    if (!selected) {
-      setNotice({kind:'error',text:'Rengini değiştirmek için önce bir pin seçin.'});
-      return;
-    }
-    if (!supabase || busy) {
-      setNotice({kind:'error',text:'Pin güncellenemedi. Lütfen bağlantınızı kontrol edin.'});
-      return;
-    }
-    const pinId = selected.id;
+  async function changeSelectedPinCategory(newCategory: string) {
+    if (!supabase || !selected || !canDeleteSelected || busy) return;
     setBusy(true);
-    setNotice(null);
     try {
-      const {data,error}=await supabase.from('pins')
-        .update({category:newCategory})
-        .eq('id',pinId)
-        .select('id,category')
-        .maybeSingle();
-      if(error)throw error;
-      if(!data)throw new Error('Bu pinin rengini değiştirme yetkiniz yok.');
-      setSelected(current=>current?.id===pinId?{...current,category:newCategory}:current);
-      setPins(current=>current.map(pin=>pin.id===pinId?{...pin,category:newCategory}:pin));
-      setNotice({kind:'success',text:`Seçili pinin rengi ${newCategory} olarak değiştirildi.`});
-    }catch(err){
-      setNotice({kind:'error',text:err instanceof Error?err.message:'Pin rengi değiştirilemedi.'});
-    }finally{
+      const { error } = await supabase.from('pins').update({ category: newCategory }).eq('id', selected.id).select();
+      if (error) throw error;
+      setSelected(prev => prev ? { ...prev, category: newCategory } : null);
+      setPins(current => current.map(p => p.id === selected.id ? { ...p, category: newCategory } : p));
+      setNotice({ kind: 'success', text: `Kategori ${newCategory} olarak değiştirildi.` });
+    } catch (err) {
+      setNotice({ kind: 'error', text: 'Kategori değiştirilemedi.' });
+    } finally {
       setBusy(false);
     }
   }
-
+  
   async function deleteBulkPins() {
     if(!supabase || bulkSelectedPins.length === 0 || busy) return;
     if(!window.confirm(`${bulkSelectedPins.length} adet noktayı silmek istediğinize emin misiniz?`)) return;
@@ -619,7 +589,7 @@ export default function App() {
       if (error) throw error;
       setAdminProfiles(current => current.map(p => p.id === userId ? { ...p, status: newStatus } : p));
       setNotice({ kind: 'success', text: 'Kullanıcı durumu güncellendi.' });
-      await loadPins(); // Banlananın pinleri gizlensin diye haritayı güncelle
+      await loadPins();
     } catch (err) {
       setNotice({ kind: 'error', text: 'İşlem başarısız.' });
     }
@@ -677,16 +647,38 @@ export default function App() {
       .trim();
     if(!normalized)return null;
 
-    if (/(?:sesle arama|aramayı başlat|arama mikrofonu|adres ara)/.test(normalized)) {
+    // ARAYÜZ VE MİKROFON KONTROLLERİ
+    if (/(?:sesli|sesle|ses ile)\s*arama|aramayı\s*başlat|arama\s*mikrofonu|adres\s*ara|mekan\s*ara|yer\s*ara/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'search' };
     }
-    if (/(?:komut dinle|mikrofonu aç|mikrofonu aktif et|beni dinle)/.test(normalized)) {
+    if (/komut\s*dinle|mikrofonu\s*aç|mikrofonu\s*aktif\s*et|beni\s*dinle|komut\s*mikrofonu/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'command' };
     }
-    if (/(?:mikrofonu kapat|dinlemeyi durdur|sus)/.test(normalized)) {
+    if (/mikrofonu\s*kapat|dinlemeyi\s*durdur|sus|kapat\s*mikrofonu|mikrofonu\s*kapa/.test(normalized)) {
       return { type: 'MIC_CONTROL', target: 'off' };
     }
+    if (/(?:aramayı temizle|arama temizle|aramayı sil|aramayı kaldır|filtreleri temizle)/.test(normalized)) {
+      return { type: 'CLEAR_SEARCH' };
+    }
 
+    // HARİTA KONTROLLERİ
+    if (/(?:yakınlaş|yaklaştır|zoom yap|büyüt|yaklaş)/.test(normalized)) {
+      return { type: 'ZOOM', action: 'in' };
+    }
+    if (/(?:uzaklaş|uzaklaştır|küçült)/.test(normalized)) {
+      return { type: 'ZOOM', action: 'out' };
+    }
+    if (/(?:rota temizle|rotayı temizle|rotayı iptal et|rotayı kapat)/.test(normalized)) {
+      return { type: 'CLEAR_ROUTE' };
+    }
+    if (/(?:gece modu|karanlık mod|siyah tema)/.test(normalized)) {
+      return { type: 'THEME', mode: 'dark' };
+    }
+    if (/(?:gündüz modu|aydınlık mod|beyaz tema)/.test(normalized)) {
+      return { type: 'THEME', mode: 'light' };
+    }
+
+    // HARİTA KATMANLARI
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: true };
     }
@@ -700,59 +692,35 @@ export default function App() {
       return { type: 'TRAFFIC', enabled: false };
     }
 
-    if (/(?:yakınlaş|yaklaştır|zoom yap|büyüt|yaklaş)/.test(normalized)) {
-      return { type: 'ZOOM', action: 'in' };
-    }
-    if (/(?:uzaklaş|uzaklaştır|küçült)/.test(normalized)) {
-      return { type: 'ZOOM', action: 'out' };
-    }
-    if (/(?:rota temizle|rotayı temizle|rotayı iptal et|rotayı kapat)/.test(normalized)) {
-      return { type: 'CLEAR_ROUTE' };
-    }
-    if (/(?:aramayı temizle|arama temizle|aramayı sil|aramayı kaldır|filtreleri temizle)/.test(normalized)) {
-      return { type: 'CLEAR_SEARCH' };
-    }
-    if (/(?:gece modu|karanlık mod|siyah tema)/.test(normalized)) {
-      return { type: 'THEME', mode: 'dark' };
-    }
-    if (/(?:gündüz modu|aydınlık mod|beyaz tema)/.test(normalized)) {
-      return { type: 'THEME', mode: 'light' };
+    // SİLME
+    if (/(?:sil|kaldır|yok et|temizle)/.test(normalized)) {
+      return { type: 'DELETE_PIN', target: /konum|konumum|burada|yakınımda/.test(normalized) ? 'nearest' : 'selected' };
     }
 
+    // RENK DEĞİŞTİRME
     const categoryWords=[
-      {pattern:/(?:^|\s)mavi(?:yi|ye|nin|ler|leri)?(?=$|\s)/,value:'MAVİ'},
-      {pattern:/(?:^|\s)yeşil(?:i|e|in|ler|leri)?(?=$|\s)/,value:'YEŞİL'},
-      {pattern:/(?:^|\s)kırmızı(?:yı|ya|nın|lar|ları)?(?=$|\s)/,value:'KIRMIZI'},
-      {pattern:/(?:^|\s)gri(?:yi|ye|nin|ler|leri)?(?=$|\s)/,value:'GRİ'}
+      {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
+      {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
+      {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
+      {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
     ];
-    const categoryMatches = categoryWords.filter(item=>item.pattern.test(normalized));
-    const matchedCategory=categoryMatches[categoryMatches.length-1]?.value;
-    if (matchedCategory && /(?:değiştir|yap|dönüştür)/.test(normalized)) {
+    const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
+    
+    if(matchedCategory && /(?:değiştir|yap|dönüştür)/.test(normalized)) {
       return { type: 'CHANGE_CATEGORY', category: matchedCategory };
     }
 
-    if (/(?:sil(?:me|in|mek)?|kaldır(?:ma|ın|mak)?|yok\s+et(?:me|mek)?|temizle(?:me|yin|mek)?)/u.test(normalized)) {
-      const target = /(?:konum|konumum|burada|yakınımda)/.test(normalized) ? 'nearest' : 'selected';
-      return { type: 'DELETE_PIN', target };
+    // FİLTRELEME
+    if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
+      return { type: 'FILTER', category: matchedCategory };
     }
 
-    const filterCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
-    if(filterCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
-      return { type: 'FILTER', category: filterCategory };
-    }
-
-    const searchMatch = normalized.match(/^(.*?)\s*(?:ara|bul|göster|konumuna git)$/);
-    if (searchMatch && searchMatch[1].trim() && !/\brota\b/.test(normalized)) {
-      const query = searchMatch[1].trim()
-        .replace(/(?:n[ıiuü]|[ıiuü]|ne|na|ye|ya|e|a)$/u, '')
-        .trim();
-      if (query) return { type: 'SEARCH_PLACE', query };
-    }
-
+    // ROTA VE ARAMA
     const routeIntent=/(?:\brota\b|\bgit\b|\bgitmek\b|\byol\s+tarifi\b|\bnasıl\s+giderim\b|\bulaşım\b)/.test(normalized);
+    const searchIntent=/(?:\bara\b|\bbul\b|\bgöster\b|\bkonumuna\s+git\b)/.test(normalized);
     const hasSave=/(?:^|\s)kaydet(?=$|\s)/.test(normalized);
     const lastWord=normalized.split(' ').pop()??'';
-    const destinationOnly=!routeIntent&&!hasSave&&/(?:ne|na|ye|ya|e|a)$/.test(lastWord);
+    const destinationOnly=!routeIntent&&!hasSave&&!searchIntent&&/(?:ne|na|ye|ya|e|a)$/.test(lastWord);
 
     if(routeIntent||destinationOnly){
       const destination=normalized
@@ -766,6 +734,14 @@ export default function App() {
       }
     }
 
+    if (searchIntent) {
+      const queryStr = normalized.replace(/\b(?:ara|bul|göster|konumuna\s+git)\b/g, '').replace(/\s+/g, ' ').trim();
+      if (queryStr) {
+        return { type: 'SEARCH_PLACE', query: queryStr };
+      }
+    }
+
+    // PİN EKLEME
     const hasPinKeyword=/\b(?:pin|işaret|işaretleri|işareti|nokta)\b/.test(normalized);
     const useCurrentLocation=/\b(?:konum|konuma|konumuma|konumumda|gps)\b/.test(normalized);
 
@@ -782,19 +758,84 @@ export default function App() {
   async function executeVoiceCommand(command:VoiceCommand):Promise<void>{
     switch(command.type){
       case 'MIC_CONTROL':
-        if(command.target==='off'){
+        if (command.target === 'off') {
           recognitionRef.current?.stop();
           voicePinRecognitionRef.current?.stop();
-          setNotice({kind:'info',text:'Mikrofon kapatıldı.'});
-          return;
+          setNotice({ kind: 'info', text: 'Mikrofon kapatıldı.' });
+        } else if (command.target === 'search') {
+          setNotice({ kind: 'success', text: 'Arama için dinliyorum...' });
+          setTimeout(() => { startListening('placeQuery', setPlaceQuery); }, 500);
+        } else if (command.target === 'command') {
+          setNotice({ kind: 'success', text: 'Komutlarınızı dinliyorum...' });
+          setTimeout(() => { startVoicePinCommand(); }, 500);
         }
-        if(command.target==='search'){
-          setNotice({kind:'success',text:'Arama için dinliyorum...'});
-          setTimeout(()=>{startListening('placeQuery',setPlaceQuery);},500);
-          return;
+        return;
+      case 'CLEAR_SEARCH':
+        setQuery(''); setDebouncedQuery(''); setSearchResultIds(null); setPlaceQuery('');
+        setNotice({ kind: 'success', text: 'Arama temizlendi.' });
+        return;
+      case 'DELETE_PIN':
+        if (command.target === 'selected') {
+          if (selected) void deletePinById(selected.id);
+          else setNotice({ kind: 'error', text: 'Silinecek bir pin seçili değil.' });
+        } else {
+          if (!navigator.geolocation) { setNotice({kind:'error', text:'GPS desteklenmiyor.'}); return; }
+          setNotice({ kind: 'info', text: 'Yakınınızdaki pin aranıyor...' });
+          navigator.geolocation.getCurrentPosition(pos => {
+            const userCoord: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+            let nearestPin: Pin | null = null;
+            let minDistance = Infinity;
+            pins.forEach(pin => {
+              const d = haversineMeters(userCoord, [pin.lat, pin.lng]);
+              if (d < minDistance && d <= 50) { // 50 metre yarıçap
+                minDistance = d;
+                nearestPin = pin;
+              }
+            });
+            if (nearestPin) {
+              void deletePinById((nearestPin as Pin).id);
+            } else {
+              setNotice({ kind: 'error', text: 'Yakınınızda (50 metre çevrede) silinecek bir pin bulunamadı.' });
+            }
+          }, () => setNotice({ kind: 'error', text: 'Konumunuz alınamadı.' }));
         }
-        setNotice({kind:'success',text:'Komutlarınızı dinliyorum...'});
-        setTimeout(()=>{startVoicePinCommand();},500);
+        return;
+      case 'CHANGE_CATEGORY':
+        void changeSelectedPinCategory(command.category);
+        return;
+      case 'ZOOM':
+        if (mapRef.current) {
+          command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut();
+          setNotice({ kind: 'success', text: command.action === 'in' ? 'Yakınlaştırıldı.' : 'Uzaklaştırıldı.' });
+        }
+        return;
+      case 'CLEAR_ROUTE':
+        setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null);
+        setNotice({ kind: 'success', text: 'Rota temizlendi.' });
+        return;
+      case 'THEME':
+        setIsDarkMode(command.mode === 'dark');
+        setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' });
+        return;
+      case 'SEARCH_PLACE':
+        setNotice({ kind: 'info', text: `"${command.query}" aranıyor...` });
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(command.query)}&countrycodes=tr&limit=1`);
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const place = data[0];
+            setPlaceQuery(command.query);
+            setSearchPlace(place);
+            if (mapRef.current) {
+              mapRef.current.flyTo([parseFloat(place.lat), parseFloat(place.lon)], 16);
+            }
+            setNotice({ kind: 'success', text: `"${command.query}" bulundu.` });
+          } else {
+            setNotice({ kind: 'error', text: `"${command.query}" bulunamadı.` });
+          }
+        } catch {
+          setNotice({ kind: 'error', text: 'Arama sırasında hata oluştu.' });
+        }
         return;
       case 'LOCATE':
         addVoicePinAtCurrentLocation(command.category,false);
@@ -830,98 +871,6 @@ export default function App() {
         setSelectedCategoryFilter(command.category);
         setShowFilterOptions(false);
         setNotice({kind:'success',text:`${command.category} işaretleri gösteriliyor.`});
-        return;
-      case 'ZOOM':
-        if (mapRef.current) {
-          command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut();
-        }
-        setNotice({kind:'success',text:command.action === 'in' ? 'Harita yakınlaştırıldı.' : 'Harita uzaklaştırıldı.'});
-        return;
-      case 'CLEAR_ROUTE':
-        setRouteMode(false);
-        setRouteStart(null);
-        setRouteEnd(null);
-        setRouteLine(null);
-        setRouteInfo(null);
-        setRouteError(null);
-        setRouteLoading(false);
-        setNotice({kind:'success',text:'Rota temizlendi.'});
-        return;
-      case 'THEME':
-        setIsDarkMode(command.mode === 'dark');
-        setNotice({kind:'success',text:command.mode === 'dark' ? 'Gece modu açıldı.' : 'Gündüz modu açıldı.'});
-        return;
-      case 'SEARCH_PLACE':
-        setNotice({kind:'info',text:`"${command.query}" aranıyor...`});
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(command.query)}&countrycodes=tr&limit=1`);
-          if (!response.ok) throw new Error('Nominatim search failed');
-          const data = await response.json() as PlaceResult[];
-          if (data.length > 0) {
-            setPlaceQuery(command.query);
-            setSearchPlace(data[0]);
-            setPlaceResults(data);
-            setPlaceSearched(true);
-            setPlaceDropdownOpen(false);
-            setSelected(null);
-            setDraftPosition(null);
-            if (mapRef.current) {
-              mapRef.current.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 16);
-            }
-            setNotice({kind:'success',text:`"${command.query}" haritada bulundu.`});
-          } else {
-            setNotice({kind:'error',text:`"${command.query}" bulunamadı.`});
-          }
-        } catch {
-          setNotice({kind:'error',text:'Yer aranırken bir hata oluştu. Lütfen tekrar deneyin.'});
-        }
-        return;
-      case 'CLEAR_SEARCH':
-        setQuery('');
-        setDebouncedQuery('');
-        setSearchResultIds(null);
-        setPlaceQuery('');
-        setSearchPlace(null);
-        setPlaceResults([]);
-        setPlaceSearched(false);
-        setPlaceDropdownOpen(false);
-        setNotice({kind:'success',text:'Arama ve filtre sonuçları temizlendi.'});
-        return;
-      case 'CHANGE_CATEGORY':
-        await changeSelectedPinCategory(command.category);
-        return;
-      case 'DELETE_PIN':
-        if (command.target === 'selected') {
-          if (!selected) {
-            setNotice({kind:'error',text:'Silmek için önce bir pin seçin.'});
-            return;
-          }
-          await deletePinById(selected.id);
-          return;
-        }
-        if (!navigator.geolocation) {
-          setNotice({kind:'error',text:'Bu tarayıcı konum hizmetini desteklemiyor.'});
-          return;
-        }
-        setNotice({kind:'info',text:'Yakınınızdaki silinebilir pinler aranıyor…'});
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const currentLocation: [number,number] = [position.coords.latitude,position.coords.longitude];
-            const canDeletePin = (pin: Pin) => !!session?.user?.id && (pin.owner_id === session.user.id || profile?.role === 'admin');
-            const nearest = pins
-              .filter(canDeletePin)
-              .map(pin => ({pin,distance:haversineMeters(currentLocation,[pin.lat,pin.lng])}))
-              .filter(item => item.distance <= 50)
-              .sort((a,b) => a.distance-b.distance)[0];
-            if (!nearest) {
-              setNotice({kind:'error',text:'50 metre içinde silebileceğiniz bir pin bulunamadı.'});
-              return;
-            }
-            void deletePinById(nearest.pin.id,true);
-          },
-          () => setNotice({kind:'error',text:'Konumunuz alınamadı. Yakındaki pin silinemedi.'}),
-          {enableHighAccuracy:true,timeout:10000,maximumAge:0}
-        );
         return;
       case 'ROUTE':
         setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
@@ -1169,7 +1118,7 @@ export default function App() {
               {canDeleteSelected && (
                 <div className="pin-owner-actions">
                   <button type="button" className="secondary-button" disabled={busy} onClick={beginPinEdit}>Düzenle</button>
-                  <button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deleteSelectedPin()}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button>
+                  <button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deletePinById(selected.id)}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button>
                 </div>
               )}
 
