@@ -205,7 +205,7 @@ export default function App() {
 
   useEffect(() => {
     async function initLLM() {
-      if (!navigator.gpu) { console.warn("Tarayıcınız WebGPU desteklemiyor."); return; }
+            if (!(navigator as any).gpu) { console.warn("Tarayıcınız WebGPU desteklemiyor."); return; }
       setLlmLoading(true);
       try {
         const engine = await CreateMLCEngine("Qwen2.5-0.5B-Instruct-q4f16_1-MLC", { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) });
