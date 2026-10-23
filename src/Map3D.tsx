@@ -7,6 +7,7 @@ interface Map3DProps {
   onPinSelect: (pin: any) => void;
   userPosition: [number, number] | null;
   flyToCoords: [number, number] | null;
+  draftPosition: [number, number] | null; // YENİ: Taslak pin için
   routeLine: [number, number][] | null;
   routeStart: [number, number] | null;
   routeEnd: [number, number] | null;
@@ -16,13 +17,22 @@ interface Map3DProps {
 }
 
 export default function Map3D({ 
-  pins, onMapClick, onPinSelect, userPosition, flyToCoords, 
+  pins, onMapClick, onPinSelect, userPosition, flyToCoords, draftPosition,
   routeLine, routeStart, routeEnd, showTraffic, showHeatmap, tomtomApiKey 
 }: Map3DProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
   const routeMarkers = useRef<any[]>([]);
+  const draftMarker = useRef<any>(null);
+
+  // KRİTİK DÜZELTME: Tıklama ve pin seçme fonksiyonlarının her zaman güncel hallerini kullanmak için ref
+  const onMapClickRef = useRef(onMapClick);
+  const onPinSelectRef = useRef(onPinSelect);
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+    onPinSelectRef.current = onPinSelect;
+  }, [onMapClick, onPinSelect]);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -48,7 +58,8 @@ export default function Map3D({
       });
 
       map.current.on('click', (e: any) => {
-        onMapClick(e.lngLat.lat, e.lngLat.lng);
+        // Ref üzerinden güncel fonksiyonu çağırıyoruz
+        onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
       });
 
       map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
@@ -73,7 +84,6 @@ export default function Map3D({
     markers.current = [];
 
     pins.forEach(pin => {
-      // SIKI KONTROL: Lat ve Lng geçerli bir sayı mı?
       if (typeof pin.lat !== 'number' || typeof pin.lng !== 'number' || isNaN(pin.lat) || isNaN(pin.lng)) return;
 
       const color = pin.category === 'YEŞİL' ? '#1e8e55' : 
@@ -91,7 +101,7 @@ export default function Map3D({
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        onPinSelect(pin);
+        onPinSelectRef.current(pin); // Ref üzerinden çağır
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -118,6 +128,42 @@ export default function Map3D({
     }
   }, [pins, userPosition]);
 
+  // TASLAK PİN ÇİZME (YENİ)
+  useEffect(() => {
+    const maplibregl = (window as any).maplibregl;
+    if (!map.current || !maplibregl) return;
+
+    if (draftMarker.current) {
+      draftMarker.current.remove();
+      draftMarker.current = null;
+    }
+
+    if (draftPosition && typeof draftPosition[0] === 'number' && typeof draftPosition[1] === 'number' && !isNaN(draftPosition[0]) && !isNaN(draftPosition[1])) {
+      const el = document.createElement('div');
+      el.style.width = '28px';
+      el.style.height = '28px';
+      el.style.borderRadius = '50% 50% 50% 4px';
+      el.style.transform = 'rotate(-45deg)';
+      el.style.backgroundColor = '#f97316'; // Turuncu taslak pin
+      el.style.border = '3px solid white';
+      el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.4)';
+      
+      const inner = document.createElement('div');
+      inner.style.width = '8px';
+      inner.style.height = '8px';
+      inner.style.borderRadius = '50%';
+      inner.style.backgroundColor = 'white';
+      inner.style.position = 'absolute';
+      inner.style.top = '7px';
+      inner.style.left = '7px';
+      el.appendChild(inner);
+
+      draftMarker.current = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([draftPosition[1], draftPosition[0]])
+        .addTo(map.current);
+    }
+  }, [draftPosition]);
+
   // Rota Çizgisi
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
@@ -128,7 +174,6 @@ export default function Map3D({
     routeMarkers.current.forEach(m => m.remove());
     routeMarkers.current = [];
 
-    // SIKI KONTROL: Rota çizgisi geçerli mi?
     if (routeLine && routeLine.length > 0) {
       const validCoords = routeLine
         .filter(c => typeof c[0] === 'number' && typeof c[1] === 'number' && !isNaN(c[0]) && !isNaN(c[1]))
@@ -155,7 +200,6 @@ export default function Map3D({
       }
     }
 
-    // SIKI KONTROL: A Noktası geçerli mi?
     if (routeStart && typeof routeStart[0] === 'number' && typeof routeStart[1] === 'number' && !isNaN(routeStart[0]) && !isNaN(routeStart[1])) {
       const startEl = document.createElement('div');
       startEl.innerText = 'A';
@@ -163,7 +207,6 @@ export default function Map3D({
       routeMarkers.current.push(new maplibregl.Marker({ element: startEl }).setLngLat([routeStart[1], routeStart[0]]).addTo(map.current));
     }
     
-    // SIKI KONTROL: B Noktası geçerli mi?
     if (routeEnd && typeof routeEnd[0] === 'number' && typeof routeEnd[1] === 'number' && !isNaN(routeEnd[0]) && !isNaN(routeEnd[1])) {
       const endEl = document.createElement('div');
       endEl.innerText = 'B';
@@ -235,7 +278,7 @@ export default function Map3D({
     }
   }, [showHeatmap, pins]);
 
-  // FlyTo (Kamera Uçuşu)
+  // FlyTo
   useEffect(() => {
     if (map.current && flyToCoords && typeof flyToCoords[0] === 'number' && typeof flyToCoords[1] === 'number' && !isNaN(flyToCoords[0]) && !isNaN(flyToCoords[1])) {
       map.current.flyTo({ center: flyToCoords, zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
