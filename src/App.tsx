@@ -665,7 +665,8 @@ export default function App() {
     | { type: 'THEME'; mode: 'dark' | 'light' }
     | { type: 'DELETE_PIN'; target: 'selected' | 'nearest' }
     | { type: 'CLEAR_SEARCH' }
-    | { type: 'CHANGE_CATEGORY'; category: string };
+    | { type: 'CHANGE_CATEGORY'; category: string }
+    | { type: 'MIC_CONTROL'; target: 'search' | 'command' | 'off' };
 
   function parseVoicePinCommand(transcript:string):VoiceCommand|null{
     const normalized=transcript
@@ -675,6 +676,16 @@ export default function App() {
       .replace(/\s+/g,' ')
       .trim();
     if(!normalized)return null;
+
+    if (/(?:sesle arama|aramayı başlat|arama mikrofonu|adres ara)/.test(normalized)) {
+      return { type: 'MIC_CONTROL', target: 'search' };
+    }
+    if (/(?:komut dinle|mikrofonu aç|mikrofonu aktif et|beni dinle)/.test(normalized)) {
+      return { type: 'MIC_CONTROL', target: 'command' };
+    }
+    if (/(?:mikrofonu kapat|dinlemeyi durdur|sus)/.test(normalized)) {
+      return { type: 'MIC_CONTROL', target: 'off' };
+    }
 
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) {
       return { type: 'HEATMAP', enabled: true };
@@ -770,6 +781,21 @@ export default function App() {
 
   async function executeVoiceCommand(command:VoiceCommand):Promise<void>{
     switch(command.type){
+      case 'MIC_CONTROL':
+        if(command.target==='off'){
+          recognitionRef.current?.stop();
+          voicePinRecognitionRef.current?.stop();
+          setNotice({kind:'info',text:'Mikrofon kapatıldı.'});
+          return;
+        }
+        if(command.target==='search'){
+          setNotice({kind:'success',text:'Arama için dinliyorum...'});
+          setTimeout(()=>{startListening('placeQuery',setPlaceQuery);},500);
+          return;
+        }
+        setNotice({kind:'success',text:'Komutlarınızı dinliyorum...'});
+        setTimeout(()=>{startVoicePinCommand();},500);
+        return;
       case 'LOCATE':
         addVoicePinAtCurrentLocation(command.category,false);
         return;
