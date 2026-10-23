@@ -1012,6 +1012,10 @@ select option { background: var(--surface); color: var(--text-dark); }
 }
 .leaflet-control-attribution { background: rgba(21, 31, 50, .86); color: var(--text-muted); }
 .leaflet-control-attribution a { color: #6ee7b7; }
+.leaflet-control-layers { background: var(--surface); color: var(--text-dark); border: 1px solid var(--border-color); border-radius: 10px; }
+.leaflet-control-layers label { color: var(--text-dark); }
+.leaflet-control-layers-separator { border-top: 1px solid var(--border-color); }
+.leaflet-control-layers-toggle { filter: none !important; }
 .status-chip.active { background: #123a33; color: #6ee7b7; }
 .status-chip { background: #352d1c; color: #fcd58b; }
 .notice.success { background: #12372b; color: #86efac; }
