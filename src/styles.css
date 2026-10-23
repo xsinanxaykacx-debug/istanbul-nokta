@@ -2372,16 +2372,6 @@ select option { background: var(--surface); color: var(--text-dark); }
   }
 }
 /* Arama çubuğunu ve sarmalayıcısını kesin olarak sınırla */
-.map-toolbar {
-  display: flex !important;
-  justify-content: flex-start !important;
-}
-
-.map-toolbar .place-search-wrap {
-  width: 100% !important;
-  max-width: 450px !important;
-  flex: 0 1 450px !important; /* Flexbox kullanılıyorsa uzamasını engeller */
-}
 
 .map-toolbar .place-searchbox {
   width: 100% !important;
@@ -2393,5 +2383,22 @@ select option { background: var(--surface); color: var(--text-dark); }
   .map-toolbar .place-search-wrap {
     max-width: calc(100% - 20px) !important;
     flex: 1 1 auto !important;
+  }
+}
+/* Sadece arama kutusunun genişliğini sınırla, haritaya ve diğer şeylere karışma */
+.place-search-wrap {
+  max-width: 450px !important;
+}
+
+/* Açılan arama sonuçlarının ekranı kaplamasını engelle */
+.place-search-results {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+/* Mobilde tam genişlik */
+@media (max-width: 768px) {
+  .place-search-wrap {
+    max-width: calc(100% - 20px) !important;
   }
 }
