@@ -156,6 +156,11 @@ export default function App() {
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
 
+  // ADMIN STATE'LERİ
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminProfiles, setAdminProfiles] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
   useEffect(() => { draftPositionRef.current = draftPosition; }, [draftPosition]);
   useEffect(() => { categoryRef.current = category; }, [category]);
@@ -245,7 +250,7 @@ export default function App() {
     const [startLat,startLng]=routeStart; const [endLat,endLng]=routeEnd;
     const calculate=async()=>{
       try{
-                const response=await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
+        const response=await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
         const result=await response.json().catch(()=>null) as {routes?:Array<{geometry?:{coordinates?:number[][]};distance?:number;duration?:number}>;error?:{message?:string}|string;message?:string}|null;
         if(!response.ok){const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`OSRM HTTP ${response.status}`;throw new Error(message);}
         if(controller.signal.aborted)return; const route=result?.routes?.[0]; const coordinates=route?.geometry?.coordinates;
@@ -253,7 +258,7 @@ export default function App() {
         const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,line).distanceMeters<=100).map(pin=>pin.id);
         setRouteLine(line); setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
-      }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, ORS API anahtarını kontrol edin.'); }
+      }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, OSRM API anahtarını kontrol edin.'); }
       finally{if(!controller.signal.aborted)setRouteLoading(false);}
     };
     void calculate(); return()=>controller.abort();
@@ -411,6 +416,35 @@ export default function App() {
   async function openInviteCodes(){setProfileMenuOpen(false);setInviteOpen(true);await loadInviteCodes();}
   async function createInviteCode(){if(!supabase||!session?.user||!active)return;setBusy(true);setNotice(null);try{const {data,error}=await supabase.rpc('create_invite_code');if(error)throw error;const result=Array.isArray(data)?data[0]:data;const code=typeof result==='string'?result:result?.code;if(!code)throw new Error('Kod oluşturuldu ancak kod bilgisi alınamadı.');const row:InviteCode={id:typeof result==='object'&&result?.id?result.id:code,code,created_at:new Date().toISOString(),redeemed_at:null,is_enabled:true};setInviteCodes(current=>[row,...current]);setNotice({kind:'success',text:'Kod başarıyla oluşturuldu!'});}catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Davet kodu oluşturulamadı.'});}finally{setBusy(false);}}
   async function copyInviteCode(item:InviteCode){if(!item.code){setNotice({kind:'info',text:'Bu kod eski şemada yalnızca hash olarak saklandığı için tekrar görüntülenemiyor. Yeni kod üretebilirsin.'});return;}try{await navigator.clipboard.writeText(item.code);setCopiedCodeId(item.id);setNotice({kind:'success',text:'Davet kodu panoya kopyalandı.'});window.setTimeout(()=>setCopiedCodeId(current=>current===item.id?null:current),1800);}catch{setNotice({kind:'error',text:'Panoya kopyalanamadı. Tarayıcı izinlerini kontrol et.'});}}
+
+  // ADMIN FONKSİYONLARI
+  async function openAdminPanel() {
+    setProfileMenuOpen(false);
+    setAdminOpen(true);
+    setAdminLoading(true);
+    if(!supabase) return;
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setAdminProfiles(data || []);
+    } catch (err) {
+      setNotice({ kind: 'error', text: 'Kullanıcılar yüklenemedi.' });
+    } finally {
+      setAdminLoading(false);
+    }
+  }
+
+  async function updateUserStatus(userId: string, newStatus: string) {
+    if(!supabase) return;
+    try {
+      const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', userId);
+      if (error) throw error;
+      setAdminProfiles(current => current.map(p => p.id === userId ? { ...p, status: newStatus } : p));
+      setNotice({ kind: 'success', text: 'Kullanıcı durumu güncellendi.' });
+    } catch (err) {
+      setNotice({ kind: 'error', text: 'İşlem başarısız.' });
+    }
+  }
   
   function startListening(field:string,setValue:SpeechSetter){if(!speechSupported)return;if(listeningField===field){recognitionRef.current?.stop();return;}recognitionRef.current?.stop();const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};const Recognition=speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition;if(!Recognition){setSpeechSupported(false);return;}const recognition=new Recognition();let recognizedText='';let recognizedFullText='';recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;recognition.onstart=()=>setListeningField(field);recognition.onresult=(event:any)=>{const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();if(!transcript)return;recognizedText=transcript;setValue(current=>{recognizedFullText=`${current}${current&&!/\s$/.test(current)?' ':''}${transcript}`;return recognizedFullText;});};recognition.onerror=(event:any)=>{if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi'});else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});else if(event.error!=='no-speech'&&event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma sırasında bir hata oluştu.'});setListeningField(null);};recognition.onend=()=>{setListeningField(null);if(recognitionRef.current===recognition)recognitionRef.current=null;if(!recognizedText)return;if(field==='placeQuery'){setPlaceDropdownOpen(true);}else if(field==='query'&&recognizedFullText){setDebouncedQuery(recognizedFullText.trim());}};recognitionRef.current=recognition;try{recognition.start();}catch{setListeningField(null);recognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}}
   
@@ -526,7 +560,7 @@ export default function App() {
   const center:[number,number]=[41.0082,28.9784];
 
   return <main className="app-shell">
-    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><MapPin size={21}/></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">{session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{active?'Aktif üye':'Hesap devre dışı'}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{session.user?.user_metadata?.name||session.user?.user_metadata?.full_name||session.user?.email?.split('@')[0]||'üye'}</strong></p>{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
+    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><MapPin size={21}/></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">{session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{active?'Aktif üye':'Hesap devre dışı'}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{session.user?.user_metadata?.name||session.user?.user_metadata?.full_name||session.user?.email?.split('@')[0]||'üye'}</strong></p>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
     
     {!isConfigured&&<div className="setup-banner"><strong>Kurulum gerekiyor:</strong> .env dosyasına Supabase URL ve anahtarını ekle; README.md içindeki SQL kurulumunu tamamla.</div>}
     {notice&&<div className={`notice ${notice.kind}`} role="status"><span>{notice.text}</span><button onClick={()=>setNotice(null)} aria-label="Bildirimi kapat"><X size={16}/></button></div>}
@@ -611,6 +645,39 @@ export default function App() {
 </span>}</span><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small></div><div className="pin-list-right"><strong className="pin-list-title" title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><div className="pin-list-meta"><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small><span className={`pin-score-badge ${score>0?'score-pos':score<0?'score-neg':'score-zero'}`} aria-label={`Oy skoru: ${score}`}>{score>0?`+${score}`:score}</span></div></div></button>;})}</div>}{!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}</div>}<div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div></aside>
     </section>
     
+    {/* ADMIN MODAL */}
+    {adminOpen && (
+      <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAdminOpen(false);}}>
+        <div className="invite-modal" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="modal-head">
+            <div><p className="eyebrow">YÖNETİCİ PANELİ</p><h2>Kullanıcı Yönetimi</h2></div>
+            <button type="button" className="icon-button" onClick={()=>setAdminOpen(false)} aria-label="Kapat"><X size={18}/></button>
+          </div>
+          
+          {adminLoading ? <p style={{textAlign:'center', padding:'20px'}}>Yükleniyor...</p> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>
+              {adminProfiles.map((p) => (
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '14px' }}>Kullanıcı ID: {p.id.slice(0,8)}...</strong>
+                    <span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>
+                      Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}
+                    </span>
+                    {p.role === 'admin' && <span style={{ marginLeft: '10px', fontSize: '10px', background: '#3b82f6', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {p.status !== 'active' && <button onClick={() => void updateUserStatus(p.id, 'active')} className="primary-button" style={{ padding: '6px 12px', fontSize: '12px' }}>Onayla</button>}
+                    {p.status === 'active' && p.role !== 'admin' && <button onClick={() => void updateUserStatus(p.id, 'disabled')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Banla</button>}
+                  </div>
+                </div>
+              ))}
+              {adminProfiles.length === 0 && <p style={{textAlign:'center'}}>Sistemde kayıtlı kullanıcı bulunamadı.</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
     {inviteOpen&&<div className="modal-backdrop invite-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setInviteOpen(false);}}><section className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title"><div className="modal-head"><div><p className="eyebrow">TOPLULUĞA DAVET</p><h2 id="invite-modal-title">Davet Kodlarım</h2></div><button type="button" className="icon-button" onClick={()=>setInviteOpen(false)} aria-label="Davet kodlarını kapat"><X size={18}/></button></div><p className="invite-intro">Kodlarını arkadaşlarınla paylaş. Her kod yalnızca bir hesap tarafından kullanılabilir.</p><button type="button" className="primary-button full-width invite-create" disabled={busy||!active||(profile?.role!=='admin'&&inviteCodes.length>=3)} onClick={()=>void createInviteCode()}><Plus size={17}/>{busy?'İşleniyor…':'Yeni Davet Kodu Üret'}</button>{profile?.role!=='admin'&&inviteCodes.length>=3&&<p className="invite-limit">Davet kodu limitinize ulaştınız.</p>}<div className="invite-list">{inviteCodes.length===0&&!busy?<div className="invite-empty">Henüz davet kodun yok. Yeni bir kod oluşturabilirsin.</div>:inviteCodes.map(item=><div className="invite-row" key={item.id}><div className="invite-code-info"><strong>{item.code||'Önceden oluşturulmuş davet kodu'}</strong><small>{new Date(item.created_at).toLocaleDateString('tr-TR')} · {item.redeemed_at?'Kullanıldı':item.is_enabled?'Kullanılabilir':'Devre dışı'}</small></div>{item.code&&!item.redeemed_at&&item.is_enabled&&<button type="button" className="copy-code-button" onClick={()=>void copyInviteCode(item)} aria-label="Davet kodunu kopyala" title="Kopyala">{copiedCodeId===item.id?<Check size={17}/>:<Copy size={17}/>}<span>{copiedCodeId===item.id?'Kopyalandı':'Kopyala'}</span></button>}</div>)}</div><p className="invite-footnote">Eski kodlar veritabanında yalnızca hash olarak saklanıyorsa tekrar görüntülenemez; yeni oluşturulan kodlar listeden kopyalanabilir.</p></section></div>}
     
     {lightboxIndex!==null&&selected&&selectedPhotos.length>0&&<div className="lightbox-backdrop" role="dialog" aria-modal="true" aria-label="Fotoğraf görüntüleyici" onTouchStart={e=>{(e.currentTarget as HTMLDivElement).dataset.touchX=String(e.touches[0].clientX);}} onTouchEnd={e=>{const start=Number((e.currentTarget as HTMLDivElement).dataset.touchX??0);const delta=e.changedTouches[0].clientX-start;if(Math.abs(delta)>45)setLightboxIndex(index=>index===null?null:delta<0?(index+1)%selectedPhotos.length:(index-1+selectedPhotos.length)%selectedPhotos.length);}} onMouseDown={e=>{if(e.target===e.currentTarget)setLightboxIndex(null);}}><button type="button" className="lightbox-close" onClick={()=>setLightboxIndex(null)} aria-label="Fotoğraf görüntüleyiciyi kapat"><X size={24}/></button>{selectedPhotos.length>1&&<button type="button" className="lightbox-nav lightbox-prev" onClick={()=>setLightboxIndex(index=>index===null?null:(index-1+selectedPhotos.length)%selectedPhotos.length)} aria-label="Önceki fotoğraf"><ChevronLeft size={30}/></button>}<img className="lightbox-image" src={photoUrls[selectedPhotos[lightboxIndex].storage_path]||''} alt={`Fotoğraf ${lightboxIndex+1} / ${selectedPhotos.length}`} loading="lazy" decoding="async"/>{selectedPhotos.length>1&&<button type="button" className="lightbox-nav lightbox-next" onClick={()=>setLightboxIndex(index=>index===null?null:(index+1)%selectedPhotos.length)} aria-label="Sonraki fotoğraf"><ChevronRight size={30}/></button>}<div className="lightbox-counter">{lightboxIndex+1} / {selectedPhotos.length}</div></div>}

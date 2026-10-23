@@ -6,3 +6,5 @@ dist
 *_snapshot.txt
 .DS_Store
 *.log
+.vercel
+.env*
