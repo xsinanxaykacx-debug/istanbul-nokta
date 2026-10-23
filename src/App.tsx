@@ -377,20 +377,16 @@ export default function App() {
     const uploadedPaths:string[]=[];
 
     try{
-      // 1. ÖNCE PİN BİLGİLERİNİ GÜNCELLE (Renk ve Yazı)
-      const {error:pinError}=await supabase.from('pins').update({
-        description:editDescription.trim(),
-        category:editCategory
-      }).eq('id',selected.id);
-      
-      if(pinError)throw pinError;
+      // 1. ÖNCE PİN BİLGİLERİNİ GÜNCELLE VE GERÇEKTEN GÜNCELLENDİĞİNİ DOĞRULA (.select() EKLENDİ)
+      const { data: updatedData, error: pinError } = await supabase.from('pins').update({
+        description: editDescription.trim(),
+        category: editCategory
+      }).eq('id', selected.id).select();
 
-      // 2. STATE'İ HEMEN GÜNCELLE (Fotoğraf hatası olsa bile renk anında değişsin)
-      const updatedPinData = { ...selected, description: editDescription.trim(), category: editCategory };
-      setPins(current=>current.map(pin=>pin.id===selected.id ? updatedPinData : pin));
-      setSelected(updatedPinData);
+      if(pinError) throw pinError;
+      if (!updatedData || updatedData.length === 0) throw new Error('Pin güncellenemedi (Yetki hatası olabilir). Lütfen SQL politikalarını kontrol edin.');
 
-      // 3. FOTOĞRAF İŞLEMLERİNİ YAP
+      // 2. FOTOĞRAF İŞLEMLERİNİ YAP
       const newPhotoRows:{pin_id:string;storage_path:string;public_url:string;sort_order:number}[]=[];
       for(let i=0;i<editFiles.length;i++){
         const blob=await compressPhoto(editFiles[i]);
@@ -430,18 +426,24 @@ export default function App() {
       setEditPinMode(false);
       setEditFiles([]);
       setNotice(cleanupMessage?{kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}:{kind:'success',text:'Değişiklikler kaydedildi.'});
-      await loadPins();
       
+      // Veritabanından son halini çekip state'i güncelle
+      const {data:finalPin} = await supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)').eq('id', selected.id).single();
+      if (finalPin) {
+        setSelected(finalPin as unknown as Pin);
+        setPins(current=>current.map(pin=>pin.id===selected.id ? (finalPin as unknown as Pin) : pin));
+      } else {
+        await loadPins();
+      }
+
     }catch(err){
       if(uploadedPaths.length)await supabase.storage.from('pin-photos').remove(uploadedPaths);
       
-      // Supabase hata mesajlarını doğru şekilde yakala
       const errorMessage = err && typeof err === 'object' && 'message' in err 
         ? String((err as any).message) 
         : (err instanceof Error ? err.message : '');
         
       setNotice({kind:'error', text: errorMessage || 'Pin değişiklikleri kaydedilemedi. Lütfen tekrar deneyin.'});
-      await loadPins();
     } finally {
       setBusy(false);
     }
