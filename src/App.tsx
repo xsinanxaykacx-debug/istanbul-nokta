@@ -709,10 +709,10 @@ export default function App() {
     }
 
     const categoryWords=[
-      {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
-      {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
-      {pattern:/(?:^|\s)(?:kırmızı|kırmızılar)(?=$|\s)/,value:'KIRMIZI'},
-      {pattern:/(?:^|\s)(?:gri|griler)(?=$|\s)/,value:'GRİ'}
+      {pattern:/(?:^|\s)mavi(?:yi|ye|nin|ler|leri)?(?=$|\s)/,value:'MAVİ'},
+      {pattern:/(?:^|\s)yeşil(?:i|e|in|ler|leri)?(?=$|\s)/,value:'YEŞİL'},
+      {pattern:/(?:^|\s)kırmızı(?:yı|ya|nın|lar|ları)?(?=$|\s)/,value:'KIRMIZI'},
+      {pattern:/(?:^|\s)gri(?:yi|ye|nin|ler|leri)?(?=$|\s)/,value:'GRİ'}
     ];
     const categoryMatches = categoryWords.filter(item=>item.pattern.test(normalized));
     const matchedCategory=categoryMatches[categoryMatches.length-1]?.value;
