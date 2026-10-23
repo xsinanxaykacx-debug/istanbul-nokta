@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'leaflet';
-// @ts-ignore
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
 import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X } from 'lucide-react';
@@ -91,7 +90,6 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
-// ISI HARİTASI BİLEŞENİ
 function HeatmapLayer({ pins }: { pins: Pin[] }) {
   const map = useMap();
   useEffect(() => {
@@ -100,7 +98,8 @@ function HeatmapLayer({ pins }: { pins: Pin[] }) {
     const heat = (L as any).heatLayer(points, {
       radius: 35, blur: 20, maxZoom: 15, minOpacity: 0.6,
       gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
-    }).addTo(map);
+    });
+    heat.addTo(map);
     return () => { map.removeLayer(heat); };
   }, [map, pins]);
   return null;
@@ -624,18 +623,16 @@ export default function App() {
         setShowTraffic(false); setNotice({kind:'success', text:'Trafik katmanı kapatıldı.'}); try{recognition.stop();}catch{} return;
       }
 
-      // YENİ: Rota oluşturma komutu (örn: "konumumdan galata kulesine rota oluştur")
+      // YENİ: Rota oluşturma komutu
       const routeMatch = lowerText.match(/(?:konumumdan|buradan|mevcut konumumdan)?\s*(.*?)\s*(?:e|a|ya|ye)\s+rota\s+oluştur/);
       if (routeMatch && routeMatch[1]) {
         const targetName = routeMatch[1].trim();
         setNotice({kind:'info', text:`"${targetName}" aranıyor ve rota hazırlanıyor...`});
         try {
-          // Nominatim ile hedefi bul
           const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(targetName)}&countrycodes=tr&limit=1`);
           const searchData = await res.json();
           if (searchData && searchData.length > 0) {
             const targetCoord: [number, number] = [parseFloat(searchData[0].lat), parseFloat(searchData[0].lon)];
-            // GPS'ten başlangıcı al
             if (navigator.geolocation) {
               navigator.geolocation.getCurrentPosition(pos => {
                 setRouteStart([pos.coords.latitude, pos.coords.longitude]);
@@ -653,7 +650,6 @@ export default function App() {
         try{recognition.stop();}catch{} return;
       }
 
-      // Eski Pin Ekleme komutları
       const parsed=parseVoicePinCommand(transcript);
       if(!parsed){
         setNotice({kind:'error',text:`Komut anlaşılmadı: "${transcript}". Örnek: "Konuma mavi pin ekle", "Trafiği aç" veya "Galata Kulesine rota oluştur".`});
@@ -730,7 +726,7 @@ export default function App() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {showHeatmap && <HeatmapLayer pins={visiblePins} />}
-          {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e) => console.warn("TomTom Tile Hatası:", e) }}/>}
+          {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; <a href="https://www.tomtom.com/">TomTom</a>' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} key={showTraffic ? 'traffic-on' : 'traffic-off'} zIndex={400} opacity={1} eventHandlers={{ tileerror: (e: any) => console.warn("TomTom Tile Hatası:", e) }}/>}
           <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>setPlaceDropdownOpen(false)} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
           <ViewportWatcher onBoundsChange={setViewportBounds}/>
           <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
