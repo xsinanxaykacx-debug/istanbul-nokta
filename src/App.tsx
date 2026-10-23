@@ -686,7 +686,7 @@ export default function App() {
     recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
     recognition.onstart=()=>{
       setVoicePinListening(true);
-      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},8000);
+      voicePinTimeoutRef.current=window.setTimeout(()=>{try{recognition.stop();}catch{}},15000);
     };
     recognition.onresult=async (event:any)=>{
       const transcript=String(event.results?.[0]?.[0]?.transcript??'').trim();
@@ -709,14 +709,14 @@ export default function App() {
       handled=true;
       if(event.error==='not-allowed'||event.error==='service-not-allowed')setNotice({kind:'error',text:'Mikrofon erişimi reddedildi. Lütfen tarayıcıdan mikrofon izni verin.'});
       else if(event.error==='audio-capture')setNotice({kind:'error',text:'Mikrofon bulunamadı veya kullanılamıyor.'});
-      else if(event.error==='no-speech')setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 8 saniye içinde konuşun.'});
+      else if(event.error==='no-speech')setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 15 saniye içinde konuşun.'});
       else if(event.error!=='aborted')setNotice({kind:'error',text:'Ses tanıma başarısız oldu. Tekrar deneyin.'});
     };
     recognition.onend=()=>{
       setVoicePinListening(false);
       if(voicePinTimeoutRef.current!==undefined){window.clearTimeout(voicePinTimeoutRef.current);voicePinTimeoutRef.current=undefined;}
       if(voicePinRecognitionRef.current===recognition)voicePinRecognitionRef.current=null;
-      if(!handled)setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 8 saniye içinde konuşun.'});
+      if(!handled)setNotice({kind:'error',text:'Ses algılanmadı. Tekrar deneyin ve 15 saniye içinde konuşun.'});
     };
     voicePinRecognitionRef.current=recognition;
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı. Tekrar deneyin.'});}
