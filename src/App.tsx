@@ -160,6 +160,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
+  const mapRef = useRef<L.Map | null>(null);
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -590,7 +591,11 @@ export default function App() {
     | { type: 'TRAFFIC'; enabled: boolean }
     | { type: 'HEATMAP'; enabled: boolean }
     | { type: 'FILTER'; category: string }
-    | { type: 'ROUTE'; destination: string };
+    | { type: 'ROUTE'; destination: string }
+    | { type: 'ZOOM'; action: 'in' | 'out' }
+    | { type: 'SEARCH_PLACE'; query: string }
+    | { type: 'CLEAR_ROUTE' }
+    | { type: 'THEME'; mode: 'dark' | 'light' };
 
   function parseVoicePinCommand(transcript:string):VoiceCommand|null{
     const normalized=transcript
@@ -614,6 +619,22 @@ export default function App() {
       return { type: 'TRAFFIC', enabled: false };
     }
 
+    if (/(?:yakınlaş|yaklaştır|zoom yap|büyüt|yaklaş)/.test(normalized)) {
+      return { type: 'ZOOM', action: 'in' };
+    }
+    if (/(?:uzaklaş|uzaklaştır|küçült)/.test(normalized)) {
+      return { type: 'ZOOM', action: 'out' };
+    }
+    if (/(?:rota temizle|rotayı temizle|rotayı iptal et|rotayı kapat)/.test(normalized)) {
+      return { type: 'CLEAR_ROUTE' };
+    }
+    if (/(?:gece modu|karanlık mod|siyah tema)/.test(normalized)) {
+      return { type: 'THEME', mode: 'dark' };
+    }
+    if (/(?:gündüz modu|aydınlık mod|beyaz tema)/.test(normalized)) {
+      return { type: 'THEME', mode: 'light' };
+    }
+
     const categoryWords=[
       {pattern:/(?:^|\s)(?:mavi|maviler)(?=$|\s)/,value:'MAVİ'},
       {pattern:/(?:^|\s)(?:yeşil|yeşiller)(?=$|\s)/,value:'YEŞİL'},
@@ -623,6 +644,14 @@ export default function App() {
     const matchedCategory=categoryWords.find(item=>item.pattern.test(normalized))?.value;
     if(matchedCategory&&/(?:^|\s)(?:göster|filtrele|sadece)(?=$|\s)/.test(normalized)){
       return { type: 'FILTER', category: matchedCategory };
+    }
+
+    const searchMatch = normalized.match(/^(.*?)\s*(?:ara|bul|göster|konumuna git)$/);
+    if (searchMatch && searchMatch[1].trim() && !/\brota\b/.test(normalized)) {
+      const query = searchMatch[1].trim()
+        .replace(/(?:n[ıiuü]|y[ıiuü]|[ıiuü]|ne|na|ye|ya|e|a)$/u, '')
+        .trim();
+      if (query) return { type: 'SEARCH_PLACE', query };
     }
 
     const routeIntent=/(?:\brota\b|\bgit\b|\bgitmek\b|\byol\s+tarifi\b|\bnasıl\s+giderim\b|\bulaşım\b)/.test(normalized);
@@ -691,6 +720,51 @@ export default function App() {
         setSelectedCategoryFilter(command.category);
         setShowFilterOptions(false);
         setNotice({kind:'success',text:`${command.category} işaretleri gösteriliyor.`});
+        return;
+      case 'ZOOM':
+        if (mapRef.current) {
+          command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut();
+        }
+        setNotice({kind:'success',text:command.action === 'in' ? 'Harita yakınlaştırıldı.' : 'Harita uzaklaştırıldı.'});
+        return;
+      case 'CLEAR_ROUTE':
+        setRouteMode(false);
+        setRouteStart(null);
+        setRouteEnd(null);
+        setRouteLine(null);
+        setRouteInfo(null);
+        setRouteError(null);
+        setRouteLoading(false);
+        setNotice({kind:'success',text:'Rota temizlendi.'});
+        return;
+      case 'THEME':
+        setIsDarkMode(command.mode === 'dark');
+        setNotice({kind:'success',text:command.mode === 'dark' ? 'Gece modu açıldı.' : 'Gündüz modu açıldı.'});
+        return;
+      case 'SEARCH_PLACE':
+        setNotice({kind:'info',text:`"${command.query}" aranıyor...`});
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(command.query)}&countrycodes=tr&limit=1`);
+          if (!response.ok) throw new Error('Nominatim search failed');
+          const data = await response.json() as PlaceResult[];
+          if (data.length > 0) {
+            setPlaceQuery(command.query);
+            setSearchPlace(data[0]);
+            setPlaceResults(data);
+            setPlaceSearched(true);
+            setPlaceDropdownOpen(false);
+            setSelected(null);
+            setDraftPosition(null);
+            if (mapRef.current) {
+              mapRef.current.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 16);
+            }
+            setNotice({kind:'success',text:`"${command.query}" haritada bulundu.`});
+          } else {
+            setNotice({kind:'error',text:`"${command.query}" bulunamadı.`});
+          }
+        } catch {
+          setNotice({kind:'error',text:'Yer aranırken bir hata oluştu. Lütfen tekrar deneyin.'});
+        }
         return;
       case 'ROUTE':
         setNotice({kind:'info',text:`"${command.destination}" aranıyor ve rota hazırlanıyor...`});
@@ -822,7 +896,7 @@ export default function App() {
           </div>}
         </div>
         
-        <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map">
+        <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
