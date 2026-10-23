@@ -673,12 +673,6 @@ export default function App() {
     }
   }
 
-.'});
-        }
-        return;
-    }
-  }
-
   function addVoicePinAtCurrentLocation(parsedCategory:string,saveImmediately=false){
     if(!navigator.geolocation){setNotice({kind:'error',text:'Bu tarayıcı konum hizmetini desteklemiyor. Lütfen konum seçin.'});return;}
     setLocating(true);
