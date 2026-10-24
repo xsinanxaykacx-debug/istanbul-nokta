@@ -180,9 +180,9 @@ function buildGeocodeQuery(messageText: string): string {
 
   const locationQuery = withoutUrls
     .replace(stopwordPattern, '$1')
-    .replace(/['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\\p{L}\\p{N}_])/giu, '')
-    .replace(/[^\\p{L}\\p{N}\\s-]/gu, ' ')
-    .replace(/\\s+/g, ' ')
+    .replace(/['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\p{L}\p{N}_])/giu, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 300);
 
