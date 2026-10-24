@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -24,6 +24,7 @@ export default function Map3D({
 }: Map3DProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
   const markers = useRef<any[]>([]);
   const routeMarkers = useRef<any[]>([]);
   const draftMarker = useRef<any>(null);
@@ -48,6 +49,7 @@ export default function Map3D({
       attributionControl: false
     });
     map.current = mapInstance;
+    mapInstance.once('load', () => setMapReady(true));
 
     mapInstance.on('click', (e: any) => {
       onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
@@ -57,6 +59,7 @@ export default function Map3D({
     const resizeTimer = window.setTimeout(() => mapInstance.resize(), 500);
     return () => {
       window.clearTimeout(resizeTimer);
+      setMapReady(false);
       mapInstance.remove();
       if (map.current === mapInstance) map.current = null;
     };
@@ -64,7 +67,7 @@ export default function Map3D({
 
   // Pinleri Çiz
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     markers.current.forEach(m => m.remove());
     markers.current = [];
@@ -112,11 +115,11 @@ export default function Map3D({
       
       markers.current.push(userMarker);
     }
-  }, [pins, userPosition]);
+  }, [pins, userPosition, mapReady]);
 
   // Taslak Pin Çiz
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     if (draftMarker.current) {
       draftMarker.current.remove();
@@ -147,11 +150,11 @@ export default function Map3D({
         .setLngLat([draftPosition[1], draftPosition[0]])
         .addTo(map.current);
     }
-  }, [draftPosition]);
+  }, [draftPosition, mapReady]);
 
   // Rota Çizgisi
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     if (map.current.getLayer('route-layer')) map.current.removeLayer('route-layer');
     if (map.current.getSource('route-source')) map.current.removeSource('route-source');
@@ -197,11 +200,11 @@ export default function Map3D({
       endEl.style.cssText = 'width:24px;height:24px;border-radius:50%;background-color:#dc2626;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)';
       routeMarkers.current.push(new maplibregl.Marker({ element: endEl }).setLngLat([routeEnd[1], routeEnd[0]]).addTo(map.current));
     }
-  }, [routeLine, routeStart, routeEnd]);
+  }, [routeLine, routeStart, routeEnd, mapReady]);
 
   // Trafik Katmanı
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     if (map.current.getLayer('traffic-layer')) map.current.removeLayer('traffic-layer');
     if (map.current.getSource('traffic-source')) map.current.removeSource('traffic-source');
@@ -219,11 +222,11 @@ export default function Map3D({
         paint: { 'raster-opacity': 0.8 }
       });
     }
-  }, [showTraffic, tomtomApiKey]);
+  }, [showTraffic, tomtomApiKey, mapReady]);
 
   // Isı Haritası Katmanı
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapReady) return;
 
     if (map.current.getLayer('heatmap-layer')) map.current.removeLayer('heatmap-layer');
     if (map.current.getSource('heatmap-source')) map.current.removeSource('heatmap-source');
@@ -258,20 +261,20 @@ export default function Map3D({
         });
       }
     }
-  }, [showHeatmap, pins]);
+  }, [showHeatmap, pins, mapReady]);
 
   // FlyTo İşlemleri
   useEffect(() => {
-    if (map.current && flyToCoords && typeof flyToCoords[0] === 'number' && typeof flyToCoords[1] === 'number' && !isNaN(flyToCoords[0]) && !isNaN(flyToCoords[1])) {
+    if (map.current && mapReady && flyToCoords && typeof flyToCoords[0] === 'number' && typeof flyToCoords[1] === 'number' && !isNaN(flyToCoords[0]) && !isNaN(flyToCoords[1])) {
       map.current.flyTo({ center: flyToCoords, zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
     }
-  }, [flyToCoords]);
+  }, [flyToCoords, mapReady]);
 
   useEffect(() => {
-    if (map.current && flyToUserCoords && typeof flyToUserCoords[0] === 'number' && typeof flyToUserCoords[1] === 'number' && !isNaN(flyToUserCoords[0]) && !isNaN(flyToUserCoords[1])) {
+    if (map.current && mapReady && flyToUserCoords && typeof flyToUserCoords[0] === 'number' && typeof flyToUserCoords[1] === 'number' && !isNaN(flyToUserCoords[0]) && !isNaN(flyToUserCoords[1])) {
       map.current.flyTo({ center: [flyToUserCoords[1], flyToUserCoords[0]], zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
     }
-  }, [flyToUserCoords]);
+  }, [flyToUserCoords, mapReady]);
 
   return <div ref={mapContainer} style={{ width: '100%', height: '100%', borderRadius: '18px', background: '#f1f5f9' }} />;
 }
