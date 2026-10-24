@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as maplibregl from 'maplibre-gl';
 // Vite'ın worker dosyasını paketlemesini ve bize URL vermesini sağlıyoruz
@@ -20,6 +20,11 @@ interface Map3DProps {
   tomtomApiKey: string;
 }
 
+const PIN_SOURCE_ID = 'pin-clusters-source';
+const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
+const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
+const PIN_POINT_LAYER_ID = 'pin-points';
+
 export default function Map3D({
   pins,
   onMapClick,
@@ -37,18 +42,53 @@ export default function Map3D({
 }: Map3DProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markers = useRef<maplibregl.Marker[]>([]);
+  const userMarker = useRef<maplibregl.Marker | null>(null);
   const routeMarkers = useRef<maplibregl.Marker[]>([]);
   const draftMarker = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const onMapClickRef = useRef(onMapClick);
   const onPinSelectRef = useRef(onPinSelect);
-  
+  const pinsRef = useRef(pins);
+
+  const pinFeatureCollection = useMemo(() => ({
+    type: 'FeatureCollection' as const,
+    features: pins
+      .filter(
+        (pin) =>
+          pin &&
+          pin.id != null &&
+          typeof pin.lat === 'number' &&
+          Number.isFinite(pin.lat) &&
+          typeof pin.lng === 'number' &&
+          Number.isFinite(pin.lng) &&
+          pin.lat >= -90 &&
+          pin.lat <= 90 &&
+          pin.lng >= -180 &&
+          pin.lng <= 180
+      )
+      .map((pin) => ({
+        type: 'Feature' as const,
+        id: String(pin.id),
+        properties: {
+          pin_id: String(pin.id),
+          category: typeof pin.category === 'string' ? pin.category : 'KIRMIZI',
+        },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [pin.lng, pin.lat] as [number, number],
+        },
+      })),
+  }), [pins]);
+
   useEffect(() => {
     onMapClickRef.current = onMapClick;
     onPinSelectRef.current = onPinSelect;
   }, [onMapClick, onPinSelect]);
+
+  useEffect(() => {
+    pinsRef.current = pins;
+  }, [pins]);
 
   // Haritayı başlat
   useEffect(() => {
@@ -65,10 +105,6 @@ export default function Map3D({
       pitch: 60,
       bearing: -20,
       attributionControl: false,
-    });
-
-    map.current.on('click', (e) => {
-      onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
@@ -91,59 +127,189 @@ export default function Map3D({
     };
   }, []);
 
-  // Pinleri Çiz
+  // Pinler: MapLibre GeoJSON clustering (DOM marker yerine GPU katmanları)
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance || !mapLoaded || mapInstance.getSource(PIN_SOURCE_ID)) return;
+
+    mapInstance.addSource(PIN_SOURCE_ID, {
+      type: 'geojson',
+      data: pinFeatureCollection,
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 50,
+    });
+
+    // Yakın pinleri bir küme dairesi olarak çiz.
+    mapInstance.addLayer({
+      id: PIN_CLUSTER_LAYER_ID,
+      type: 'circle',
+      source: PIN_SOURCE_ID,
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#60a5fa',
+          10,
+          '#3b82f6',
+          50,
+          '#1e40af',
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          18,
+          10,
+          23,
+          50,
+          29,
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
+      },
+    });
+
+    // Kümenin içindeki pin sayısını göster.
+    mapInstance.addLayer({
+      id: PIN_CLUSTER_COUNT_LAYER_ID,
+      type: 'symbol',
+      source: PIN_SOURCE_ID,
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': ['get', 'point_count_abbreviated'],
+        'text-font': ['Open Sans Semibold'],
+        'text-size': 12,
+        'text-allow-overlap': true,
+      },
+      paint: {
+        'text-color': '#ffffff',
+      },
+    });
+
+    // Küme dışında kalan tek pinleri kategori renkleriyle çiz.
+    mapInstance.addLayer({
+      id: PIN_POINT_LAYER_ID,
+      type: 'circle',
+      source: PIN_SOURCE_ID,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-radius': 8,
+        'circle-color': [
+          'match',
+          ['get', 'category'],
+          'YEŞİL',
+          '#1e8e55',
+          'MAVİ',
+          '#3b82f6',
+          'GRİ',
+          '#9ca3af',
+          '#d64545',
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
+      },
+    });
+
+    const setPointerCursor = () => {
+      mapInstance.getCanvas().style.cursor = 'pointer';
+    };
+    const resetCursor = () => {
+      mapInstance.getCanvas().style.cursor = '';
+    };
+
+    for (const layerId of [
+      PIN_CLUSTER_LAYER_ID,
+      PIN_CLUSTER_COUNT_LAYER_ID,
+      PIN_POINT_LAYER_ID,
+    ]) {
+      mapInstance.on('mouseenter', layerId, setPointerCursor);
+      mapInstance.on('mouseleave', layerId, resetCursor);
+    }
+
+    mapInstance.on('click', (event) => {
+      // Cluster click: zoom to the cluster expansion level.
+      const clusterFeatures = mapInstance.queryRenderedFeatures(event.point, {
+        layers: [PIN_CLUSTER_LAYER_ID],
+      });
+      const clusterFeature = clusterFeatures[0];
+
+      if (clusterFeature) {
+        const clusterId = Number(clusterFeature.properties?.cluster_id);
+        const geometry = clusterFeature.geometry;
+        const source = mapInstance.getSource(PIN_SOURCE_ID) as
+          | maplibregl.GeoJSONSource
+          | undefined;
+
+        if (
+          source &&
+          Number.isFinite(clusterId) &&
+          geometry.type === 'Point'
+        ) {
+          const center = geometry.coordinates as [number, number];
+          void source
+            .getClusterExpansionZoom(clusterId)
+            .then((zoom) => {
+              if (map.current !== mapInstance) return;
+              mapInstance.easeTo({ center, zoom });
+            })
+            .catch((error: unknown) => {
+              console.error('Küme yakınlaştırılamadı:', error);
+            });
+        }
+        return;
+      }
+
+      // Single pin click: pass the original pin object to the existing selection flow.
+      const pinFeatures = mapInstance.queryRenderedFeatures(event.point, {
+        layers: [PIN_POINT_LAYER_ID],
+      });
+      const pinId = pinFeatures[0]?.properties?.pin_id;
+
+      if (pinId != null) {
+        const selectedPin = pinsRef.current.find(
+          (pin) => String(pin.id) === String(pinId)
+        );
+        if (selectedPin) onPinSelectRef.current(selectedPin);
+        return;
+      }
+
+      // Only a click on empty map space should create a draft or pick a route point.
+      onMapClickRef.current(event.lngLat.lat, event.lngLat.lng);
+    });
+  }, [mapLoaded, pinFeatureCollection]);
+
+  // Update the existing GeoJSON source when the visible pin list changes.
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
 
-    markers.current.forEach((m) => m.remove());
-    markers.current = [];
+    const source = mapInstance.getSource(PIN_SOURCE_ID) as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (!source) return;
 
-    pins.forEach((pin) => {
-      if (
-        typeof pin.lat !== 'number' ||
-        typeof pin.lng !== 'number' ||
-        isNaN(pin.lat) ||
-        isNaN(pin.lng)
-      )
-        return;
-
-      const color =
-        pin.category === 'YEŞİL'
-          ? '#1e8e55'
-          : pin.category === 'MAVİ'
-          ? '#3b82f6'
-          : pin.category === 'GRİ'
-          ? '#9ca3af'
-          : '#d64545';
-
-      const el = document.createElement('div');
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = color;
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.4)';
-      el.style.cursor = 'pointer';
-
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        onPinSelectRef.current(pin);
-      });
-
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([pin.lng, pin.lat])
-        .addTo(mapInstance);
-
-      markers.current.push(marker);
+    void source.setData(pinFeatureCollection).catch((error: unknown) => {
+      console.error('Pin kaynağı güncellenemedi:', error);
     });
+  }, [pinFeatureCollection, mapLoaded]);
+
+  // Kullanıcının GPS konumu ayrı bir marker olarak kalır; pin clustering'e dahil edilmez.
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance || !mapLoaded) return;
+
+    userMarker.current?.remove();
+    userMarker.current = null;
 
     if (
       userPosition &&
-      typeof userPosition[0] === 'number' &&
-      typeof userPosition[1] === 'number' &&
-      !isNaN(userPosition[0]) &&
-      !isNaN(userPosition[1])
+      Number.isFinite(userPosition[0]) &&
+      Number.isFinite(userPosition[1]) &&
+      userPosition[0] >= -90 &&
+      userPosition[0] <= 90 &&
+      userPosition[1] >= -180 &&
+      userPosition[1] <= 180
     ) {
       const userEl = document.createElement('div');
       userEl.style.width = '16px';
@@ -153,13 +319,11 @@ export default function Map3D({
       userEl.style.border = '3px solid white';
       userEl.style.boxShadow = '0 0 0 4px rgba(39, 133, 255, 0.3)';
 
-      const userMarker = new maplibregl.Marker({ element: userEl })
+      userMarker.current = new maplibregl.Marker({ element: userEl })
         .setLngLat([userPosition[1], userPosition[0]])
         .addTo(mapInstance);
-
-      markers.current.push(userMarker);
     }
-  }, [pins, userPosition, mapLoaded]);
+  }, [userPosition, mapLoaded]);
 
   // Taslak Pin Çiz
   useEffect(() => {
@@ -241,7 +405,7 @@ export default function Map3D({
             source: 'route-source',
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: { 'line-color': '#2684ff', 'line-width': 6, 'line-opacity': 0.8 },
-          });
+          }, PIN_CLUSTER_LAYER_ID);
 
           const bounds = new maplibregl.LngLatBounds(validCoords[0], validCoords[0]);
           for (const coord of validCoords) bounds.extend(coord);
@@ -310,7 +474,7 @@ export default function Map3D({
         type: 'raster',
         source: 'traffic-source',
         paint: { 'raster-opacity': 0.8 },
-      });
+      }, PIN_CLUSTER_LAYER_ID);
     }
   }, [showTraffic, tomtomApiKey, mapLoaded]);
 
@@ -365,7 +529,7 @@ export default function Map3D({
             ],
             'heatmap-radius': 30,
           },
-        });
+        }, PIN_CLUSTER_LAYER_ID);
       }
     }
   }, [showHeatmap, pins, mapLoaded]);
