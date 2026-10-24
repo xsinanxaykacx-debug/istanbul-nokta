@@ -2884,3 +2884,52 @@ select option { background: var(--surface); color: var(--text-dark); }
     min-width: 0 !important;
   }
 }
+
+
+/* Final mobile map-control positioning: neutralize standalone button offsets. */
+@media (max-width: 768px) {
+  .map-action-right-group .voice-pin-control,
+  .map-action-right-group .voice-pin-button,
+  .map-action-right-group .locate-button,
+  .map-action-right-group .route-button,
+  .map-action-right-group .traffic-button:not(.heatmap-button) {
+    position: relative !important;
+    inset: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    top: auto !important;
+    left: auto !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    flex: 0 0 44px !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+  }
+
+  .map-action-right-group .voice-pin-control {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .map-action-right-group .voice-pin-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  .map-action-right-group .voice-pin-button > span,
+  .map-action-right-group .route-button > span,
+  .map-action-right-group .traffic-button:not(.heatmap-button) > span {
+    display: none !important;
+  }
+}
