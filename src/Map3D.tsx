@@ -49,12 +49,26 @@ async function registerSvgPinIcon(
   name: string,
   dataUrl: string
 ): Promise<void> {
-  const image = new Image();
-  image.src = dataUrl;
-  await image.decode();
+  // MapLibre loadImage SVG kabul etmez; SVG'yi tarayıcıda PNG'ye rasterize edip
+  // desteklenen PNG veri URL'sini loadImage ile yükle.
+  const svgImage = new Image();
+  svgImage.src = dataUrl;
+  await svgImage.decode();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = svgImage.naturalWidth;
+  canvas.height = svgImage.naturalHeight;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('Pin ikonu için 2D canvas oluşturulamadı.');
+  }
+
+  context.drawImage(svgImage, 0, 0);
+  const { data } = await mapInstance.loadImage(canvas.toDataURL('image/png'));
 
   if (!mapInstance.hasImage(name)) {
-    mapInstance.addImage(name, image);
+    mapInstance.addImage(name, data);
   }
 }
 
