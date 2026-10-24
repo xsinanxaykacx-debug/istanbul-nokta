@@ -405,7 +405,7 @@ export default function Map3D({
             source: 'route-source',
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: { 'line-color': '#2684ff', 'line-width': 6, 'line-opacity': 0.8 },
-          });
+          }, PIN_CLUSTER_LAYER_ID);
 
           const bounds = new maplibregl.LngLatBounds(validCoords[0], validCoords[0]);
           for (const coord of validCoords) bounds.extend(coord);
