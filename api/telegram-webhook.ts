@@ -69,8 +69,28 @@ function extractMessage(body: unknown): TelegramMessage | null {
 }
 
 function isValidWebhookSecret(providedSecret: string | undefined): boolean {
-  const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!telegramBotToken || !providedSecret) return false;
+  const rawTelegramBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
+  const telegramBotToken = rawTelegramBotToken.trim();
+  const normalizedProvidedSecret = providedSecret?.trim();
+
+  // Log diagnostics only; never print the header secret, bot token, or expected
+  // hash because the expected hash is itself the webhook secret.
+  const diagnostics = {
+    headerPresent: Boolean(normalizedProvidedSecret),
+    headerLength: normalizedProvidedSecret?.length ?? 0,
+    tokenConfigured: Boolean(telegramBotToken),
+    tokenHasOuterWhitespace: rawTelegramBotToken !== telegramBotToken,
+  };
+
+  if (!telegramBotToken || !normalizedProvidedSecret) {
+    console.log('Telegram webhook secret diagnostics:', {
+      ...diagnostics,
+      expectedSecretLength: telegramBotToken ? 64 : 0,
+      matches: false,
+      reason: !telegramBotToken ? 'token_missing' : 'header_missing',
+    });
+    return false;
+  }
 
   // Preserve the existing webhook secret scheme so the Telegram integration
   // continues to work without changing its Vercel environment configuration.
@@ -78,19 +98,26 @@ function isValidWebhookSecret(providedSecret: string | undefined): boolean {
     .update(telegramBotToken, 'utf8')
     .digest('hex');
   const expectedBytes = new Uint8Array(Buffer.from(expectedSecret, 'utf8'));
-  const providedBytes = new Uint8Array(Buffer.from(providedSecret, 'utf8'));
+  const providedBytes = new Uint8Array(Buffer.from(normalizedProvidedSecret, 'utf8'));
 
-  return (
+  const matches =
     expectedBytes.length === providedBytes.length &&
-    timingSafeEqual(expectedBytes, providedBytes)
-  );
+    timingSafeEqual(expectedBytes, providedBytes);
+
+  console.log('Telegram webhook secret diagnostics:', {
+    ...diagnostics,
+    expectedSecretLength: expectedSecret.length,
+    matches,
+  });
+
+  return matches;
 }
 
 async function sendTelegramConfirmation(
   message: TelegramMessage,
   category: RadarCategory,
 ): Promise<void> {
-  const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+  const telegramBotToken = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
   const chatId = message.chat?.id ?? message.chat_id;
 
   if (!telegramBotToken || chatId === undefined || chatId === null) {
