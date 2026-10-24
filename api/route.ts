@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const data: OSRMResponse = await osrmResponse.json();
     return res.status(200).json(data);
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('OSRM proxy request failed:', errorMessage);
     return res.status(502).json({ error: 'Route request failed' });
