@@ -7,7 +7,8 @@ interface Map3DProps {
   onPinSelect: (pin: any) => void;
   userPosition: [number, number] | null;
   flyToCoords: [number, number] | null;
-  draftPosition: [number, number] | null; // YENİ: Taslak pin için
+  flyToUserCoords: [number, number] | null;
+  draftPosition: [number, number] | null;
   routeLine: [number, number][] | null;
   routeStart: [number, number] | null;
   routeEnd: [number, number] | null;
@@ -17,7 +18,7 @@ interface Map3DProps {
 }
 
 export default function Map3D({ 
-  pins, onMapClick, onPinSelect, userPosition, flyToCoords, draftPosition,
+  pins, onMapClick, onPinSelect, userPosition, flyToCoords, flyToUserCoords, draftPosition,
   routeLine, routeStart, routeEnd, showTraffic, showHeatmap, tomtomApiKey 
 }: Map3DProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -26,7 +27,6 @@ export default function Map3D({
   const routeMarkers = useRef<any[]>([]);
   const draftMarker = useRef<any>(null);
 
-  // KRİTİK DÜZELTME: Tıklama ve pin seçme fonksiyonlarının her zaman güncel hallerini kullanmak için ref
   const onMapClickRef = useRef(onMapClick);
   const onPinSelectRef = useRef(onPinSelect);
   useEffect(() => {
@@ -58,7 +58,6 @@ export default function Map3D({
       });
 
       map.current.on('click', (e: any) => {
-        // Ref üzerinden güncel fonksiyonu çağırıyoruz
         onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
       });
 
@@ -75,7 +74,7 @@ export default function Map3D({
     };
   }, []);
 
-  // Pinleri Çizme
+  // Pinleri Çiz
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
     if (!map.current || !maplibregl) return;
@@ -101,7 +100,7 @@ export default function Map3D({
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        onPinSelectRef.current(pin); // Ref üzerinden çağır
+        onPinSelectRef.current(pin);
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -128,7 +127,7 @@ export default function Map3D({
     }
   }, [pins, userPosition]);
 
-  // TASLAK PİN ÇİZME (YENİ)
+  // Taslak Pin Çiz
   useEffect(() => {
     const maplibregl = (window as any).maplibregl;
     if (!map.current || !maplibregl) return;
@@ -144,7 +143,7 @@ export default function Map3D({
       el.style.height = '28px';
       el.style.borderRadius = '50% 50% 50% 4px';
       el.style.transform = 'rotate(-45deg)';
-      el.style.backgroundColor = '#f97316'; // Turuncu taslak pin
+      el.style.backgroundColor = '#f97316';
       el.style.border = '3px solid white';
       el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.4)';
       
@@ -278,12 +277,18 @@ export default function Map3D({
     }
   }, [showHeatmap, pins]);
 
-  // FlyTo
+  // FlyTo İşlemleri
   useEffect(() => {
     if (map.current && flyToCoords && typeof flyToCoords[0] === 'number' && typeof flyToCoords[1] === 'number' && !isNaN(flyToCoords[0]) && !isNaN(flyToCoords[1])) {
       map.current.flyTo({ center: flyToCoords, zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
     }
   }, [flyToCoords]);
+
+  useEffect(() => {
+    if (map.current && flyToUserCoords && typeof flyToUserCoords[0] === 'number' && typeof flyToUserCoords[1] === 'number' && !isNaN(flyToUserCoords[0]) && !isNaN(flyToUserCoords[1])) {
+      map.current.flyTo({ center: [flyToUserCoords[1], flyToUserCoords[0]], zoom: 16, pitch: 60, bearing: -20, duration: 1500 });
+    }
+  }, [flyToUserCoords]);
 
   return <div ref={mapContainer} style={{ width: '100%', height: '100%', borderRadius: '18px', background: '#f1f5f9' }} />;
 }

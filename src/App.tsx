@@ -169,6 +169,7 @@ export default function App() {
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
+  const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null); // YENİ EKLENDİ
 
   const [llmEngine, setLlmEngine] = useState<MLCEngine | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
@@ -713,8 +714,8 @@ export default function App() {
       position=>{
         const coords:[number,number]=[position.coords.latitude,position.coords.longitude];
         setUserPosition(coords);
+        setFlyToUserCoords(coords); // YENİ: 3D haritanın uçması için tetikleyici
         
-        // 2D haritada konuma uç
         if(!is3D && mapRef.current) {
           mapRef.current.flyTo(coords, 16);
         }
@@ -837,8 +838,9 @@ export default function App() {
               }
             }}
             onPinSelect={(pin: any) => { setSelected(pin); setDraftPosition(null); }}
-                        userPosition={userPosition} 
+            userPosition={userPosition}
             flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [Number(selected.lng), Number(selected.lat)] : null) }
+            flyToUserCoords={flyToUserCoords}
             draftPosition={draftPosition}
             routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
             showTraffic={showTraffic} showHeatmap={showHeatmap} tomtomApiKey={tomtomApiKey}
