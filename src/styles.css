@@ -2707,3 +2707,180 @@ select option { background: var(--surface); color: var(--text-dark); }
     display: none !important;
   }
 }
+
+
+/* Mobile controls v2: one stable 2x2 group at the bottom-right. */
+@media (max-width: 768px) {
+  .place-search-wrap {
+    box-sizing: border-box !important;
+    left: 10px !important;
+    right: auto !important;
+    width: calc(100vw - 170px) !important;
+    max-width: calc(100vw - 170px) !important;
+    min-width: 0 !important;
+    top: 10px !important;
+  }
+
+  .map-action-left-group {
+    display: none !important;
+  }
+
+  .map-action-right-group {
+    position: absolute !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    left: auto !important;
+    top: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 44px) !important;
+    grid-template-rows: repeat(2, 44px) !important;
+    grid-auto-flow: row !important;
+    align-items: center !important;
+    justify-items: center !important;
+    justify-content: center !important;
+    align-content: center !important;
+    gap: 8px !important;
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    z-index: 1200 !important;
+  }
+
+  .map-action-right-group .voice-pin-control,
+  .map-action-right-group .route-button,
+  .map-action-right-group .traffic-button,
+  .map-action-right-group .locate-button {
+    position: relative !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    gap: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+    overflow: visible !important;
+  }
+
+  .map-action-right-group .voice-pin-control {
+    flex: 0 0 44px !important;
+    align-self: stretch !important;
+  }
+
+  .map-action-right-group .voice-pin-button {
+    position: relative !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .map-action-right-group .voice-pin-button > span,
+  .map-action-right-group .route-button > span,
+  .map-action-right-group .traffic-button > span {
+    display: none !important;
+  }
+
+  .map-action-right-group .traffic-button.heatmap-button {
+    display: none !important;
+  }
+
+  .map-action-right-group .traffic-button:not(.heatmap-button) {
+    font-size: 20px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+  }
+
+  .map-action-right-group .voice-tooltip {
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
+    bottom: 52px !important;
+    top: auto !important;
+    width: max-content !important;
+    max-width: min(260px, calc(100vw - 32px)) !important;
+    white-space: normal !important;
+    z-index: 1300 !important;
+  }
+
+  .panel-filter-search-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .panel-filter-search-row .panel-filters {
+    display: contents !important;
+  }
+
+  .panel-filter-search-row .category-filter-row {
+    display: flex !important;
+    order: 0 !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .panel-filter-search-row .time-filter-control {
+    display: inline-flex !important;
+    order: 1 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 42% !important;
+    margin: 0 !important;
+    padding: 6px 7px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+  }
+
+  .panel-filter-search-row .time-filter-control select {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100px !important;
+    padding: 0 2px !important;
+  }
+
+  .panel-filter-search-row .pin-searchbox {
+    display: flex !important;
+    order: 2 !important;
+    flex: 1 1 0% !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .panel-filter-search-row .pin-searchbox input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
