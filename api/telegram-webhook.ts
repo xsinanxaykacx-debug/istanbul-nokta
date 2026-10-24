@@ -54,6 +54,17 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const ownerId = process.env.TELEGRAM_OWNER_ID;
 
+// Diagnostic presence checks only: never print the service-role key or its value.
+console.log('Supabase URL mevcut mu?:', Boolean(process.env.SUPABASE_URL));
+console.log(
+  'VITE_SUPABASE_URL mevcut mu?:',
+  Boolean(process.env.VITE_SUPABASE_URL),
+);
+console.log(
+  'Service Role Key mevcut mu?:',
+  Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+);
+
 const supabaseAdmin =
   supabaseUrl && serviceRoleKey
     ? createClient(supabaseUrl, serviceRoleKey, {
@@ -63,6 +74,8 @@ const supabaseAdmin =
         },
       })
     : null;
+
+console.log('Supabase admin istemcisi başlatıldı mı?:', Boolean(supabaseAdmin));
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -192,13 +205,35 @@ async function geocodeQueryWithNominatim(
         return null;
       }
 
-      const results = (await response.json()) as NominatimResult[];
-      const first = Array.isArray(results) ? results[0] : undefined;
-      if (!first) return null;
+      const nominatimData: unknown = await response.json();
+      console.log('Nominatim Cevabı:', JSON.stringify(nominatimData));
+
+      if (!Array.isArray(nominatimData) || nominatimData.length === 0) {
+        console.warn('Konum bulunamadı, işlem iptal');
+        return null;
+      }
+
+      const first = nominatimData[0] as Partial<NominatimResult> | null;
+      if (
+        !first ||
+        typeof first.lat !== 'string' ||
+        typeof first.lon !== 'string' ||
+        first.lat.trim() === '' ||
+        first.lon.trim() === ''
+      ) {
+        console.warn('Nominatim cevabında lat/lon alanları yok, işlem iptal');
+        return null;
+      }
 
       const lat = Number(first.lat);
       const lng = Number(first.lon);
-      return isIstanbulCoordinate(lat, lng) ? { lat, lng } : null;
+      if (!isIstanbulCoordinate(lat, lng)) {
+        console.warn('Nominatim koordinatları geçersiz veya İstanbul sınırları dışında');
+        return null;
+      }
+
+      console.log('Nominatim koordinatları doğrulandı:', { lat, lng });
+      return { lat, lng };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Nominatim request failed:', message);
@@ -283,16 +318,30 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
 
   if (!coordinates) return;
 
-  const { error } = await supabaseAdmin.from('pins').insert({
-    owner_id: ownerId,
+  console.log('Supabase kaydı başlatılıyor:', {
     lat: coordinates.lat,
     lng: coordinates.lng,
-    description: messageText.slice(0, 5000),
     category: 'KIRMIZI',
   });
 
+  const { data, error } = await supabaseAdmin
+    .from('pins')
+    .insert({
+      owner_id: ownerId,
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      description: messageText.slice(0, 5000),
+      category: 'KIRMIZI',
+    })
+    .select('id, owner_id, lat, lng, category, created_at');
+
   if (error) {
-    console.error('Telegram pin insert failed:', error.message);
+    console.error('Supabase Insert Hatası:', error);
+  } else {
+    console.log('Supabase kaydı başarılı:', data);
+    if (!data || data.length === 0) {
+      console.warn('Supabase hata dönmedi ancak insert cevabı boş geldi');
+    }
   }
 }
 
