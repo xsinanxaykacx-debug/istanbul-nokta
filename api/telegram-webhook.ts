@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { processRadarMessage } from './_lib/webhook-core';
-import type { RadarCategory } from './_lib/webhook-core';
+import { processRadarMessage } from './_lib/webhook-core.js';
+import type { RadarCategory } from './_lib/webhook-core.js';
 
 interface TelegramLocation {
   latitude: number;
