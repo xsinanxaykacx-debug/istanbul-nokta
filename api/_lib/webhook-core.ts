@@ -37,7 +37,7 @@ const MAX_LNG = 29.9;
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ownerId = process.env.RADAR_OWNER_ID ?? process.env.TELEGRAM_OWNER_ID;
+const ownerId = process.env.RADAR_OWNER_ID || process.env.TELEGRAM_OWNER_ID;
 
 const supabaseAdmin =
   supabaseUrl && serviceRoleKey
@@ -342,7 +342,7 @@ export async function processRadarMessage(
       owner_id: ownerId,
       lat: coordinates.lat,
       lng: coordinates.lng,
-      description: RADAR_PIN_MARKER + ' ' + messageText,
+      description: (RADAR_PIN_MARKER + ' ' + messageText).slice(0, 5000),
       category,
     })
     .select('id');
