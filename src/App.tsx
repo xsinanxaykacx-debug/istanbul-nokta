@@ -163,7 +163,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
-  const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
+  const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
@@ -320,29 +320,120 @@ export default function App() {
     void calculate(); return()=>controller.abort();
   },[routeMode,routeStart,routeEnd,pins]);
 
+  const addressableVisiblePins=useMemo(()=>{
+    if(!viewportBounds)return [];
+    const [minLat,maxLat,minLng,maxLng]=viewportBounds;
+    return visiblePins.filter(pin=>
+      pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng
+    );
+  },[visiblePins,viewportBounds]);
+
   useEffect(()=>{
-    if(!pins.length)return; let cancelled=false; let delayTimer:number|undefined; const controller=new AbortController();
-    const waitOneSecond=()=>new Promise<void>(resolve=>{ delayTimer=window.setTimeout(()=>{delayTimer=undefined;resolve();},1000); });
+    const visibleIds=new Set(addressableVisiblePins.map(pin=>pin.id));
+    visiblePinsRef.current=addressableVisiblePins;
+
+    // Forget failed attempts after a pin leaves view, so it can be retried when revisited.
+    for(const pinId of addressAttemptedRef.current){
+      if(!visibleIds.has(pinId))addressAttemptedRef.current.delete(pinId);
+    }
+
+    const activeRequest=addressRequestRef.current;
+    if(activeRequest&&!visibleIds.has(activeRequest.pinId)){
+      activeRequest.controller.abort();
+    }
+    addressQueueWakeRef.current?.();
+  },[addressableVisiblePins]);
+
+  useEffect(()=>{
+    let cancelled=false;
+    let delayTimer:number|undefined;
+    let idleResolver:(()=>void)|null=null;
+
+    const wake=()=>{
+      const resolve=idleResolver;
+      idleResolver=null;
+      resolve?.();
+    };
+    addressQueueWakeRef.current=wake;
+
+    const waitOneSecond=()=>new Promise<void>(resolve=>{
+      delayTimer=window.setTimeout(()=>{
+        delayTimer=undefined;
+        resolve();
+      },1000);
+    });
+    const waitForWork=()=>new Promise<void>(resolve=>{
+      idleResolver=resolve;
+    });
+
     const fetchAddressesSequentially=async()=>{
-      for(let index=0;index<pins.length;index++){
-        if(cancelled)break; const pin=pins[index]; if(pinAddressesRef.current[pin.id])continue;
+      while(!cancelled){
+        const pin=visiblePinsRef.current.find(candidate=>
+          !pinAddressesRef.current[candidate.id]&&
+          !addressAttemptedRef.current.has(candidate.id)
+        );
+        if(!pin){
+          await waitForWork();
+          continue;
+        }
+
+        const controller=new AbortController();
+        addressRequestRef.current={pinId:pin.id,controller};
+        addressAttemptedRef.current.add(pin.id);
+
         try{
           const url=`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pin.lat}&lon=${pin.lng}&zoom=18&addressdetails=1&accept-language=tr`;
-          const response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}});
-          if(!response.ok)throw new Error(`HTTP ${response.status}`); const result=await response.json() as {display_name?:string;address?:Record<string,string>};
-          if(cancelled)break; const address=result.address??{}; const neighbourhood=address.neighbourhood||address.quarter||address.suburb||address.residential;
-          const road=address.road||address.pedestrian||address.footway||address.path; const district=address.city_district||address.district||address.borough;
-          const town=address.town||address.city||address.village||address.municipality; const parts:string[]=[];
-          const add=(value:string|undefined)=>{if(value&&!parts.includes(value))parts.push(value);};
-          if(neighbourhood)add(/mahallesi$/i.test(neighbourhood)?neighbourhood:`${neighbourhood} Mahallesi`); add(road); add(district); if(town!==district)add(town);
-          const formatted=parts.length?parts.join(', '):result.display_name?.trim();
-          if(formatted){ pinAddressesRef.current={...pinAddressesRef.current,[pin.id]:formatted}; setPinAddresses(current=>current[pin.id]?current:{...current,[pin.id]:formatted}); }
-        }catch(error){ if(cancelled||(error instanceof DOMException&&error.name==='AbortError'))break; console.warn('Pin adresi alınamadı:',pin.id,error); }
-        if(index<pins.length-1&&!cancelled)await waitOneSecond();
+          const response=await fetch(url,{
+            signal:controller.signal,
+            headers:{'Accept':'application/json','Accept-Language':'tr'}
+          });
+          if(!response.ok)throw new Error(`HTTP ${response.status}`);
+          const result=await response.json() as {display_name?:string;address?:Record<string,string>};
+
+          const stillVisible=visiblePinsRef.current.some(candidate=>candidate.id===pin.id);
+          if(!cancelled&&!controller.signal.aborted&&stillVisible){
+            const address=result.address??{};
+            const neighbourhood=address.neighbourhood||address.quarter||address.suburb||address.residential;
+            const road=address.road||address.pedestrian||address.footway||address.path;
+            const district=address.city_district||address.district||address.borough;
+            const town=address.town||address.city||address.village||address.municipality;
+            const parts:string[]=[];
+            const add=(value:string|undefined)=>{if(value&&!parts.includes(value))parts.push(value);};
+            if(neighbourhood)add(/mahallesi$/i.test(neighbourhood)?neighbourhood:`${neighbourhood} Mahallesi`);
+            add(road);
+            add(district);
+            if(town!==district)add(town);
+            const formatted=parts.length?parts.join(', '):result.display_name?.trim();
+            if(formatted){
+              pinAddressesRef.current={...pinAddressesRef.current,[pin.id]:formatted};
+              setPinAddresses(current=>current[pin.id]?current:{...current,[pin.id]:formatted});
+            }
+          }
+        }catch(error){
+          if(!(error instanceof DOMException&&error.name==='AbortError')){
+            console.warn('Pin adresi alınamadı:',pin.id,error);
+          }
+        }finally{
+          if(addressRequestRef.current?.controller===controller){
+            addressRequestRef.current=null;
+          }
+        }
+
+        // Keep a strict minimum one-second pause between Nominatim requests,
+        // including when a request is aborted after the viewport changes.
+        if(!cancelled)await waitOneSecond();
       }
     };
-    void fetchAddressesSequentially(); return()=>{cancelled=true;controller.abort();if(delayTimer!==undefined)window.clearTimeout(delayTimer);};
-  },[pins]);
+
+    void fetchAddressesSequentially();
+    return()=>{
+      cancelled=true;
+      addressRequestRef.current?.controller.abort();
+      if(delayTimer!==undefined)window.clearTimeout(delayTimer);
+      wake();
+      if(addressQueueWakeRef.current===wake)addressQueueWakeRef.current=null;
+    };
+  },[]);
 
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedQuery(query.trim()),250);return()=>window.clearTimeout(timer);},[query]);
   useEffect(()=>{const q=placeQuery.trim();const controller=new AbortController();if(!q){setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);return()=>controller.abort();}setPlaceResults([]);setPlaceLoading(false);setPlaceSearched(false);const timer=window.setTimeout(()=>{setPlaceLoading(true);fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=tr&limit=5&addressdetails=1`,{signal:controller.signal,headers:{'Accept':'application/json','Accept-Language':'tr'}}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json() as Promise<PlaceResult[]>;}).then(results=>{setPlaceResults(Array.isArray(results)?results:[]);setPlaceSearched(true);}).catch(error=>{if(error instanceof DOMException&&error.name==='AbortError')return;setPlaceResults([]);setPlaceSearched(true);setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});}).finally(()=>{if(!controller.signal.aborted)setPlaceLoading(false);});},500);return()=>{window.clearTimeout(timer);controller.abort();};},[placeQuery]);

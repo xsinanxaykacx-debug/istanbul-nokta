@@ -2518,3 +2518,22 @@ select option { background: var(--surface); color: var(--text-dark); }
     font-size: 12px;
   }
 }
+
+
+/* Light theme: ensure selected-pin details remain readable in daylight mode. */
+.app-shell.light-theme .selected-address {
+  color: #334155 !important;
+}
+.app-shell.light-theme .selected-address > svg {
+  color: #64748b !important;
+  stroke: #64748b !important;
+}
+.app-shell.light-theme .selected-coordinates {
+  color: #334155 !important;
+}
+.app-shell.light-theme .directions-link {
+  color: #059669 !important;
+}
+.app-shell.light-theme .directions-link:hover {
+  color: #047857 !important;
+}
