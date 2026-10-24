@@ -2364,3 +2364,157 @@ select option { background: var(--surface); color: var(--text-dark); }
 .place-search-wrap {
   z-index: 1000 !important;
 }
+
+/* My Pins filter: a distinct violet accent that remains readable in both themes. */
+.category-filter-button.my-pins-filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+.category-filter-button.my-pins-filter-button:hover {
+  border-color: #8b5cf6;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.category-filter-button.my-pins-filter-button.selected {
+  border-color: #8b5cf6;
+  background: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, .25);
+}
+.app-shell.light-theme .category-filter-button.my-pins-filter-button {
+  border-color: #c4b5fd !important;
+}
+.app-shell.light-theme .category-filter-button.my-pins-filter-button.selected {
+  border-color: #8b5cf6 !important;
+}
+
+/* Pin edit form: clearer field rhythm, file rows and inline error feedback. */
+.pin-edit-form {
+  gap: 13px;
+  padding-bottom: 6px;
+}
+.pin-edit-form .panel-heading {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.pin-edit-form .panel-heading > div {
+  min-width: 0;
+}
+.pin-edit-form .panel-heading h2 {
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+.edit-form-subtitle {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.edit-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.pin-edit-form .field-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+}
+.pin-edit-form .category-select {
+  width: 100%;
+  min-height: 40px;
+}
+.pin-edit-form textarea {
+  box-sizing: border-box;
+  min-height: 112px;
+}
+.edit-description-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+}
+.edit-description-meta small {
+  font-size: inherit;
+}
+.edit-photos-heading {
+  margin-top: 3px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-color, #dce5df);
+}
+.edit-photo-list {
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 1px 2px 1px 0;
+}
+.edit-photo-item {
+  background: var(--surface, rgba(148, 163, 184, .05));
+}
+.edit-photo-item span {
+  overflow-wrap: anywhere;
+}
+.edit-photo-remove {
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.edit-photo-remove:hover:not(:disabled) {
+  border-color: #f87171;
+  background: #fee2e2;
+}
+.edit-upload-box {
+  margin-top: 0;
+}
+.edit-form-error {
+  padding: 9px 11px;
+  border: 1px solid rgba(220, 38, 38, .24);
+  border-radius: 9px;
+  background: rgba(254, 226, 226, .12);
+}
+.edit-form-actions {
+  gap: 10px;
+  margin-top: 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color, #dce5df);
+}
+.edit-form-actions button {
+  min-height: 40px;
+}
+.edit-form-actions button:disabled,
+.pin-edit-form .icon-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+@media (max-width: 768px) {
+  .pin-edit-form {
+    gap: 11px;
+  }
+  .pin-edit-form textarea {
+    min-height: 100px;
+    padding: 10px;
+  }
+  .edit-photo-item {
+    gap: 8px;
+    padding: 6px;
+  }
+  .edit-form-actions {
+    gap: 7px;
+  }
+  .edit-form-actions button {
+    min-height: 38px;
+    padding: 8px 9px;
+    font-size: 12px;
+  }
+}
