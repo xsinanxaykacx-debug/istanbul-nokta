@@ -2933,3 +2933,84 @@ select option { background: var(--surface); color: var(--text-dark); }
     display: none !important;
   }
 }
+
+
+/* Mobile final alignment: keep the four controls together and align 2D/3D with search. */
+@media (max-width: 768px) {
+  .map-frame .map-action-right-group {
+    position: absolute !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    top: auto !important;
+    left: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 44px) !important;
+    grid-template-rows: repeat(2, 44px) !important;
+    grid-auto-flow: row !important;
+    gap: 8px !important;
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 1200 !important;
+  }
+
+  .map-frame .map-action-right-group .voice-pin-control,
+  .map-frame .map-action-right-group .voice-pin-button,
+  .map-frame .map-action-right-group .locate-button,
+  .map-frame .map-action-right-group .route-button,
+  .map-frame .map-action-right-group .traffic-button:not(.heatmap-button) {
+    position: relative !important;
+    inset: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+  }
+
+  .map-frame .map-action-right-group .voice-pin-control {
+    overflow: visible !important;
+  }
+
+  .map-frame .map-action-right-group .voice-pin-button > span,
+  .map-frame .map-action-right-group .route-button > span,
+  .map-frame .map-action-right-group .traffic-button:not(.heatmap-button) > span {
+    display: none !important;
+  }
+
+  .map-frame .map-action-right-group .traffic-button.heatmap-button {
+    display: none !important;
+  }
+
+  .map-frame .map-view-switch {
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    padding: 2px !important;
+    gap: 1px !important;
+    box-sizing: border-box !important;
+  }
+
+  .map-frame .map-view-switch button {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+
+  .map-frame .place-search-wrap {
+    top: 10px !important;
+  }
+}
