@@ -42,7 +42,21 @@ interface NominatimResult {
   lon: string;
 }
 
-const FILTER_KEYWORDS = ['kaza', 'yangın', 'trafik', 'kapalı', 'yol'];
+const FILTER_KEYWORDS = [
+  'kaza',
+  'yangın',
+  'trafik',
+  'kapalı',
+  'yol',
+  'sivil',
+  'yeleksiz',
+  'uygulama',
+  'dikkat',
+  'çatal',
+  'durak',
+  'geçiş',
+  'kilit',
+];
 
 const MIN_LAT = 40.7;
 const MAX_LAT = 41.8;
@@ -145,16 +159,36 @@ function delay(milliseconds: number): Promise<void> {
 }
 
 const GEOCODING_STOPWORDS = [
-  'kaza',
+  'bağlantı yolu',
+  'son durak',
+  'kucaktasın',
+  'yönünde',
+  'çatalda',
+  'siviller',
+  'yeleksiz',
+  'uygulama',
   'yangın',
   'trafik',
+  'geçiş',
+  'dikkat',
+  'çatal',
+  'kaza',
   'kapalı',
+  'yön',
+  'önü',
+  'girişi',
+  'çıkışı',
+  'üstü',
+  'altı',
+  'sivil',
+  'kilit',
+  'göbek',
+  'nihayet',
+  'durak',
   'yol',
   'var',
+  've',
   'yok',
-  'siviller',
-  'sivil',
-  'dikkat',
   'acil',
   'oldu',
   'olmuş',
@@ -166,27 +200,54 @@ const GEOCODING_STOPWORDS = [
   'nedeniyle',
 ];
 
-function buildGeocodeQuery(messageText: string): string {
-  const withoutUrls = messageText
+function cleanTelegramText(value: string): string {
+  return value
+    // Strip a channel-forwarding prefix such as "[24.10.2026 16:15] UserName: "
+    .replace(
+      /^\s*\[[^\]\r\n]*(?:\d{1,2}:\d{2}|\d{1,2}[./-]\d{1,2})[^\]\r\n]*\]\s*[^:\r\n]{1,64}:\s*/u,
+      '',
+    )
     .replace(/https?:\/\/\S+/gi, ' ')
-    .slice(0, 1000);
+    .replace(/@[\p{L}\p{N}_]{2,}/gu, ' ')
+    // Remove pictographic emoji, flags, variation selectors and joiners.
+    .replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0E\uFE0F\u200D]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  // Match whole Turkish words (including letters such as ı, ş, ğ) so
-  // "Kadıköy kaza siviller" becomes "Kadıköy", not the original sentence.
+function buildGeocodeQuery(messageText: string): string {
+  const withoutNoise = cleanTelegramText(messageText).slice(0, 1000);
+  // Long phrases appear before their component words so "son durak" and
+  // "bağlantı yolu" are removed as whole phrases.
+  const sortedStopwords = [...GEOCODING_STOPWORDS].sort(
+    (left, right) => right.length - left.length,
+  );
   const stopwordPattern = new RegExp(
-    `(^|[^\\p{L}\\p{N}_])(?:${GEOCODING_STOPWORDS.join('|')})(?=$|[^\\p{L}\\p{N}_])`,
+    '(^|[^\\p{L}\\p{N}_])(?:' +
+      sortedStopwords.join('|') +
+      ')(?=$|[^\\p{L}\\p{N}_])',
     'giu',
   );
 
-  const locationQuery = withoutUrls
+  return withoutNoise
     .replace(stopwordPattern, '$1')
-    .replace(/['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\p{L}\p{N}_])/giu, '')
+    .replace(
+      /['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\p{L}\p{N}_])/giu,
+      '',
+    )
     .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+    .toLocaleLowerCase('tr-TR')
     .slice(0, 300);
+}
 
-  return locationQuery;
+function buildFallbackQuery(cleanedText: string): string {
+  // For comma-separated multi-location messages, start with the first location
+  // chunk. Otherwise try only the first four meaningful words.
+  const firstChunk = cleanedText.split(/[,;\n|]+/u)[0]?.trim() ?? '';
+  const source = firstChunk || cleanedText;
+  return source.split(/\s+/u).filter(Boolean).slice(0, 4).join(' ');
 }
 
 async function geocodeQueryWithNominatim(
@@ -272,14 +333,27 @@ async function geocodeQueryWithNominatim(
 async function geocodeWithNominatim(
   messageText: string,
 ): Promise<Coordinates | null> {
-  const query = buildGeocodeQuery(messageText);
-  if (!query) {
-    console.warn('Temizlenmiş konum sorgusu boş, Nominatim isteği atlanıyor');
+  const cleanedText = buildGeocodeQuery(messageText);
+  if (!cleanedText) {
+    console.warn('Konum bulunamadı, atlanıyor:', cleanedText);
     return null;
   }
 
-  console.log('Nominatim temiz sorgusu:', query);
-  return geocodeQueryWithNominatim(query);
+  console.log('Nominatim Sorgusu (Deneme 1):', cleanedText);
+  const firstResult = await geocodeQueryWithNominatim(cleanedText);
+  if (firstResult) return firstResult;
+
+  const fallbackCandidate = buildFallbackQuery(cleanTelegramText(messageText));
+  const fallbackQuery = buildGeocodeQuery(fallbackCandidate);
+
+  if (fallbackQuery && fallbackQuery !== cleanedText) {
+    console.log('Nominatim Sorgusu (Fallback):', fallbackQuery);
+    const fallbackResult = await geocodeQueryWithNominatim(fallbackQuery);
+    if (fallbackResult) return fallbackResult;
+  }
+
+  console.warn('Konum bulunamadı, atlanıyor:', cleanedText);
+  return null;
 }
 
 function isValidWebhookSecret(providedSecret: string | undefined): boolean {
@@ -303,14 +377,21 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
   const message = extractMessage(body);
   if (!message) return;
 
-  const messageText =
+  const rawMessageText =
     typeof message.text === 'string'
       ? message.text.trim()
       : typeof message.caption === 'string'
         ? message.caption.trim()
         : '';
 
-  if (!messageText || !containsFilterKeyword(messageText)) return;
+  // Filter on the original message, then normalize Telegram metadata/noise.
+  if (!rawMessageText || !containsFilterKeyword(rawMessageText)) return;
+
+  const messageText = cleanTelegramText(rawMessageText);
+  if (!messageText) {
+    console.warn('Telegram mesajı temizlik sonrası boş kaldı; pin oluşturulmadı');
+    return;
+  }
 
   // pins.owner_id references auth.users(id). Service role bypasses RLS,
   // but cannot bypass this foreign-key constraint; use an existing system account.
