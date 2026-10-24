@@ -615,7 +615,7 @@ export default function App() {
           ],
           temperature: 0.1,
           max_tokens: 20,
-          stop: ["\\n"]
+          stop: ["\n"]
         });
         const resultText = reply.choices[0]?.message?.content?.trim() || "";
         if (resultText.includes("TRAFFIC_ACIK")) return { type: 'TRAFFIC', enabled: true };
