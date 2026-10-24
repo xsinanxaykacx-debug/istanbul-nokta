@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-export type RadarSource = 'telegram' | 'slack';
+export type RadarSource = string;
+export type RadarCategory = 'GRİ' | 'MAVİ' | 'YEŞİL' | 'KIRMIZI';
+export type RadarProcessResult =
+  | { saved: true; category: RadarCategory }
+  | { saved: false };
 
 export interface RadarLocation {
   latitude: number;
@@ -72,7 +76,7 @@ function containsFilterKeyword(value: string): boolean {
   );
 }
 
-function getRadarCategory(messageText: string): 'GRİ' | 'MAVİ' | 'YEŞİL' | 'KIRMIZI' {
+function getRadarCategory(messageText: string): RadarCategory {
   const normalized = normalizeTurkishText(messageText);
   if (/(^|[^\p{L}])sivil(?:ler)?(?=$|[^\p{L}])/u.test(normalized)) {
     return 'GRİ';
@@ -296,21 +300,24 @@ async function geocodeWithNominatim(messageText: string): Promise<Coordinates | 
 }
 
 /**
- * Process a filtered Telegram or Slack message using the same cleaning,
- * categorization, geocoding and Supabase insert pipeline.
+ * Process an incoming Radar report through cleaning, categorization,
+ * geocoding and Supabase insertion. The platform-specific webhook can then
+ * react to whether the report was successfully saved.
  */
 export async function processRadarMessage(
   source: RadarSource,
   rawMessageText: string,
   location?: RadarLocation,
-): Promise<void> {
-  const sourceLabel = source === 'telegram' ? 'Telegram' : 'Slack';
-  if (!rawMessageText || !containsFilterKeyword(rawMessageText)) return;
+): Promise<RadarProcessResult> {
+  const sourceLabel = source === 'telegram' ? 'Telegram' : source;
+  if (!rawMessageText || !containsFilterKeyword(rawMessageText)) {
+    return { saved: false };
+  }
 
   const messageText = cleanRadarText(rawMessageText);
   if (!messageText) {
     console.error(sourceLabel + ' mesajı temizlik sonrası boş kaldı; pin oluşturulmadı');
-    return;
+    return { saved: false };
   }
   const category = getRadarCategory(messageText);
 
@@ -318,7 +325,7 @@ export async function processRadarMessage(
     console.error(
       'Radar webhook yapılandırılmamış: SUPABASE_URL (veya VITE_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY ve mevcut auth.users UUID değerine sahip RADAR_OWNER_ID (veya TELEGRAM_OWNER_ID) gerekli.',
     );
-    return;
+    return { saved: false };
   }
 
   let coordinates: Coordinates | null = null;
@@ -327,14 +334,14 @@ export async function processRadarMessage(
     const lng = Number(location.longitude);
     if (!isIstanbulCoordinate(lat, lng)) {
       console.error(sourceLabel + ' konumu yapılandırılmış İstanbul sınırlarının dışında; atlandı.');
-      return;
+      return { saved: false };
     }
     coordinates = { lat, lng };
   } else {
     coordinates = await geocodeWithNominatim(messageText);
   }
 
-  if (!coordinates) return;
+  if (!coordinates) return { saved: false };
 
   const { data, error } = await supabaseAdmin
     .from('pins')
@@ -352,7 +359,13 @@ export async function processRadarMessage(
       code: error.code,
       message: error.message,
     });
-  } else if (!data || data.length === 0) {
-    console.error('Supabase hata dönmedi ancak insert cevabı boş geldi (' + sourceLabel + ')');
+    return { saved: false };
   }
+
+  if (!data || data.length === 0) {
+    console.error('Supabase hata dönmedi ancak insert cevabı boş geldi (' + sourceLabel + ')');
+    return { saved: false };
+  }
+
+  return { saved: true, category };
 }
