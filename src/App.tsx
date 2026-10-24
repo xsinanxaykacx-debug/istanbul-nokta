@@ -173,6 +173,7 @@ export default function App() {
 
   const [llmEngine, setLlmEngine] = useState<MLCEngine | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
+  const llmEngineRef = useRef<MLCEngine | null>(null);
   const llmLoadPromiseRef = useRef<Promise<MLCEngine | null> | null>(null);
 
   const [adminOpen, setAdminOpen] = useState(false);
@@ -521,6 +522,7 @@ export default function App() {
     | { type: 'MIC_CONTROL'; target: 'search' | 'command' | 'off' };
 
   async function getLLMEngine(): Promise<MLCEngine | null> {
+    if (llmEngineRef.current) return llmEngineRef.current;
     if (llmEngine) return llmEngine;
     if (typeof navigator === 'undefined' || !(navigator as any).gpu) return null;
     if (llmLoadPromiseRef.current) return llmLoadPromiseRef.current;
@@ -534,6 +536,7 @@ export default function App() {
           "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
           { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) }
         );
+        llmEngineRef.current = engine;
         setLlmEngine(engine);
         return engine;
       } catch (error) {
@@ -541,7 +544,8 @@ export default function App() {
         return null;
       } finally {
         setLlmLoading(false);
-        llmLoadPromiseRef.current = null;
+        // Keep the successful engine cached; allow retry only after a failed initialization.
+        if (!llmEngineRef.current) llmLoadPromiseRef.current = null;
       }
     })();
 
