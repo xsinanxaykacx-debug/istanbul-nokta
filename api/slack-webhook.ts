@@ -21,14 +21,21 @@ async function readRawBody(req: VercelRequest): Promise<Buffer> {
   if (Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8');
 
-  // If middleware already consumed and parsed the stream, the original bytes
-  // cannot be reconstructed safely for Slack signature verification.
-  if (req.readableEnded) {
+  // A parsed object cannot be used for signature validation: its original
+  // whitespace and byte representation have already been lost.
+  if (
+    req.body !== undefined &&
+    !Buffer.isBuffer(req.body) &&
+    typeof req.body !== 'string'
+  ) {
     throw new Error(
-      req.body !== undefined
-        ? 'Request body was parsed before signature verification; ensure bodyParser is disabled.'
-        : 'Request stream ended before its raw body could be read.',
+      'Request body was parsed before signature verification; ensure bodyParser is disabled.',
     );
+  }
+
+  // If middleware consumed the stream, the original bytes cannot be reconstructed.
+  if (req.readableEnded) {
+    throw new Error('Request stream ended before its raw body could be read.');
   }
 
   return new Promise<Buffer>((resolve, reject) => {
