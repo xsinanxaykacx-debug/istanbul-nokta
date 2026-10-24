@@ -28,7 +28,7 @@ const pinIcons: Record<string, L.DivIcon> = {
 };
 
 const categoryFilterColors: Record<string, string> = {
-  'Tümü': '#f97316', 'YEŞİL': '#1e8e55', 'MAVİ': '#3b82f6', 'KIRMIZI': '#d64545', 'GRİ': '#9ca3af',
+  'Tümü': '#f97316', 'YEŞİL': '#1e8e55', 'MAVİ': '#3b82f6', 'KIRMIZI': '#d64545', 'GRİ': '#9ca3af', 'BENIM': '#8b5cf6',
 };
 
 function normalizeCategory(category?: string | null): string {
@@ -162,7 +162,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
@@ -194,7 +194,24 @@ export default function App() {
   const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
   
   const matchingIds=useMemo(()=>new Set(searchResultIds??pins.map(p=>p.id)),[searchResultIds,pins]);
-  const filteredPins=useMemo(()=>{const categoryPins=selectedCategoryFilter==='Tümü'?pins:pins.filter(pin=>normalizeCategory(pin.category)===selectedCategoryFilter);if(timeFilter==='all')return categoryPins;const durationByFilter:Record<string,number>={'1m':60_000,'15m':15*60_000,'30m':30*60_000,'1h':60*60_000,'6h':6*60*60_000,'12h':12*60*60_000};const duration=durationByFilter[timeFilter];if(!duration)return categoryPins;const now=Date.now();return categoryPins.filter(pin=>{const createdAt=new Date(pin.created_at).getTime();const age=now-createdAt;return Number.isFinite(createdAt)&&age>=0&&age<duration;});},[pins,selectedCategoryFilter,timeFilter]);
+  const filteredPins=useMemo(()=>{
+    const userId=session?.user?.id;
+    const categoryPins=selectedCategoryFilter==='Tümü'
+      ? pins
+      : selectedCategoryFilter==='BENIM'
+        ? (userId ? pins.filter(pin=>pin.owner_id===userId) : [])
+        : pins.filter(pin=>normalizeCategory(pin.category)===selectedCategoryFilter);
+    if(timeFilter==='all')return categoryPins;
+    const durationByFilter:Record<string,number>={'1m':60_000,'15m':15*60_000,'30m':30*60_000,'1h':60*60_000,'6h':6*60*60_000,'12h':12*60*60_000};
+    const duration=durationByFilter[timeFilter];
+    if(!duration)return categoryPins;
+    const now=Date.now();
+    return categoryPins.filter(pin=>{
+      const createdAt=new Date(pin.created_at).getTime();
+      const age=now-createdAt;
+      return Number.isFinite(createdAt)&&age>=0&&age<duration;
+    });
+  },[pins,selectedCategoryFilter,timeFilter,session?.user?.id]);
   const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
 
   // Keep the coordinate array stable across unrelated renders; otherwise Map3D's flyTo effect re-runs.
@@ -209,7 +226,7 @@ export default function App() {
     return filteredListPins.map(pin=>({pin,position:routePositionForPin(pin,routeLine)})).filter(item=>item.position.distanceMeters<=100).sort((a,b)=>a.position.alongRouteMeters-b.position.alongRouteMeters).map((item,index)=>({pin:item.pin,routeOrder:index+1,routeDistance:item.position.alongRouteMeters}));
   },[filteredListPins,routeMode,routeInfo,routeLine]);
   
-  const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
+  const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&filteredPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
@@ -239,6 +256,7 @@ export default function App() {
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{const hintTimeout=window.setTimeout(()=>setVoicePinHintVisible(false),4000);return()=>window.clearTimeout(hintTimeout);},[]);
   useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSession(data.session);if(data.session?.user)await loadProfile(data.session.user.id);});const {data:listener}=supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);if(next?.user)window.setTimeout(()=>void loadProfile(next.user.id),0);else{setProfile(null);setPins([]);setSelected(null);}});return()=>listener.subscription.unsubscribe();},[loadProfile]);
+  useEffect(()=>{if(!session?.user?.id&&selectedCategoryFilter==='BENIM'){setSelectedCategoryFilter('Tümü');setShowFilterOptions(false);}},[session?.user?.id,selectedCategoryFilter]);
 
   useEffect(()=>{
     const userId=session?.user?.id; if(!supabase||!userId)return; const cleanupKey='lastPhotoCleanup'; const now=Date.now();
@@ -372,40 +390,156 @@ export default function App() {
   }
 
   async function addPin(e:FormEvent){e.preventDefault();if(!draftPosition){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}await savePinDirectly(draftPosition,description,category,files);}
-  function beginPinEdit(){if(!selected||!canDeleteSelected)return;setEditDescription(selected.description);setEditCategory(normalizeCategory(selected.category));setEditPhotos([...selectedPhotos]);setEditFiles([]);setEditPinMode(true);setNotice(null);}
+  function beginPinEdit(){
+    if(!selected||!canDeleteSelected)return;
+    setEditDescription(selected.description);
+    setEditCategory(normalizeCategory(selected.category));
+    setEditPhotos([...selectedPhotos]);
+    setEditFiles([]);
+    setEditError(null);
+    setEditPinMode(true);
+    setNotice(null);
+  }
 
   async function savePinEdits(e:FormEvent){
-    e.preventDefault();if(!supabase||!selected||!canDeleteSelected||busy)return;
-    if(containsProfanity(editDescription)){setNotice({kind:'error',text:'Açıklamanızda uygun olmayan bir ifade tespit edildi.'});return;}
-    if(editPhotos.length+editFiles.length>3){setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});return;}
-    setBusy(true);setNotice({kind:'info',text:'Değişiklikler kaydediliyor…'});const uploadedPaths:string[]=[];
+    e.preventDefault();
+    if(!supabase)return;
+    if(!selected||!canDeleteSelected||busy)return;
+
+    const client=supabase;
+    const targetPin=selected;
+    const userId=session?.user?.id;
+    if(!userId){
+      const message='Fotoğraf güncellemek için tekrar giriş yapmalısınız.';
+      setEditError(message);
+      setNotice({kind:'error',text:message});
+      return;
+    }
+
+    const descriptionToSave=editDescription.trim();
+    const categoryToSave=editCategory;
+    const keptPhotos=[...editPhotos];
+    const originalPhotos=[...selectedPhotos];
+    const filesToUpload=[...editFiles];
+
+    if(containsProfanity(descriptionToSave)){
+      const message='Açıklamanızda uygun olmayan bir ifade tespit edildi.';
+      setEditError(message);
+      setNotice({kind:'error',text:message});
+      return;
+    }
+    if(keptPhotos.length+filesToUpload.length>3){
+      const message='Toplam fotoğraf sayısı 3 adedi geçemez.';
+      setEditError(message);
+      setNotice({kind:'error',text:message});
+      return;
+    }
+
+    setBusy(true);
+    setEditError(null);
+    setNotice({kind:'info',text:'Değişiklikler kaydediliyor…'});
+    const uploadedPaths:string[]=[];
+    let pinDetailsSaved=false;
+
     try{
-      const { data: updatedData, error: pinError } = await supabase.from('pins').update({ description: editDescription.trim(), category: editCategory }).eq('id', selected.id).select();
-      if(pinError) throw pinError;
-      if (!updatedData || updatedData.length === 0) throw new Error('Pin güncellenemedi (Yetki hatası olabilir).');
-      const updatedPinData = { ...selected, description: editDescription.trim(), category: editCategory };
-      setPins(current=>current.map(pin=>pin.id===selected.id ? updatedPinData : pin));setSelected(updatedPinData);
       const newPhotoRows:{pin_id:string;storage_path:string;public_url:string;sort_order:number}[]=[];
-      for(let i=0;i<editFiles.length;i++){
-        const blob=await compressPhoto(editFiles[i]);const path=`${session.user.id}/${crypto.randomUUID()}.jpg`;
-        const {error:uploadError}=await supabase.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});
-        if(uploadError)throw uploadError;uploadedPaths.push(path);
-        const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
-        newPhotoRows.push({pin_id:selected.id,storage_path:path,public_url:data.publicUrl,sort_order:editPhotos.length+i});
+      for(let index=0;index<filesToUpload.length;index++){
+        const blob=await compressPhoto(filesToUpload[index]);
+        const path=`${userId}/${crypto.randomUUID()}.jpg`;
+        const {error:uploadError}=await client.storage.from('pin-photos').upload(path,blob,{contentType:'image/jpeg',upsert:false});
+        if(uploadError)throw uploadError;
+        uploadedPaths.push(path);
+        const {data}=client.storage.from('pin-photos').getPublicUrl(path);
+        newPhotoRows.push({pin_id:targetPin.id,storage_path:path,public_url:data.publicUrl,sort_order:keptPhotos.length+index});
       }
-      const keptIds=new Set(editPhotos.map(photo=>photo.id));const removedPhotos=selectedPhotos.filter(photo=>!keptIds.has(photo.id));
-      if(removedPhotos.length){const {error:removeRowsError}=await supabase.from('pin_photos').delete().in('id',removedPhotos.map(photo=>photo.id));if(removeRowsError)throw removeRowsError;}
-      for(let i=0;i<editPhotos.length;i++){const {error:orderError}=await supabase.from('pin_photos').update({sort_order:i}).eq('id',editPhotos[i].id);if(orderError)throw orderError;}
-      if(newPhotoRows.length){const {error:insertError}=await supabase.from('pin_photos').insert(newPhotoRows);if(insertError)throw insertError;}
-      let cleanupMessage='';const removedPaths=removedPhotos.map(photo=>photo.storage_path);
-      if(removedPaths.length){const {error:storageError}=await supabase.storage.from('pin-photos').remove(removedPaths);if(storageError)cleanupMessage=storageError.message;}
-      setEditPinMode(false);setEditFiles([]);setNotice(cleanupMessage?{kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}:{kind:'success',text:'Değişiklikler kaydedildi.'});
+
+      for(let index=0;index<keptPhotos.length;index++){
+        const {error:orderError}=await client.from('pin_photos').update({sort_order:index}).eq('id',keptPhotos[index].id);
+        if(orderError)throw orderError;
+      }
+
+      let insertedPhotos:PinPhoto[]=[];
+      if(newPhotoRows.length){
+        const {data:insertedData,error:insertError}=await client.from('pin_photos').insert(newPhotoRows).select('id,storage_path,public_url,sort_order');
+        if(insertError)throw insertError;
+        insertedPhotos=(insertedData??[]) as PinPhoto[];
+        if(insertedPhotos.length!==newPhotoRows.length)throw new Error('Yeni fotoğraf kayıtları doğrulanamadı.');
+      }
+
+      const {data:updatedData,error:pinError}=await client.from('pins').update({description:descriptionToSave,category:categoryToSave}).eq('id',targetPin.id).select('id');
+      if(pinError)throw pinError;
+      if(!updatedData||updatedData.length===0)throw new Error('Pin güncellenemedi (yetki hatası olabilir).');
+
+      pinDetailsSaved=true;
+      const pinWithUpdatedDetails:Pin={...targetPin,description:descriptionToSave,category:categoryToSave};
+      setPins(current=>current.map(pin=>pin.id===targetPin.id?{...pin,description:descriptionToSave,category:categoryToSave}:pin));
+      setSelected(current=>current?.id===targetPin.id?{...current,description:descriptionToSave,category:categoryToSave}:current);
+
+      const keptIds=new Set(keptPhotos.map(photo=>photo.id));
+      const removedPhotos=originalPhotos.filter(photo=>!keptIds.has(photo.id));
+      if(removedPhotos.length){
+        const {error:removeRowsError}=await client.from('pin_photos').delete().in('id',removedPhotos.map(photo=>photo.id));
+        if(removeRowsError)throw removeRowsError;
+      }
+
+      const nextPhotos:PinPhoto[]=[
+        ...keptPhotos.map((photo,index)=>({...photo,sort_order:index})),
+        ...insertedPhotos.map((photo,index)=>({...photo,sort_order:keptPhotos.length+index})),
+      ];
+      const updatedPin:Pin={...pinWithUpdatedDetails,pin_photos:nextPhotos};
+      setPins(current=>current.map(pin=>pin.id===targetPin.id?updatedPin:pin));
+      setSelected(current=>current?.id===targetPin.id?updatedPin:current);
+
+      let cleanupMessage='';
+      const removedPaths=removedPhotos.map(photo=>photo.storage_path);
+      if(removedPaths.length){
+        try{
+          const {error:storageError}=await client.storage.from('pin-photos').remove(removedPaths);
+          if(storageError)cleanupMessage=storageError.message;
+        }catch(cleanupError:unknown){
+          cleanupMessage=cleanupError instanceof Error?cleanupError.message:String(cleanupError);
+        }
+      }
+
+      setEditPinMode(false);
+      setEditFiles([]);
+      setEditError(null);
+      setNotice(cleanupMessage
+        ? {kind:'error',text:`Pin güncellendi ancak silinen fotoğraf dosyalarının temizlenmesi başarısız oldu: ${cleanupMessage}`}
+        : {kind:'success',text:'Değişiklikler kaydedildi.'});
       await loadPins();
-    }catch(err){
-      if(uploadedPaths.length)await supabase.storage.from('pin-photos').remove(uploadedPaths);
-      const errorMessage = err && typeof err === 'object' && 'message' in err ? String((err as any).message) : (err instanceof Error ? err.message : '');
-      setNotice({kind:'error', text: errorMessage || 'Pin değişiklikleri kaydedilemedi. Lütfen tekrar deneyin.'});
-    } finally { setBusy(false); }
+    }catch(error:unknown){
+      let cleanupMessage='';
+      if(uploadedPaths.length){
+        try{
+          const {error:rowsCleanupError}=await client.from('pin_photos').delete().in('storage_path',uploadedPaths);
+          if(rowsCleanupError)cleanupMessage=rowsCleanupError.message;
+        }catch(rowsCleanupError:unknown){
+          cleanupMessage=rowsCleanupError instanceof Error?rowsCleanupError.message:String(rowsCleanupError);
+        }
+        try{
+          const {error:storageCleanupError}=await client.storage.from('pin-photos').remove(uploadedPaths);
+          if(storageCleanupError)cleanupMessage=[cleanupMessage,storageCleanupError.message].filter(Boolean).join(' ');
+        }catch(storageCleanupError:unknown){
+          const storageErrorText=storageCleanupError instanceof Error?storageCleanupError.message:String(storageCleanupError);
+          cleanupMessage=[cleanupMessage,storageErrorText].filter(Boolean).join(' ');
+        }
+      }
+
+      const rawMessage=error instanceof Error?error.message:
+        error!==null&&typeof error==='object'&&'message' in error?String(error.message??''):'';
+      const baseMessage=rawMessage||'Pin değişiklikleri kaydedilemedi. Lütfen tekrar deneyin.';
+      const message=pinDetailsSaved
+        ? `Pin açıklaması ve kategorisi kaydedildi ancak fotoğraf işlemi tamamlanamadı: ${baseMessage}`
+        : baseMessage;
+      const fullMessage=cleanupMessage
+        ? `${message} Yeni fotoğraf temizliği uyarısı: ${cleanupMessage}`
+        : message;
+      setEditError(fullMessage);
+      setNotice({kind:'error',text:fullMessage});
+    }finally{
+      setBusy(false);
+    }
   }
 
   async function togglePinVote(voteType:1|-1){
@@ -845,11 +979,11 @@ export default function App() {
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
-            <MapClick enabled={canAdd} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+            <MapClick enabled={canAdd&&!editPinMode} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
             <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
             <FlyTo position={userPosition} zoom={16}/>
-            <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{ if(bulkSelectMode)setBulkSelectedPins(prev=>prev.includes(pin.id)?prev.filter(id=>id!==pin.id):[...prev,pin.id]); else {setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);} }} />
+            <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{ if(editPinMode)return; if(bulkSelectMode)setBulkSelectedPins(prev=>prev.includes(pin.id)?prev.filter(id=>id!==pin.id):[...prev,pin.id]); else {setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);} }} />
             {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
             {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
             {userPosition&&<Marker position={userPosition} icon={userLocationIcon} keyboard><Popup><div className="user-location-popup"><strong>Şu anki konumun</strong><span>{userPosition[0].toFixed(5)}, {userPosition[1].toFixed(5)}</span><button type="button" onClick={()=>{if(canAdd)openAddPinAt({lat:userPosition[0],lng:userPosition[1]});else setAuthOpen(true);}}>Buraya işaret koy</button></div></Popup></Marker>}
@@ -863,6 +997,7 @@ export default function App() {
           <Map3D 
             pins={filteredPins} 
             onMapClick={(lat: number, lng: number) => {
+              if(editPinMode)return;
               setPlaceDropdownOpen(false);
               setSearchPlace(null);
               if (routeMode) {
@@ -880,7 +1015,7 @@ export default function App() {
                 setSelected(null);
               }
             }}
-            onPinSelect={(pin: any) => { setSelected(pin); setSearchPlace(null); setDraftPosition(null); }}
+            onPinSelect={(pin: any) => { if(editPinMode)return; setSelected(pin); setSearchPlace(null); setDraftPosition(null); }}
             userPosition={userPosition}
             flyToCoords={flyToCoords}
             flyToUserCoords={flyToUserCoords}
@@ -919,14 +1054,14 @@ export default function App() {
         )}
         {selected&&!routeMode?<div className="panel-content">
           {editPinMode?<form className="pin-edit-form" onSubmit={savePinEdits}>
-            <div className="panel-heading"><div><p className="eyebrow">KONUMU DÜZENLE</p><h2>{pinTitle(selected)}</h2></div><button type="button" className="icon-button" onClick={()=>{setEditPinMode(false);setEditFiles([]);}} aria-label="Düzenlemeyi kapat"><X size={18}/></button></div>
-            <label className="field-label" htmlFor="edit-category">Kategori</label><select id="edit-category" className="category-select" value={editCategory} onChange={e=>setEditCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="GRİ">GRİ</option></select>
-            <label className="field-label" htmlFor="edit-description">Açıklama</label><textarea id="edit-description" value={editDescription} onChange={e=>setEditDescription(e.target.value)} maxLength={5000} rows={4} placeholder="Konum açıklaması"/>{containsProfanity(editDescription)&&<p className="form-error" role="alert">Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}
+            <div className="panel-heading"><div><p className="eyebrow">KONUMU DÜZENLE</p><h2>{pinTitle(selected)}</h2><small className="edit-form-subtitle">Değişikliklerin yalnızca bu konuma uygulanır.</small></div><button type="button" className="icon-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}} aria-label="Düzenlemeyi kapat"><X size={18}/></button></div>
+            <div className="edit-field-group"><label className="field-label" htmlFor="edit-category">Kategori</label><select id="edit-category" className="category-select" value={editCategory} onChange={e=>{setEditCategory(e.target.value);setEditError(null);}}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="GRİ">GRİ</option></select></div>
+            <div className="edit-field-group"><label className="field-label" htmlFor="edit-description">Açıklama</label><textarea id="edit-description" value={editDescription} onChange={e=>{setEditDescription(e.target.value);setEditError(null);}} maxLength={5000} rows={4} placeholder="Konum açıklaması"/><div className="edit-description-meta"><small>En fazla 5.000 karakter</small><small>{editDescription.length.toLocaleString('tr-TR')}/5.000</small></div>{containsProfanity(editDescription)&&<p className="form-error" role="alert">Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}</div>
             <div className="edit-photos-heading"><span className="field-label">Mevcut fotoğraflar</span><small>{editPhotos.length+editFiles.length}/3</small></div>
-            {editPhotos.length>0?<div className="edit-photo-list">{editPhotos.map(photo=><div className="edit-photo-item" key={photo.id}><img src={photoUrls[photo.storage_path]||photo.public_url} alt="Mevcut pin fotoğrafı"/><span>{photo.storage_path.split('/').pop()}</span><button type="button" className="edit-photo-remove" onClick={()=>setEditPhotos(current=>current.filter(item=>item.id!==photo.id))} aria-label="Fotoğrafı sil" title="Fotoğrafı sil"><X size={15}/></button></div>)}</div>:<p className="comments-empty">Mevcut fotoğraf yok.</p>}
-            <label className="field-label" htmlFor="edit-photo-input">Yeni fotoğraf ekle <span>Kalan hak: {Math.max(0,3-editPhotos.length-editFiles.length)}</span></label><label className="upload-box" htmlFor="edit-photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Toplam en fazla 3 fotoğraf</small><input id="edit-photo-input" type="file" accept="image/*" multiple disabled={editPhotos.length+editFiles.length>=3} onChange={e=>{const chosen=Array.from(e.target.files??[]);const allowed=Math.max(0,3-editPhotos.length-editFiles.length);setEditFiles(current=>[...current,...chosen.slice(0,allowed)].slice(0,allowed));if(chosen.length>allowed)setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});e.currentTarget.value='';}}/></label>
-            {editFiles.length>0&&<div className="file-list">{editFiles.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label="Yeni fotoğrafı kaldır" onClick={()=>setEditFiles(current=>current.filter((_,i)=>i!==index))}><X size={14}/></button></div>)}</div>}
-            <div className="edit-form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);}}>İptal</button><button type="submit" className="primary-button" disabled={busy||editPhotos.length+editFiles.length>3||containsProfanity(editDescription)}>{busy?'Kaydediliyor…':'Değişiklikleri Kaydet'}</button></div>
+            {editPhotos.length>0?<div className="edit-photo-list">{editPhotos.map(photo=><div className="edit-photo-item" key={photo.id}><img src={photoUrls[photo.storage_path]||photo.public_url} alt="Mevcut pin fotoğrafı"/><span>{photo.storage_path.split('/').pop()}</span><button type="button" className="edit-photo-remove" onClick={()=>{setEditPhotos(current=>current.filter(item=>item.id!==photo.id));setEditError(null);}} aria-label="Fotoğrafı sil" title="Fotoğrafı sil"><X size={15}/></button></div>)}</div>:<p className="comments-empty">Mevcut fotoğraf yok.</p>}
+            <div className="edit-field-group"><label className="field-label" htmlFor="edit-photo-input">Yeni fotoğraf ekle <span>Kalan hak: {Math.max(0,3-editPhotos.length-editFiles.length)}</span></label><label className="upload-box edit-upload-box" htmlFor="edit-photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Toplam en fazla 3 fotoğraf</small><input id="edit-photo-input" type="file" accept="image/*" multiple disabled={editPhotos.length+editFiles.length>=3||busy} onChange={e=>{const chosen=Array.from(e.target.files??[]);const totalAllowed=Math.max(0,3-editPhotos.length);const allowed=Math.max(0,totalAllowed-editFiles.length);setEditFiles(current=>[...current,...chosen.slice(0,Math.max(0,totalAllowed-current.length))].slice(0,totalAllowed));setEditError(chosen.length>allowed?'Toplam fotoğraf sayısı 3 adedi geçemez.':null);if(chosen.length>allowed)setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});e.currentTarget.value='';}}/></div>
+            {editFiles.length>0&&<div className="file-list">{editFiles.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label="Yeni fotoğrafı kaldır" onClick={()=>{setEditFiles(current=>current.filter((_,i)=>i!==index));setEditError(null);}}><X size={14}/></button></div>)}</div>}
+            {editError&&<p className="form-error edit-form-error" role="alert">{editError}</p>}<div className="edit-form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}}>İptal</button><button type="submit" className="primary-button" disabled={busy||editPhotos.length+editFiles.length>3||containsProfanity(editDescription)}>{busy?<><LoaderCircle size={15} className="gps-spinner"/> Kaydediliyor…</>:'Değişiklikleri Kaydet'}</button></div>
           </form>:<>
             <div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span><h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{selected.description||'Açıklama eklenmemiş.'}</p>
             {(()=>{const votes=selected.pin_votes??[];const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0);const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0;const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id;return <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}><button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button><strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong><button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button>{ownPin&&<small>Kendi noktanı oylayamazsın</small>}{!session?.user&&<small>Oy vermek için giriş yap</small>}</div>;})()}
@@ -952,7 +1087,7 @@ export default function App() {
           </>}
         </div>
         :draftPosition&&canAdd&&!routeMode?<form className="panel-content" onSubmit={addPin}><div className="panel-heading"><div><p className="eyebrow">YENİ PAYLAŞIM</p><h2>Konum ekle</h2></div><button type="button" className="icon-button" onClick={()=>setDraftPosition(null)} aria-label="Konum ekleme formunu kapat"><X size={18}/></button></div><div className="draft-coordinates-row"><p className="coordinates">{draftPosition[0].toFixed(5)}, {draftPosition[1].toFixed(5)}</p><button type="button" className="use-location-button" onClick={()=>locateUser(true)} disabled={locating} title="GPS konumunu kullan">{locating?<LoaderCircle className="gps-spinner" size={15}/>:<LocateFixed size={15}/>}<span>{locating?'Konum alınıyor…':'Konumumu Kullan'}</span></button></div><p className="draft-location-hint">📍 Konumu değiştirmek için haritada başka bir noktaya tıklayabilir veya yandaki GPS butonunu kullanabilirsiniz.</p><label className="field-label" htmlFor="category">Kategori</label><select id="category" className="category-select" value={category} onChange={e=>setCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="GRİ">GRİ</option></select><label className="field-label" htmlFor="description">Açıklama</label><div className={`voice-textarea-wrap ${speechSupported?'voice-supported':''}`}><textarea id="description" className={speechSupported?'voice-enabled-input':''} value={description} onChange={e=>setDescription(e.target.value)} maxLength={5000} placeholder={listeningField==='description'?'Dinleniyor...':'Bu konum hakkında ne paylaşmak istersin?'} rows={3}/>{hasProfanity&&<p role="alert" style={{color:"#dc2626",fontSize:"13px",margin:"6px 0 0"}}>⚠️ Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}{speechSupported&&<button type="button" className={`voice-button textarea-voice-button ${listeningField==='description'?'is-listening':''}`} onClick={()=>startListening('description',setDescription)} aria-label={listeningField==='description'?'Dinlemeyi durdur':'Açıklamaya sesli giriş'} title={listeningField==='description'?'Dinleniyor...':'Sesli giriş'}><Mic size={16}/></button>}</div><label className="field-label" htmlFor="photo-input">Fotoğraflar <span>İsteğe bağlı · En fazla 3 adet</span></label><label className="upload-box" htmlFor="photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Görsel dosyası · dosya başına en fazla 12 MB</small><input id="photo-input" type="file" accept="image/*" capture="environment" multiple onChange={e=>{const selectedFiles=Array.from(e.target.files??[]);setFiles(selectedFiles);setNotice(selectedFiles.length>3?{kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}:null);}}/></label>{files.length>0&&<div className="file-list">{files.map((file,i)=><div key={`${file.name}-${i}`}><span>{file.name}</span><button type="button" onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Dosyayı kaldır"><X size={14}/></button></div>)}</div>}<button className="primary-button full-width" disabled={busy||files.length>3||hasProfanity}>{busy?'Kaydediliyor…':'Konumu kaydet'}</button><p className="info-text" style={{fontSize:"12px",color:"#94a3b8",marginTop:"10px",textAlign:"center"}}>Bilgilendirme: Paylaşımlarınız haritada 24 saat boyunca görünür kalır.</p></form>
-        :<div className="empty-panel"><div className="panel-top-controls">{routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır.</p>}</section>}<div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>{!showFilterOptions?<><button type="button" className="category-filter-button selected" style={{backgroundColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,borderColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,color:selectedCategoryFilter==='GRİ'?'#111827':'#fff'}} onClick={()=>setShowFilterOptions(true)} aria-expanded="false" aria-label={`Seçili filtre: ${selectedCategoryFilter}. Filtre seçeneklerini aç`}>{selectedCategoryFilter}</button><button type="button" className="filter-toggle-button" onClick={()=>setShowFilterOptions(true)} aria-label="Filtre seçeneklerini aç" title="Filtre seçenekleri"><SlidersHorizontal size={16}/></button></>:['Tümü','YEŞİL','MAVİ','KIRMIZI','GRİ'].map(filter=><button key={filter} type="button" className={`category-filter-button ${selectedCategoryFilter===filter?'selected':''}`} style={selectedCategoryFilter===filter?{backgroundColor:categoryFilterColors[filter],borderColor:categoryFilterColors[filter],color:filter==='GRİ'?'#111827':'#fff'}:undefined} aria-pressed={selectedCategoryFilter===filter} onClick={()=>{setSelectedCategoryFilter(filter);setShowFilterOptions(false);}}>{filter}</button>)}</div><label className="time-filter-control" aria-label="Zaman filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><Clock size={15} aria-hidden="true"/><select value={timeFilter} onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()} onChange={event=>setTimeFilter(event.target.value)} aria-label="Pinleri zamana göre filtrele"><option value="all">Tümü (24 Saat)</option><option value="1m">Son 1 Dakika</option><option value="15m">Son 15 Dakika</option><option value="30m">Son 30 Dakika</option><option value="1h">Son 1 Saat</option><option value="6h">Son 6 Saat</option><option value="12h">Son 12 Saat</option></select></label></div><div className="pin-searchbox"><Search size={15}/><input className={speechSupported?'voice-enabled-input':''} value={query} onChange={e=>setQuery(e.target.value)} placeholder={listeningField==='query'?'Dinleniyor...':'Açıklamalarda ara...'} aria-label="Açıklamalarda ara"/>{speechSupported&&<button type="button" className={`voice-button pin-voice-button ${listeningField==='query'?'is-listening':''}`} onClick={()=>startListening('query',setQuery)} aria-label={listeningField==='query'?'Dinlemeyi durdur':'Sesli pin araması'} title={listeningField==='query'?'Dinleniyor...':'Sesli arama'}><Mic size={15}/></button>}{query&&<button className="search-clear" type="button" onClick={()=>{setQuery('');setDebouncedQuery('');setSearchResultIds(null);}} aria-label="Pin aramasını temizle"><X size={14}/></button>}</div>{routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}</div>{filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);const score=pin.pin_votes?.reduce((sum,v)=>sum+v.vote_type,0)||0;return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<div className="pin-list-left"><span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))} category={pin.category} />:<span className="mini-pin"><MapPin size={16} style={{ stroke: categoryFilterColors[normalizeCategory(pin.category)], color: categoryFilterColors[normalizeCategory(pin.category)] }} /></span>}</span><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small></div><div className="pin-list-right"><strong className="pin-list-title" title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><div className="pin-list-meta"><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small><span className={`pin-score-badge ${score>0?'score-pos':score<0?'score-neg':'score-zero'}`} aria-label={`Oy skoru: ${score}`}>{score>0?`+${score}`:score}</span></div></div></button>;})}</div>}{!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}</div>}<div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div></aside>
+        :<div className="empty-panel"><div className="panel-top-controls">{routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır.</p>}</section>}<div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>{!showFilterOptions?<><button type="button" className={`category-filter-button selected ${selectedCategoryFilter==='BENIM'?'my-pins-filter-button':''}`} style={{backgroundColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,borderColor:categoryFilterColors[selectedCategoryFilter]??categoryFilterColors.Tümü,color:selectedCategoryFilter==='GRİ'?'#111827':'#fff'}} onClick={()=>setShowFilterOptions(true)} aria-expanded="false" aria-label={`Seçili filtre: ${selectedCategoryFilter==='BENIM'?'Benim Pinlerim':selectedCategoryFilter}. Filtre seçeneklerini aç`}>{selectedCategoryFilter==='BENIM'&&<UserRound size={13} aria-hidden="true"/>}{selectedCategoryFilter==='BENIM'?'Benim Pinlerim':selectedCategoryFilter}</button><button type="button" className="filter-toggle-button" onClick={()=>setShowFilterOptions(true)} aria-label="Filtre seçeneklerini aç" title="Filtre seçenekleri"><SlidersHorizontal size={16}/></button></>:(session?.user?.id?['Tümü','YEŞİL','MAVİ','KIRMIZI','GRİ','BENIM']:['Tümü','YEŞİL','MAVİ','KIRMIZI','GRİ']).map(filter=><button key={filter} type="button" className={`category-filter-button ${selectedCategoryFilter===filter?'selected':''} ${filter==='BENIM'?'my-pins-filter-button':''}`} style={selectedCategoryFilter===filter?{backgroundColor:categoryFilterColors[filter],borderColor:categoryFilterColors[filter],color:filter==='GRİ'?'#111827':'#fff'}:undefined} aria-pressed={selectedCategoryFilter===filter} onClick={()=>{setSelectedCategoryFilter(filter);setShowFilterOptions(false);}}>{filter==='BENIM'&&<UserRound size={13} aria-hidden="true"/>}{filter==='BENIM'?'Benim Pinlerim':filter}</button>)}</div><label className="time-filter-control" aria-label="Zaman filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><Clock size={15} aria-hidden="true"/><select value={timeFilter} onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()} onChange={event=>setTimeFilter(event.target.value)} aria-label="Pinleri zamana göre filtrele"><option value="all">Tümü (24 Saat)</option><option value="1m">Son 1 Dakika</option><option value="15m">Son 15 Dakika</option><option value="30m">Son 30 Dakika</option><option value="1h">Son 1 Saat</option><option value="6h">Son 6 Saat</option><option value="12h">Son 12 Saat</option></select></label></div><div className="pin-searchbox"><Search size={15}/><input className={speechSupported?'voice-enabled-input':''} value={query} onChange={e=>setQuery(e.target.value)} placeholder={listeningField==='query'?'Dinleniyor...':'Açıklamalarda ara...'} aria-label="Açıklamalarda ara"/>{speechSupported&&<button type="button" className={`voice-button pin-voice-button ${listeningField==='query'?'is-listening':''}`} onClick={()=>startListening('query',setQuery)} aria-label={listeningField==='query'?'Dinlemeyi durdur':'Sesli pin araması'} title={listeningField==='query'?'Dinleniyor...':'Sesli arama'}><Mic size={15}/></button>}{query&&<button className="search-clear" type="button" onClick={()=>{setQuery('');setDebouncedQuery('');setSearchResultIds(null);}} aria-label="Pin aramasını temizle"><X size={14}/></button>}</div>{routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}</div>{filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);const score=pin.pin_votes?.reduce((sum,v)=>sum+v.vote_type,0)||0;return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<div className="pin-list-left"><span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))} category={pin.category} />:<span className="mini-pin"><MapPin size={16} style={{ stroke: categoryFilterColors[normalizeCategory(pin.category)], color: categoryFilterColors[normalizeCategory(pin.category)] }} /></span>}</span><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small></div><div className="pin-list-right"><strong className="pin-list-title" title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><div className="pin-list-meta"><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small><span className={`pin-score-badge ${score>0?'score-pos':score<0?'score-neg':'score-zero'}`} aria-label={`Oy skoru: ${score}`}>{score>0?`+${score}`:score}</span></div></div></button>;})}</div>}{!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}</div>}<div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div></aside>
     </section>
     
     {adminOpen && (
