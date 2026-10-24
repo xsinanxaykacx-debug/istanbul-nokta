@@ -1,17 +1,23 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { processRadarMessage } from './_lib/webhook-core';
+import type { RadarCategory } from './_lib/webhook-core';
 
 interface TelegramLocation {
   latitude: number;
   longitude: number;
 }
 
+interface TelegramChat {
+  id: number;
+}
+
 interface TelegramMessage {
   text?: string;
   caption?: string;
-  chat?: { id: number };
+  chat?: TelegramChat;
   chat_id?: number | string;
+  message_id?: number;
   location?: TelegramLocation;
 }
 
@@ -23,8 +29,9 @@ interface TelegramUpdateBody {
   edited_channel_post?: TelegramMessage;
   text?: string;
   caption?: string;
-  chat?: { id: number };
+  chat?: TelegramChat;
   chat_id?: number | string;
+  message_id?: number;
   location?: TelegramLocation;
 }
 
@@ -79,6 +86,60 @@ function isValidWebhookSecret(providedSecret: string | undefined): boolean {
   );
 }
 
+async function sendTelegramConfirmation(
+  message: TelegramMessage,
+  category: RadarCategory,
+): Promise<void> {
+  const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = message.chat?.id ?? message.chat_id;
+
+  if (!telegramBotToken || chatId === undefined || chatId === null) {
+    console.error(
+      'İhbar kaydedildi ancak Telegram onayı gönderilemedi: bot token veya kaynak kanal kimliği eksik.',
+    );
+    return;
+  }
+
+  const confirmationText =
+    '✅ İhbarınız AYTAR haritasına kaydedildi. (Kategori: ' + category + ')';
+
+  try {
+    const response = await fetch(
+      'https://api.telegram.org/bot' + telegramBotToken + '/sendMessage',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: confirmationText,
+        }),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+
+    if (!response.ok) {
+      console.error(
+        'İhbar Supabase’e kaydedildi ancak Telegram onay mesajı gönderilemedi. HTTP:',
+        response.status,
+      );
+      return;
+    }
+
+    const result: unknown = await response.json();
+    if (!isRecord(result) || result.ok !== true) {
+      console.error(
+        'İhbar Supabase’e kaydedildi ancak Telegram API onay mesajını kabul etmedi.',
+      );
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(
+      'İhbar Supabase’e kaydedildi ancak Telegram onayı gönderilirken hata oluştu:',
+      errorMessage,
+    );
+  }
+}
+
 async function processTelegramUpdate(body: unknown): Promise<void> {
   const message = extractMessage(body);
   if (!message) return;
@@ -90,7 +151,10 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
         ? message.caption.trim()
         : '';
 
-  await processRadarMessage('telegram', rawMessageText, message.location);
+  const result = await processRadarMessage('telegram', rawMessageText, message.location);
+  if (result.saved) {
+    await sendTelegramConfirmation(message, result.category);
+  }
 }
 
 export default async function handler(
