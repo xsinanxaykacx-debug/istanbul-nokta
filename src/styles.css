@@ -2543,3 +2543,167 @@ select option { background: var(--surface); color: var(--text-dark); }
 .pin-icon.pin-icon-telegram { background: #7c3aed !important; }
 .telegram-pin-icon-wrap { filter: drop-shadow(0 4px 7px rgba(124, 58, 237, .45)); }
 .radar-source-badge { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 4px 7px; border: 1px solid #ddd6fe; border-radius: 999px; background: #f5f3ff; color: #6d28d9; font-size: 10px; font-weight: 800; vertical-align: middle; }
+
+
+/* AYTAR mobile map controls: compact search and unified circular action group. */
+@media (max-width: 768px) {
+  .place-search-wrap {
+    width: min(52vw, 250px) !important;
+    max-width: calc(100vw - 150px) !important;
+    left: 10px !important;
+    top: 10px !important;
+  }
+
+  .map-action-left-group {
+    max-width: 0 !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    overflow: visible !important;
+  }
+  .map-action-left-group .map-add-location-button {
+    display: none !important;
+  }
+  .map-action-right-group {
+    position: absolute !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    left: auto !important;
+    top: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 1200 !important;
+  }
+  .map-action-right-group .route-button,
+  .map-action-right-group .traffic-button,
+  .map-action-right-group .locate-button,
+  .map-action-right-group .voice-pin-button {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    gap: 0 !important;
+  }
+  .map-action-right-group .route-button > span,
+  .map-action-right-group .traffic-button > span {
+    display: none !important;
+  }
+  .map-action-right-group .traffic-button.heatmap-button {
+    display: none !important;
+  }
+  .map-action-right-group .traffic-button:not(.heatmap-button) {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+  .map-action-right-group .voice-pin-button.is-listening {
+    flex-basis: 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+  }
+  .map-action-right-group .voice-pin-control {
+    display: inline-flex !important;
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+    position: relative !important;
+  }
+  .map-action-right-group .voice-tooltip {
+    left: auto !important;
+    right: 0 !important;
+    bottom: 48px !important;
+    top: auto !important;
+    white-space: normal !important;
+    width: max-content !important;
+    max-width: min(280px, calc(100vw - 32px)) !important;
+  }
+
+  .panel-filter-search-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .panel-filter-search-row .panel-filters {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .panel-filter-search-row .category-filter-row {
+    display: none !important;
+  }
+  .panel-filter-search-row .time-filter-control {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 132px !important;
+    margin: 0 !important;
+    padding: 6px 7px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+  }
+  .panel-filter-search-row .time-filter-control select {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 92px !important;
+    padding: 0 2px !important;
+    font-size: 11px !important;
+  }
+  .panel-filter-search-row .pin-searchbox {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .panel-filter-search-row .pin-searchbox input {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+
+
+/* Keep category filters visible above the compact time/search row on mobile. */
+@media (max-width: 768px) {
+  .panel-filter-search-row {
+    flex-wrap: wrap !important;
+  }
+  .panel-filter-search-row .panel-filters {
+    display: contents !important;
+  }
+  .panel-filter-search-row .category-filter-row {
+    display: flex !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .map-action-right-group .voice-pin-button > span {
+    display: none !important;
+  }
+}
