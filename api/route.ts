@@ -1,7 +1,18 @@
-// @ts-nocheck
-/* eslint-disable */
-type VercelRequest = { method?: string; body?: unknown };
-type VercelResponse = { setHeader(name: string, value: string): void; status(code: number): VercelResponse; json(body: unknown): VercelResponse; send(body: string): VercelResponse };
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+type RouteRequest = {
+  coordinates: [[number, number], [number, number]];
+};
+
+interface OSRMResponse {
+  code: string;
+  routes?: Array<{
+    geometry: { coordinates: number[][] };
+    distance: number;
+    duration: number;
+  }>;
+  message?: string;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -9,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const body = req.body as any;
+  const body = req.body as RouteRequest;
   if (!body || !Array.isArray(body.coordinates) || body.coordinates.length !== 2) {
     return res.status(400).json({ error: 'Invalid route request body' });
   }
@@ -26,10 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('OSRM Error Response:', osrmResponse.status, errorText);
       return res.status(osrmResponse.status).json({ error: `OSRM HTTP ${osrmResponse.status}: ${errorText}` });
     }
-    const data = await osrmResponse.json();
+    const data: OSRMResponse = await osrmResponse.json();
     return res.status(200).json(data);
-  } catch (error) {
-    console.error('OSRM proxy request failed:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('OSRM proxy request failed:', errorMessage);
     return res.status(502).json({ error: 'Route request failed' });
   }
 }
