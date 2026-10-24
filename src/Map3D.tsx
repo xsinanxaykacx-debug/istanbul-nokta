@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as maplibregl from 'maplibre-gl';
+// Vite'ın worker dosyasını paketlemesini ve bize URL vermesini sağlıyoruz
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 interface Map3DProps {
   pins: any[];
@@ -42,14 +44,18 @@ export default function Map3D({
 
   const onMapClickRef = useRef(onMapClick);
   const onPinSelectRef = useRef(onPinSelect);
+  
   useEffect(() => {
     onMapClickRef.current = onMapClick;
     onPinSelectRef.current = onPinSelect;
   }, [onMapClick, onPinSelect]);
 
-  // Haritayı başlat (sadece bir kez)
+  // Haritayı başlat
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
+
+    // KRİTİK: Worker yolunu MapLibre'ye veriyoruz (Harita oluşmadan önce)
+    maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -350,18 +356,12 @@ export default function Map3D({
               'interpolate',
               ['linear'],
               ['heatmap-density'],
-              0,
-              'rgba(0,0,255,0)',
-              0.4,
-              'blue',
-              0.6,
-              'cyan',
-              0.7,
-              'lime',
-              0.8,
-              'yellow',
-              1,
-              'red',
+              0, 'rgba(0,0,255,0)',
+              0.4, 'blue',
+              0.6, 'cyan',
+              0.7, 'lime',
+              0.8, 'yellow',
+              1, 'red',
             ],
             'heatmap-radius': 30,
           },
