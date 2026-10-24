@@ -2562,7 +2562,7 @@ select option { background: var(--surface); color: var(--text-dark); }
     gap: 0 !important;
     overflow: visible !important;
   }
-  .map-action-left-group .map-add-button {
+  .map-action-left-group .map-add-location-button {
     display: none !important;
   }
   .map-action-right-group {
@@ -2698,5 +2698,12 @@ select option { background: var(--surface); color: var(--text-dark); }
     flex: 0 0 100% !important;
     width: 100% !important;
     min-width: 0 !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .map-action-right-group .voice-pin-button > span {
+    display: none !important;
   }
 }
