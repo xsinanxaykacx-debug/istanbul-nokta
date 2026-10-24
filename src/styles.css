@@ -2683,3 +2683,20 @@ select option { background: var(--surface); color: var(--text-dark); }
     width: 100% !important;
   }
 }
+
+
+/* Keep category filters visible above the compact time/search row on mobile. */
+@media (max-width: 768px) {
+  .panel-filter-search-row {
+    flex-wrap: wrap !important;
+  }
+  .panel-filter-search-row .panel-filters {
+    display: contents !important;
+  }
+  .panel-filter-search-row .category-filter-row {
+    display: flex !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
