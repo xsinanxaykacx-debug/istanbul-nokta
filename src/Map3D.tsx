@@ -25,6 +25,40 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 
+const PIN_ICON_IMAGES = [
+  {
+    name: 'pin-yesil',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMxZThlNTUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5ZPC90ZXh0Pjwvc3ZnPg==',
+  },
+  {
+    name: 'pin-mavi',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMzYjgyZjYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5NPC90ZXh0Pjwvc3ZnPg==',
+  },
+  {
+    name: 'pin-kirmizi',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiNkNjQ1NDUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5LPC90ZXh0Pjwvc3ZnPg==',
+  },
+  {
+    name: 'pin-gri',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiM5Y2EzYWYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5HPC90ZXh0Pjwvc3ZnPg==',
+  },
+] as const;
+
+async function registerSvgPinIcon(
+  mapInstance: maplibregl.Map,
+  name: string,
+  dataUrl: string
+): Promise<void> {
+  const image = new Image();
+  image.src = dataUrl;
+  await image.decode();
+
+  if (!mapInstance.hasImage(name)) {
+    mapInstance.addImage(name, image);
+  }
+}
+
+
 export default function Map3D({
   pins,
   onMapClick,
@@ -109,8 +143,30 @@ export default function Map3D({
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
 
-    map.current.once('load', () => {
-      setMapLoaded(true);
+    const mapInstance = map.current;
+    if (!mapInstance) return;
+
+    mapInstance.once('load', () => {
+      void (async () => {
+        const iconResults = await Promise.allSettled(
+          PIN_ICON_IMAGES.map(({ name, dataUrl }) =>
+            registerSvgPinIcon(mapInstance, name, dataUrl)
+          )
+        );
+
+        iconResults.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.error(
+              `Pin ikonu yüklenemedi: ${PIN_ICON_IMAGES[index].name}`,
+              result.reason
+            );
+          }
+        });
+
+        if (map.current === mapInstance) {
+          setMapLoaded(true);
+        }
+      })();
     });
 
     const resizeTimer = window.setTimeout(() => {
@@ -187,27 +243,28 @@ export default function Map3D({
       },
     });
 
-    // Küme dışında kalan tek pinleri kategori renkleriyle çiz.
+    // Küme dışında kalan tek pinleri renkli, harfli damla ikonlarıyla çiz.
     mapInstance.addLayer({
       id: PIN_POINT_LAYER_ID,
-      type: 'circle',
+      type: 'symbol',
       source: PIN_SOURCE_ID,
       filter: ['!', ['has', 'point_count']],
-      paint: {
-        'circle-radius': 8,
-        'circle-color': [
+      layout: {
+        'icon-image': [
           'match',
           ['get', 'category'],
           'YEŞİL',
-          '#1e8e55',
+          'pin-yesil',
           'MAVİ',
-          '#3b82f6',
+          'pin-mavi',
           'GRİ',
-          '#9ca3af',
-          '#d64545',
+          'pin-gri',
+          'pin-kirmizi',
         ],
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 2,
+        'icon-anchor': 'bottom',
+        'icon-size': 0.5,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
       },
     });
 
