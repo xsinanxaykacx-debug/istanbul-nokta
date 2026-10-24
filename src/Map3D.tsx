@@ -25,6 +25,7 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
+const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
 const PIN_ICON_IMAGES = [
   {
@@ -126,7 +127,7 @@ export default function Map3D({
         properties: {
           pin_id: String(pin.id),
           category: typeof pin.category === 'string' ? pin.category : 'KIRMIZI',
-          is_telegram: typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `),
+          is_telegram: (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) || (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
         },
         geometry: {
           type: 'Point' as const,

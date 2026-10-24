@@ -37,11 +37,6 @@ interface Coordinates {
   lng: number;
 }
 
-interface NominatimResult {
-  lat: string;
-  lon: string;
-}
-
 const FILTER_KEYWORDS = [
   'kaza',
   'yangın',
@@ -56,6 +51,7 @@ const FILTER_KEYWORDS = [
   'durak',
   'geçiş',
   'kilit',
+  'yeşil',
 ];
 
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
@@ -130,6 +126,20 @@ function containsFilterKeyword(value: string): boolean {
   return FILTER_KEYWORDS.some((keyword) =>
     normalized.includes(normalizeTurkishText(keyword)),
   );
+}
+
+function getTelegramCategory(messageText: string): 'GRİ' | 'MAVİ' | 'YEŞİL' | 'KIRMIZI' {
+  const normalized = normalizeTurkishText(messageText);
+  if (/(^|[^\p{L}])sivil(?:ler)?(?=$|[^\p{L}])/u.test(normalized)) {
+    return 'GRİ';
+  }
+  if (/(^|[^\p{L}])yeleksiz(?=$|[^\p{L}])/u.test(normalized)) {
+    return 'MAVİ';
+  }
+  if (/(^|[^\p{L}])yeşil(?:ler)?(?=$|[^\p{L}])/u.test(normalized)) {
+    return 'YEŞİL';
+  }
+  return 'KIRMIZI';
 }
 
 function isIstanbulCoordinate(lat: number, lng: number): boolean {
@@ -285,7 +295,6 @@ async function geocodeQueryWithNominatim(
       }
 
       const nominatimData: unknown = await response.json();
-      console.log('Nominatim sonuç sayısı:', Array.isArray(nominatimData) ? nominatimData.length : 0);
 
       if (!Array.isArray(nominatimData) || nominatimData.length === 0) {
         return null;
@@ -333,27 +342,26 @@ async function geocodeWithNominatim(
 ): Promise<Coordinates | null> {
   const cleanedText = buildGeocodeQuery(messageText);
   if (!cleanedText) {
-    console.warn('Konum bulunamadı, atlanıyor:', cleanedText);
+    console.error('Konum bulunamadı, atlanıyor:', cleanedText);
     return null;
   }
 
   const attempts = [
-    { label: 'Deneme 1', query: cleanedText },
-    { label: 'Deneme 2 / Fallback 1', query: buildFallbackQuery(cleanedText, 3) },
-    { label: 'Deneme 3 / Fallback 2', query: buildFallbackQuery(cleanedText, 1) },
-  ] as const;
+    cleanedText,
+    buildFallbackQuery(cleanedText, 3),
+    buildFallbackQuery(cleanedText, 1),
+  ];
   const attemptedQueries = new Set<string>();
 
-  for (const attempt of attempts) {
-    if (!attempt.query || attemptedQueries.has(attempt.query)) continue;
-    attemptedQueries.add(attempt.query);
+  for (const query of attempts) {
+    if (!query || attemptedQueries.has(query)) continue;
+    attemptedQueries.add(query);
 
-    console.log('Nominatim Sorgusu (' + attempt.label + '):', attempt.query);
-    const coordinates = await geocodeQueryWithNominatim(attempt.query);
+    const coordinates = await geocodeQueryWithNominatim(query);
     if (coordinates) return coordinates;
   }
 
-  console.warn('Konum bulunamadı, atlanıyor:', cleanedText);
+  console.error('Konum bulunamadı, atlanıyor:', cleanedText);
   return null;
 }
 
@@ -390,9 +398,10 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
 
   const messageText = cleanTelegramText(rawMessageText);
   if (!messageText) {
-    console.warn('Telegram mesajı temizlik sonrası boş kaldı; pin oluşturulmadı');
+    console.error('Telegram mesajı temizlik sonrası boş kaldı; pin oluşturulmadı');
     return;
   }
+  const telegramCategory = getTelegramCategory(messageText);
 
   // pins.owner_id references auth.users(id). Service role bypasses RLS,
   // but cannot bypass this foreign-key constraint; use an existing system account.
@@ -413,7 +422,7 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
     const lat = Number(message.location.latitude);
     const lng = Number(message.location.longitude);
     if (!isIstanbulCoordinate(lat, lng)) {
-      console.warn('Telegram location ignored because it is outside the configured Istanbul bounds.');
+      console.error('Telegram location ignored because it is outside the configured Istanbul bounds.');
       return;
     }
     coordinates = { lat, lng };
@@ -423,7 +432,6 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
 
   if (!coordinates) return;
 
-  console.log('Telegram pini için Supabase kaydı başlatılıyor.');
 
   const { data, error } = await supabaseAdmin
     .from('pins')
@@ -432,16 +440,15 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
       lat: coordinates.lat,
       lng: coordinates.lng,
       description: `${TELEGRAM_PIN_MARKER} ${messageText}`.slice(0, 5000),
-      category: 'KIRMIZI',
+      category: telegramCategory,
     })
     .select('id');
 
   if (error) {
     console.error('Supabase Insert Hatası:', { code: error.code, message: error.message });
   } else if (!data || data.length === 0) {
-    console.warn('Supabase hata dönmedi ancak insert cevabı boş geldi');
+    console.error('Supabase hata dönmedi ancak insert cevabı boş geldi');
   } else {
-    console.log('Telegram pini başarıyla kaydedildi.');
   }
 }
 
