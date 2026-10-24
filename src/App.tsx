@@ -1048,7 +1048,7 @@ export default function App() {
     <section className="workspace">
       <div className="map-frame">
         
-        <div style={{
+        <div className="map-view-switch" style={{
           position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
           display: 'flex', alignItems: 'center', gap: '2px',
           background: 'var(--surface)', border: '1px solid var(--border-color)',
