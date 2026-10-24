@@ -144,29 +144,49 @@ function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function buildGeocodeQueries(messageText: string): string[] {
-  const rawQuery = messageText
+const GEOCODING_STOPWORDS = [
+  'kaza',
+  'yangın',
+  'trafik',
+  'kapalı',
+  'yol',
+  'var',
+  'yok',
+  'siviller',
+  'sivil',
+  'dikkat',
+  'acil',
+  'oldu',
+  'olmuş',
+  'oluyor',
+  'bildirildi',
+  'meydana',
+  'geldi',
+  'geliyor',
+  'nedeniyle',
+];
+
+function buildGeocodeQuery(messageText: string): string {
+  const withoutUrls = messageText
     .replace(/https?:\/\/\S+/gi, ' ')
-    .replace(/\s+/g, ' ')
+    .slice(0, 1000);
+
+  // Match whole Turkish words (including letters such as ı, ş, ğ) so
+  // "Kadıköy kaza siviller" becomes "Kadıköy", not the original sentence.
+  const stopwordPattern = new RegExp(
+    `(^|[^\\p{L}\\p{N}_])(?:${GEOCODING_STOPWORDS.join('|')})(?=$|[^\\p{L}\\p{N}_])`,
+    'giu',
+  );
+
+  const locationQuery = withoutUrls
+    .replace(stopwordPattern, '$1')
+    .replace(/['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\\p{L}\\p{N}_])/giu, '')
+    .replace(/[^\\p{L}\\p{N}\\s-]/gu, ' ')
+    .replace(/\\s+/g, ' ')
     .trim()
     .slice(0, 300);
 
-  // Keep the first query intact, then try a location-focused query:
-  // "Kadıköy'de kaza var" -> "Kadıköy".
-  const locationQuery = rawQuery
-    .replace(/\b(kaza|yangın|trafik|kapalı|yol)\b/giu, ' ')
-    .replace(
-      /\b(var|yok|oldu|olmuş|oluyor|bildirildi|meydana|geldi|geliyor|nedeniyle)\b/giu,
-      ' ',
-    )
-    .replace(/['’](da|de|ta|te|dan|den|tan|ten)\b/giu, '')
-    .replace(/[^\p{L}\p{N}\s.,-]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/^[\s.,-]+|[\s.,-]+$/g, '')
-    .trim()
-    .slice(0, 300);
-
-  return [...new Set([rawQuery, locationQuery].filter(Boolean))];
+  return locationQuery;
 }
 
 async function geocodeQueryWithNominatim(
@@ -252,11 +272,14 @@ async function geocodeQueryWithNominatim(
 async function geocodeWithNominatim(
   messageText: string,
 ): Promise<Coordinates | null> {
-  for (const query of buildGeocodeQueries(messageText)) {
-    const coordinates = await geocodeQueryWithNominatim(query);
-    if (coordinates) return coordinates;
+  const query = buildGeocodeQuery(messageText);
+  if (!query) {
+    console.warn('Temizlenmiş konum sorgusu boş, Nominatim isteği atlanıyor');
+    return null;
   }
-  return null;
+
+  console.log('Nominatim temiz sorgusu:', query);
+  return geocodeQueryWithNominatim(query);
 }
 
 function isValidWebhookSecret(providedSecret: string | undefined): boolean {
