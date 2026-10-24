@@ -58,6 +58,8 @@ const FILTER_KEYWORDS = [
   'kilit',
 ];
 
+const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
+
 const MIN_LAT = 40.7;
 const MAX_LAT = 41.8;
 const MIN_LNG = 27.8;
@@ -68,17 +70,6 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const ownerId = process.env.TELEGRAM_OWNER_ID;
 
-// Diagnostic presence checks only: never print the service-role key or its value.
-console.log('Supabase URL mevcut mu?:', Boolean(process.env.SUPABASE_URL));
-console.log(
-  'VITE_SUPABASE_URL mevcut mu?:',
-  Boolean(process.env.VITE_SUPABASE_URL),
-);
-console.log(
-  'Service Role Key mevcut mu?:',
-  Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-);
-
 const supabaseAdmin =
   supabaseUrl && serviceRoleKey
     ? createClient(supabaseUrl, serviceRoleKey, {
@@ -88,8 +79,6 @@ const supabaseAdmin =
         },
       })
     : null;
-
-console.log('Supabase admin istemcisi başlatıldı mı?:', Boolean(supabaseAdmin));
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -216,38 +205,47 @@ function cleanTelegramText(value: string): string {
 }
 
 function buildGeocodeQuery(messageText: string): string {
-  const withoutNoise = cleanTelegramText(messageText).slice(0, 1000);
-  // Long phrases appear before their component words so "son durak" and
-  // "bağlantı yolu" are removed as whole phrases.
-  const sortedStopwords = [...GEOCODING_STOPWORDS].sort(
-    (left, right) => right.length - left.length,
-  );
-  const stopwordPattern = new RegExp(
-    '(^|[^\\p{L}\\p{N}_])(?:' +
-      sortedStopwords.join('|') +
-      ')(?=$|[^\\p{L}\\p{N}_])',
-    'giu',
+  let query = cleanTelegramText(messageText)
+    .slice(0, 1000)
+    .toLocaleLowerCase('tr-TR');
+
+  // Remove multi-word phrases first, then remove every blocked token.
+  // Each phrase is processed separately so adjacent noise words cannot slip through.
+  const phrases = [...new Set(GEOCODING_STOPWORDS.filter((word) => /\s/u.test(word)))]
+    .sort((left, right) => right.length - left.length);
+  for (const phrase of phrases) {
+    const escapedPhrase = phrase.replace(/\s+/gu, '\\s+');
+    const phrasePattern = new RegExp(
+      '(^|[^\\p{L}\\p{N}_])(?:' + escapedPhrase + ')(?=$|[^\\p{L}\\p{N}_])',
+      'giu',
+    );
+    query = query.replace(phrasePattern, '$1');
+  }
+
+  query = query
+    .replace(/['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\p{L}\p{N}_])/giu, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ');
+
+  const blockedWords = new Set(
+    [...GEOCODING_STOPWORDS.filter((word) => !/\s/u.test(word)), ...FILTER_KEYWORDS]
+      .map((word) => normalizeTurkishText(word)),
   );
 
-  return withoutNoise
-    .replace(stopwordPattern, '$1')
-    .replace(
-      /['’](?:da|de|ta|te|dan|den|tan|ten)(?=$|[^\p{L}\p{N}_])/giu,
-      '',
-    )
-    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-    .replace(/\s+/g, ' ')
+  return query
+    .split(/\s+/u)
+    .filter((word) => word.length > 0 && !blockedWords.has(normalizeTurkishText(word)))
+    .join(' ')
     .trim()
-    .toLocaleLowerCase('tr-TR')
     .slice(0, 300);
 }
 
-function buildFallbackQuery(cleanedText: string): string {
-  // For comma-separated multi-location messages, start with the first location
-  // chunk. Otherwise try only the first four meaningful words.
-  const firstChunk = cleanedText.split(/[,;\n|]+/u)[0]?.trim() ?? '';
-  const source = firstChunk || cleanedText;
-  return source.split(/\s+/u).filter(Boolean).slice(0, 4).join(' ');
+function buildFallbackQuery(cleanedText: string, wordLimit: 3 | 1): string {
+  // Fallbacks always come from the already-sanitized query, never raw channel text.
+  return buildGeocodeQuery(cleanedText)
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, wordLimit)
+    .join(' ');
 }
 
 async function geocodeQueryWithNominatim(
@@ -265,7 +263,7 @@ async function geocodeQueryWithNominatim(
       url.search = new URLSearchParams({
         format: 'jsonv2',
         q: query,
-        limit: '1',
+        limit: '5',
         addressdetails: '0',
         countrycodes: 'tr',
         viewbox: '27.8,41.8,29.9,40.7',
@@ -287,34 +285,34 @@ async function geocodeQueryWithNominatim(
       }
 
       const nominatimData: unknown = await response.json();
-      console.log('Nominatim Cevabı:', JSON.stringify(nominatimData));
+      console.log('Nominatim sonuç sayısı:', Array.isArray(nominatimData) ? nominatimData.length : 0);
 
       if (!Array.isArray(nominatimData) || nominatimData.length === 0) {
-        console.warn('Konum bulunamadı, işlem iptal');
         return null;
       }
 
-      const first = nominatimData[0] as Partial<NominatimResult> | null;
-      if (
-        !first ||
-        typeof first.lat !== 'string' ||
-        typeof first.lon !== 'string' ||
-        first.lat.trim() === '' ||
-        first.lon.trim() === ''
-      ) {
-        console.warn('Nominatim cevabında lat/lon alanları yok, işlem iptal');
-        return null;
+      // Use the first valid result inside the Istanbul bounds.
+      for (const entry of nominatimData) {
+        if (!isRecord(entry)) continue;
+        const latText = entry.lat;
+        const lonText = entry.lon;
+        if (
+          typeof latText !== 'string' ||
+          typeof lonText !== 'string' ||
+          latText.trim() === '' ||
+          lonText.trim() === ''
+        ) {
+          continue;
+        }
+
+        const lat = Number(latText);
+        const lng = Number(lonText);
+        if (isIstanbulCoordinate(lat, lng)) {
+          return { lat, lng };
+        }
       }
 
-      const lat = Number(first.lat);
-      const lng = Number(first.lon);
-      if (!isIstanbulCoordinate(lat, lng)) {
-        console.warn('Nominatim koordinatları geçersiz veya İstanbul sınırları dışında');
-        return null;
-      }
-
-      console.log('Nominatim koordinatları doğrulandı:', { lat, lng });
-      return { lat, lng };
+      return null;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('Nominatim request failed:', message);
@@ -339,17 +337,20 @@ async function geocodeWithNominatim(
     return null;
   }
 
-  console.log('Nominatim Sorgusu (Deneme 1):', cleanedText);
-  const firstResult = await geocodeQueryWithNominatim(cleanedText);
-  if (firstResult) return firstResult;
+  const attempts = [
+    { label: 'Deneme 1', query: cleanedText },
+    { label: 'Deneme 2 / Fallback 1', query: buildFallbackQuery(cleanedText, 3) },
+    { label: 'Deneme 3 / Fallback 2', query: buildFallbackQuery(cleanedText, 1) },
+  ] as const;
+  const attemptedQueries = new Set<string>();
 
-  const fallbackCandidate = buildFallbackQuery(cleanTelegramText(messageText));
-  const fallbackQuery = buildGeocodeQuery(fallbackCandidate);
+  for (const attempt of attempts) {
+    if (!attempt.query || attemptedQueries.has(attempt.query)) continue;
+    attemptedQueries.add(attempt.query);
 
-  if (fallbackQuery && fallbackQuery !== cleanedText) {
-    console.log('Nominatim Sorgusu (Fallback):', fallbackQuery);
-    const fallbackResult = await geocodeQueryWithNominatim(fallbackQuery);
-    if (fallbackResult) return fallbackResult;
+    console.log('Nominatim Sorgusu (' + attempt.label + '):', attempt.query);
+    const coordinates = await geocodeQueryWithNominatim(attempt.query);
+    if (coordinates) return coordinates;
   }
 
   console.warn('Konum bulunamadı, atlanıyor:', cleanedText);
@@ -422,11 +423,7 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
 
   if (!coordinates) return;
 
-  console.log('Supabase kaydı başlatılıyor:', {
-    lat: coordinates.lat,
-    lng: coordinates.lng,
-    category: 'KIRMIZI',
-  });
+  console.log('Telegram pini için Supabase kaydı başlatılıyor.');
 
   const { data, error } = await supabaseAdmin
     .from('pins')
@@ -434,18 +431,17 @@ async function processTelegramUpdate(body: unknown): Promise<void> {
       owner_id: ownerId,
       lat: coordinates.lat,
       lng: coordinates.lng,
-      description: messageText.slice(0, 5000),
+      description: `${TELEGRAM_PIN_MARKER} ${messageText}`.slice(0, 5000),
       category: 'KIRMIZI',
     })
-    .select('id, owner_id, lat, lng, category, created_at');
+    .select('id');
 
   if (error) {
-    console.error('Supabase Insert Hatası:', error);
+    console.error('Supabase Insert Hatası:', { code: error.code, message: error.message });
+  } else if (!data || data.length === 0) {
+    console.warn('Supabase hata dönmedi ancak insert cevabı boş geldi');
   } else {
-    console.log('Supabase kaydı başarılı:', data);
-    if (!data || data.length === 0) {
-      console.warn('Supabase hata dönmedi ancak insert cevabı boş geldi');
-    }
+    console.log('Telegram pini başarıyla kaydedildi.');
   }
 }
 
@@ -462,8 +458,6 @@ export default async function handler(
       if (!isValidWebhookSecret(providedSecret)) {
         console.error('Güvenlik hatası: Token uyuşmuyor');
       } else {
-        // Temporary diagnostic log, intentionally placed after authentication.
-        console.log('Gelen Veri:', JSON.stringify(req.body));
         await processTelegramUpdate(req.body as TelegramUpdateBody);
       }
     }

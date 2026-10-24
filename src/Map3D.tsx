@@ -24,6 +24,7 @@ const PIN_SOURCE_ID = 'pin-clusters-source';
 const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
+const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 
 const PIN_ICON_IMAGES = [
   {
@@ -37,6 +38,10 @@ const PIN_ICON_IMAGES = [
   {
     name: 'pin-kirmizi',
     dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiNkNjQ1NDUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5LPC90ZXh0Pjwvc3ZnPg==',
+  },
+  {
+    name: 'pin-radar',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiM3YzNhZWQiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyMiIgcj0iMTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI0IDExdjIyTTEzIDIyaDIyTTE3IDE1bDE0IDE0TTMxIDE1TDE3IDI5IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjIyIiByPSIzIiBmaWxsPSIjMjJkM2VlIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==',
   },
   {
     name: 'pin-gri',
@@ -121,6 +126,7 @@ export default function Map3D({
         properties: {
           pin_id: String(pin.id),
           category: typeof pin.category === 'string' ? pin.category : 'KIRMIZI',
+          is_telegram: typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `),
         },
         geometry: {
           type: 'Point' as const,
@@ -265,15 +271,20 @@ export default function Map3D({
       filter: ['!', ['has', 'point_count']],
       layout: {
         'icon-image': [
-          'match',
-          ['get', 'category'],
-          'YEŞİL',
-          'pin-yesil',
-          'MAVİ',
-          'pin-mavi',
-          'GRİ',
-          'pin-gri',
-          'pin-kirmizi',
+          'case',
+          ['==', ['get', 'is_telegram'], true],
+          'pin-radar',
+          [
+            'match',
+            ['get', 'category'],
+            'YEŞİL',
+            'pin-yesil',
+            'MAVİ',
+            'pin-mavi',
+            'GRİ',
+            'pin-gri',
+            'pin-kirmizi',
+          ],
         ],
         'icon-anchor': 'bottom',
         'icon-size': 0.5,

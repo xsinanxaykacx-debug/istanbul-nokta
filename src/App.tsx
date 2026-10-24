@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
@@ -20,12 +20,31 @@ type PlaceResult = { place_id: number; lat: string; lon: string; display_name: s
 type SpeechSetter = (value: string | ((current: string) => string)) => void;
 type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlternatives: number; onstart: (() => void) | null; onresult: ((event: any) => void) | null; onerror: ((event: any) => void) | null; onend: (() => void) | null; start: () => void; stop: () => void };
 
+const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
+
 const pinIcons: Record<string, L.DivIcon> = {
   'YEŞİL': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8 0-14 4-14 11a5 5 0 0 0 5 5c7 0 11-6 9-16Z"/><path d="M4 20c4-5 7-7 12-10"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'MAVİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-mavi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 10 6 14a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'KIRMIZI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-kirmizi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'GRİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-gri"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] })
 };
+
+const telegramPinIcon = new L.DivIcon({
+  className: 'pin-icon-wrap telegram-pin-icon-wrap',
+  html: '<div class="pin-icon pin-icon-telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg></div>',
+  iconSize: [32, 40],
+  iconAnchor: [16, 38],
+});
+
+function isTelegramPin(description?: string | null): boolean {
+  return typeof description === 'string' && description.startsWith(`${TELEGRAM_PIN_MARKER} `);
+}
+
+function pinDescription(pin: Pick<Pin, 'description'>): string {
+  return isTelegramPin(pin.description)
+    ? pin.description.slice(TELEGRAM_PIN_MARKER.length).trimStart()
+    : pin.description;
+}
 
 const categoryFilterColors: Record<string, string> = {
   'Tümü': '#f97316', 'YEŞİL': '#1e8e55', 'MAVİ': '#3b82f6', 'KIRMIZI': '#d64545', 'GRİ': '#9ca3af', 'BENIM': '#8b5cf6',
@@ -44,7 +63,7 @@ function categoryClass(category?: string | null): string {
   const normalized = normalizeCategory(category);
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'GRİ' ? 'gri' : 'kirmizi'}`;
 }
-function getPinIcon(category?: string | null): L.DivIcon { return pinIcons[normalizeCategory(category)]; }
+function getPinIcon(category?: string | null, description?: string | null): L.DivIcon { return isTelegramPin(description) ? telegramPinIcon : pinIcons[normalizeCategory(category)]; }
 
 const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div class="draft-pin-target"><span class="draft-pin-halo"></span><div class="pin-icon"><span></span></div></div>', iconSize:[44,50], iconAnchor:[22,48] });
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
@@ -83,7 +102,8 @@ function formatRouteDuration(seconds:number):string {
   const hours=Math.floor(minutes/60); const remaining=minutes%60;
   return remaining?`${hours} sa ${remaining} dk`:`${hours} sa`;
 }
-function pinTitle(pin: Pin) { return pin.description.trim().split(/\r?\n/)[0].slice(0, 90) || 'Açıklamasız konum'; }
+function pinTitle(pin: Pin) { return pinDescription(pin).trim().split(/\r?\n/)[0].slice(0, 90) || 'Açıklamasız konum'; }
+function pinMarkerTitle(pin: Pin) { return isTelegramPin(pin.description) ? `AYTAR RADAR · ${pinTitle(pin)}` : pinTitle(pin); }
 function relativeTime(iso: string): string {
   const elapsed = Date.now() - new Date(iso).getTime();
   if (elapsed < 60000) return 'az önce';
@@ -139,7 +159,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   return <>{Array.from(cells.entries()).map(([key, group]) => {
     if (group.length === 1) {
       const pin = group[0];
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinTitle(pin)} alt={pinTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -483,7 +503,7 @@ export default function App() {
   async function addPin(e:FormEvent){e.preventDefault();if(!draftPosition){setNotice({kind:'error',text:'Lütfen önce konum seçin.'});return;}await savePinDirectly(draftPosition,description,category,files);}
   function beginPinEdit(){
     if(!selected||!canDeleteSelected)return;
-    setEditDescription(selected.description);
+    setEditDescription(pinDescription(selected));
     setEditCategory(normalizeCategory(selected.category));
     setEditPhotos([...selectedPhotos]);
     setEditFiles([]);
@@ -507,7 +527,10 @@ export default function App() {
       return;
     }
 
-    const descriptionToSave=editDescription.trim();
+    const cleanDescriptionToSave=editDescription.trim();
+    const descriptionToSave=isTelegramPin(targetPin.description)
+      ? `${TELEGRAM_PIN_MARKER} ${cleanDescriptionToSave}`.slice(0,5000)
+      : cleanDescriptionToSave;
     const categoryToSave=editCategory;
     const keptPhotos=[...editPhotos];
     const originalPhotos=[...selectedPhotos];
@@ -1154,7 +1177,7 @@ export default function App() {
             {editFiles.length>0&&<div className="file-list">{editFiles.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label="Yeni fotoğrafı kaldır" onClick={()=>{setEditFiles(current=>current.filter((_,i)=>i!==index));setEditError(null);}}><X size={14}/></button></div>)}</div>}
             {editError&&<p className="form-error edit-form-error" role="alert">{editError}</p>}<div className="edit-form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}}>İptal</button><button type="submit" className="primary-button" disabled={busy||editPhotos.length+editFiles.length>3||containsProfanity(editDescription)}>{busy?<><LoaderCircle size={15} className="gps-spinner"/> Kaydediliyor…</>:'Değişiklikleri Kaydet'}</button></div>
           </form>:<>
-            <div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span><h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{selected.description||'Açıklama eklenmemiş.'}</p>
+            <div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>{isTelegramPin(selected.description)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}<h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
             {(()=>{const votes=selected.pin_votes??[];const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0);const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0;const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id;return <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}><button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button><strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong><button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button>{ownPin&&<small>Kendi noktanı oylayamazsın</small>}{!session?.user&&<small>Oy vermek için giriş yap</small>}</div>;})()}
             <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>{selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}</div>
             <div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div>
@@ -1172,7 +1195,7 @@ export default function App() {
                 </div>
               )}
               {session?.user && !canDeleteSelected && (
-                <button type="button" className="secondary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} onClick={() => void reportPin(selected.id, selected.description, selected.category)}><ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et</button>
+                <button type="button" className="secondary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} onClick={() => void reportPin(selected.id, pinDescription(selected), selected.category)}><ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et</button>
               )}
             </div>
           </>}
