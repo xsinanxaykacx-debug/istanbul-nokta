@@ -196,6 +196,13 @@ export default function App() {
   const matchingIds=useMemo(()=>new Set(searchResultIds??pins.map(p=>p.id)),[searchResultIds,pins]);
   const filteredPins=useMemo(()=>{const categoryPins=selectedCategoryFilter==='Tümü'?pins:pins.filter(pin=>normalizeCategory(pin.category)===selectedCategoryFilter);if(timeFilter==='all')return categoryPins;const durationByFilter:Record<string,number>={'1m':60_000,'15m':15*60_000,'30m':30*60_000,'1h':60*60_000,'6h':6*60*60_000,'12h':12*60*60_000};const duration=durationByFilter[timeFilter];if(!duration)return categoryPins;const now=Date.now();return categoryPins.filter(pin=>{const createdAt=new Date(pin.created_at).getTime();const age=now-createdAt;return Number.isFinite(createdAt)&&age>=0&&age<duration;});},[pins,selectedCategoryFilter,timeFilter]);
   const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
+
+  // Keep the coordinate array stable across unrelated renders; otherwise Map3D's flyTo effect re-runs.
+  const flyToCoords=useMemo<[number,number]|null>(() => {
+    if (searchPlace) return [Number(searchPlace.lon), Number(searchPlace.lat)];
+    if (selected) return [Number(selected.lng), Number(selected.lat)];
+    return null;
+  }, [searchPlace?.lon, searchPlace?.lat, selected?.lng, selected?.lat]);
   
   const routeOrderedPins=useMemo(()=>{
     if(!routeMode||!routeInfo||!routeLine)return filteredListPins.map(pin=>({pin,routeOrder:null as number|null,routeDistance:null as number|null}));
@@ -856,6 +863,8 @@ export default function App() {
           <Map3D 
             pins={filteredPins} 
             onMapClick={(lat: number, lng: number) => {
+              setPlaceDropdownOpen(false);
+              setSearchPlace(null);
               if (routeMode) {
                 if (!routeStart) {
                   setRouteStart([lat, lng]);
@@ -871,9 +880,9 @@ export default function App() {
                 setSelected(null);
               }
             }}
-            onPinSelect={(pin: any) => { setSelected(pin); setDraftPosition(null); }}
+            onPinSelect={(pin: any) => { setSelected(pin); setSearchPlace(null); setDraftPosition(null); }}
             userPosition={userPosition}
-            flyToCoords={ searchPlace ? [Number(searchPlace.lon), Number(searchPlace.lat)] : (selected ? [Number(selected.lng), Number(selected.lat)] : null) }
+            flyToCoords={flyToCoords}
             flyToUserCoords={flyToUserCoords}
             draftPosition={draftPosition}
             routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
