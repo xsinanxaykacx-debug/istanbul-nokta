@@ -8,4 +8,7 @@ export default defineConfig({
       ignored: ['**/supabase/**'],
     },
   },
+  optimizeDeps: {
+    exclude: ['maplibre-gl'],
+  },
 });
