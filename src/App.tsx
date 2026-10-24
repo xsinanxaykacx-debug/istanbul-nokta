@@ -1150,10 +1150,8 @@ export default function App() {
             </button>
           )}
           {canAdd&&<button className="map-add-button map-add-location-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
-          
-          
         </div>
-        
+
         <div className="map-action-right-group">
           {speechSupported&&<div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>}
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
