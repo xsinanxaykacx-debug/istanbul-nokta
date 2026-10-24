@@ -59,6 +59,18 @@ function isValidSlackSignature(
   );
 }
 
+function normalizeSlackText(value: string): string {
+  return value
+    // Preserve a Slack link's visible label while discarding its URL.
+    .replace(/<https?:\/\/[^>|]+\|([^>]+)>/gi, '$1')
+    .replace(/<https?:\/\/[^>]+>/gi, ' ')
+    // Remove Slack user, user-group, and broadcast tokens.
+    .replace(/<@[A-Z0-9]+(?:\|[^>]*)?>/gi, ' ')
+    .replace(/<!(?:here|channel|everyone|subteam\^[A-Z0-9]+)(?:\|[^>]*)?>/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -123,7 +135,7 @@ export default async function handler(
     return;
   }
 
-  const messageText = event.text.trim();
+  const messageText = normalizeSlackText(event.text);
   if (!messageText) return;
 
   try {
