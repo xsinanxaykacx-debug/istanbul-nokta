@@ -7,7 +7,7 @@ import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Fla
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
-import { CreateMLCEngine, MLCEngine } from "@mlc-ai/web-llm";
+import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
 
 type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null };
@@ -173,6 +173,7 @@ export default function App() {
 
   const [llmEngine, setLlmEngine] = useState<MLCEngine | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
+  const llmLoadPromiseRef = useRef<Promise<MLCEngine | null> | null>(null);
 
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminProfiles, setAdminProfiles] = useState<any[]>([]);
@@ -203,19 +204,6 @@ export default function App() {
   const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
-
-  useEffect(() => {
-    async function initLLM() {
-      if (!(navigator as any).gpu) { console.warn("Tarayıcınız WebGPU desteklemiyor."); return; }
-      setLlmLoading(true);
-      try {
-        const engine = await CreateMLCEngine("Qwen2.5-0.5B-Instruct-q4f16_1-MLC", { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) });
-        setLlmEngine(engine);
-      } catch (e) { console.error("LLM yüklenirken hata oluştu:", e); } 
-      finally { setLlmLoading(false); }
-    }
-    initLLM();
-  }, []);
 
   const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
     const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
@@ -532,6 +520,35 @@ export default function App() {
     | { type: 'CHANGE_CATEGORY'; category: string }
     | { type: 'MIC_CONTROL'; target: 'search' | 'command' | 'off' };
 
+  async function getLLMEngine(): Promise<MLCEngine | null> {
+    if (llmEngine) return llmEngine;
+    if (typeof navigator === 'undefined' || !(navigator as any).gpu) return null;
+    if (llmLoadPromiseRef.current) return llmLoadPromiseRef.current;
+
+    setLlmLoading(true);
+    const loadPromise = (async (): Promise<MLCEngine | null> => {
+      try {
+        // WebLLM and its model resources are downloaded only if regex parsing cannot handle a command.
+        const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
+        const engine = await CreateMLCEngine(
+          "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+          { initProgressCallback: (progress) => console.log("Model indiriliyor:", progress.text) }
+        );
+        setLlmEngine(engine);
+        return engine;
+      } catch (error) {
+        console.error("LLM yüklenirken hata oluştu:", error);
+        return null;
+      } finally {
+        setLlmLoading(false);
+        llmLoadPromiseRef.current = null;
+      }
+    })();
+
+    llmLoadPromiseRef.current = loadPromise;
+    return loadPromise;
+  }
+
   async function parseVoicePinCommand(transcript:string):Promise<VoiceCommand|null>{
     const normalized=transcript.toLocaleLowerCase('tr-TR').replace(/['’‘]/g,'').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
     if(!normalized)return null;
@@ -585,10 +602,21 @@ export default function App() {
     if(hasSave)return { type: 'SAVE' };
     if (normalized.split(' ').length <= 4) return { type: 'SEARCH_PLACE', query: normalized };
 
-    if (llmEngine) {
+    const engine = await getLLMEngine();
+    if (engine) {
       try {
-        const prompt = `Sen bir harita asistanısın. Kullanıcının cümlesini şu kategorilerden birine ayır: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ, BILINMIYOR. Sadece kategori adını büyük harfle döndür. Kullanıcı Cümlesi: "${transcript}"`;
-        const reply = await llmEngine.chat.completions.create({ messages: [{ role: "user", content: prompt }], temperature: 0.1, max_tokens: 20 });
+        const reply = await engine.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: "Sen bir harita asistanısın. Kullanıcının cümlesini şu kategorilerden birine ayır: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ, BILINMIYOR. Yalnızca kategori adını büyük harfle döndür."
+            },
+            { role: "user", content: transcript }
+          ],
+          temperature: 0.1,
+          max_tokens: 20,
+          stop: ["\\n"]
+        });
         const resultText = reply.choices[0]?.message?.content?.trim() || "";
         if (resultText.includes("TRAFFIC_ACIK")) return { type: 'TRAFFIC', enabled: true };
         if (resultText.includes("TRAFFIC_KAPALI")) return { type: 'TRAFFIC', enabled: false };
@@ -599,7 +627,9 @@ export default function App() {
         if (resultText.includes("PIN_SIL")) return { type: 'DELETE_PIN', target: 'selected' };
         if (resultText.includes("ROTA")) return { type: 'ROUTE', destination: transcript };
         if (resultText.includes("ARAMA")) return { type: 'SEARCH_PLACE', query: transcript };
-      } catch (err) {}
+      } catch (err) {
+        console.warn("LLM komut çözümlemesi başarısız oldu:", err);
+      }
     }
     return null;
   }
