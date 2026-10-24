@@ -1149,7 +1149,7 @@ export default function App() {
               <Check size={17}/> <span>{bulkSelectMode ? 'Seçimi İptal Et' : 'Toplu Seç'}</span>
             </button>
           )}
-          {canAdd&&<button className="map-add-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
+          {canAdd&&<button className="map-add-button map-add-location-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
           
           
         </div>
