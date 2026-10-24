@@ -76,28 +76,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isTelegramMessage(value: unknown): value is TelegramMessage {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.text === 'string' ||
+    typeof value.caption === 'string' ||
+    isRecord(value.location)
+  );
+}
+
 function extractMessage(body: unknown): TelegramMessage | null {
   if (!isRecord(body)) return null;
 
-  const candidate =
-    body.message ??
-    body.edited_message ??
-    body.channel_post ??
-    body.edited_channel_post ??
-    body;
+  // Telegram sends different update fields for groups and channels.
+  // Inspect each one in order instead of stopping at the first non-null field.
+  const candidates: unknown[] = [
+    body.message,
+    body.channel_post,
+    body.edited_message,
+    body.edited_channel_post,
+  ];
 
-  if (!isRecord(candidate)) return null;
-
-  const message = candidate as unknown as TelegramMessage;
-  if (
-    typeof message.text !== 'string' &&
-    typeof message.caption !== 'string' &&
-    !message.location
-  ) {
-    return null;
+  for (const candidate of candidates) {
+    if (isTelegramMessage(candidate)) return candidate;
   }
 
-  return message;
+  // Keep support for test/custom clients that post the message object directly.
+  return isTelegramMessage(body) ? body : null;
 }
 
 function normalizeTurkishText(value: string): string {
@@ -300,8 +305,12 @@ export default async function handler(
       const header = req.headers['x-telegram-bot-api-secret-token'];
       const providedSecret = Array.isArray(header) ? header[0] : header;
 
-      // Always acknowledge Telegram, but only process authenticated POST requests.
-      if (isValidWebhookSecret(providedSecret)) {
+      // Always acknowledge Telegram, but never process an unauthenticated update.
+      if (!isValidWebhookSecret(providedSecret)) {
+        console.error('Güvenlik hatası: Token uyuşmuyor');
+      } else {
+        // Temporary diagnostic log, intentionally placed after authentication.
+        console.log('Gelen Veri:', JSON.stringify(req.body));
         await processTelegramUpdate(req.body as TelegramUpdateBody);
       }
     }
