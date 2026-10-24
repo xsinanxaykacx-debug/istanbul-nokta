@@ -17,20 +17,21 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) return;
+          const normalizedId = id.replace(/\\/g, '/');
+          if (!normalizedId.includes('node_modules')) return;
 
-          if (id.includes('@mlc-ai/web-llm')) {
+          if (normalizedId.includes('node_modules/@mlc-ai/web-llm/')) {
             return 'webllm-vendor';
           }
 
-          if (id.includes('/node_modules/maplibre-gl/')) {
+          if (normalizedId.includes('node_modules/maplibre-gl/')) {
             return 'maplibre-vendor';
           }
 
           if (
-            id.includes('/node_modules/react/') ||
-            id.includes('/node_modules/react-dom/') ||
-            id.includes('/node_modules/scheduler/')
+            normalizedId.includes('node_modules/react/') ||
+            normalizedId.includes('node_modules/react-dom/') ||
+            normalizedId.includes('node_modules/scheduler/')
           ) {
             return 'react-vendor';
           }
