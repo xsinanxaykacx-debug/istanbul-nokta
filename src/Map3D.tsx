@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Map3DProps {
@@ -37,47 +38,33 @@ export default function Map3D({
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
-    script.async = true;
-    
-    script.onload = () => {
-      const maplibregl = (window as any).maplibregl;
-      if (!maplibregl) return;
+    const mapInstance = new maplibregl.Map({
+      container: mapContainer.current,
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [28.9784, 41.0082],
+      zoom: 15,
+      pitch: 60,
+      bearing: -20,
+      attributionControl: false
+    });
+    map.current = mapInstance;
 
-      maplibregl.workerUrl = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl-csp-worker.js';
+    mapInstance.on('click', (e: any) => {
+      onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
+    });
+    mapInstance.addControl(new maplibregl.NavigationControl(), 'top-left');
 
-      map.current = new maplibregl.Map({
-        container: mapContainer.current,
-        style: 'https://tiles.openfreemap.org/styles/liberty', 
-        center: [28.9784, 41.0082],
-        zoom: 15,
-        pitch: 60,
-        bearing: -20,
-        attributionControl: false
-      });
-
-      map.current.on('click', (e: any) => {
-        onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
-      });
-
-      map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
-      setTimeout(() => { map.current?.resize(); }, 500);
-    };
-
-    document.head.appendChild(script);
-
+    const resizeTimer = window.setTimeout(() => mapInstance.resize(), 500);
     return () => {
-      if (map.current) { map.current.remove(); map.current = null; }
-      const existingScript = document.querySelector('script[src*="maplibre-gl"]');
-      if (existingScript) document.head.removeChild(existingScript);
+      window.clearTimeout(resizeTimer);
+      mapInstance.remove();
+      if (map.current === mapInstance) map.current = null;
     };
   }, []);
 
   // Pinleri Çiz
   useEffect(() => {
-    const maplibregl = (window as any).maplibregl;
-    if (!map.current || !maplibregl) return;
+    if (!map.current) return;
 
     markers.current.forEach(m => m.remove());
     markers.current = [];
@@ -129,8 +116,7 @@ export default function Map3D({
 
   // Taslak Pin Çiz
   useEffect(() => {
-    const maplibregl = (window as any).maplibregl;
-    if (!map.current || !maplibregl) return;
+    if (!map.current) return;
 
     if (draftMarker.current) {
       draftMarker.current.remove();
@@ -165,8 +151,7 @@ export default function Map3D({
 
   // Rota Çizgisi
   useEffect(() => {
-    const maplibregl = (window as any).maplibregl;
-    if (!map.current || !maplibregl) return;
+    if (!map.current) return;
 
     if (map.current.getLayer('route-layer')) map.current.removeLayer('route-layer');
     if (map.current.getSource('route-source')) map.current.removeSource('route-source');
@@ -216,8 +201,7 @@ export default function Map3D({
 
   // Trafik Katmanı
   useEffect(() => {
-    const maplibregl = (window as any).maplibregl;
-    if (!map.current || !maplibregl) return;
+    if (!map.current) return;
 
     if (map.current.getLayer('traffic-layer')) map.current.removeLayer('traffic-layer');
     if (map.current.getSource('traffic-source')) map.current.removeSource('traffic-source');
@@ -239,8 +223,7 @@ export default function Map3D({
 
   // Isı Haritası Katmanı
   useEffect(() => {
-    const maplibregl = (window as any).maplibregl;
-    if (!map.current || !maplibregl) return;
+    if (!map.current) return;
 
     if (map.current.getLayer('heatmap-layer')) map.current.removeLayer('heatmap-layer');
     if (map.current.getSource('heatmap-source')) map.current.removeSource('heatmap-source');
