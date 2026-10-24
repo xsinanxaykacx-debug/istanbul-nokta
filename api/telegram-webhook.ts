@@ -227,8 +227,8 @@ function isValidWebhookSecret(providedSecret: string | undefined): boolean {
   const expectedSecret = createHash('sha256')
     .update(telegramBotToken, 'utf8')
     .digest('hex');
-  const expectedBytes = Buffer.from(expectedSecret, 'utf8');
-  const providedBytes = Buffer.from(providedSecret, 'utf8');
+  const expectedBytes = new Uint8Array(Buffer.from(expectedSecret, 'utf8'));
+  const providedBytes = new Uint8Array(Buffer.from(providedSecret, 'utf8'));
 
   return (
     expectedBytes.length === providedBytes.length &&
