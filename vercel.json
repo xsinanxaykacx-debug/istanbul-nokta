@@ -6,16 +6,5 @@
     "api/telegram-webhook.ts": {
       "maxDuration": 30
     }
-  },
-  "headers": [
-    {
-      "source": "/aytar-og-image.jpg",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "image/jpeg"
-        }
-      ]
-    }
-  ]
+  }
 }
