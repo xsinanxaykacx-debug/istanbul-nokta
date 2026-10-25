@@ -126,7 +126,9 @@ export default function Map3D({
         id: String(pin.id),
         properties: {
           pin_id: String(pin.id),
-          category: typeof pin.category === 'string' ? pin.category : 'KIRMIZI',
+          category: typeof pin.category === 'string'
+            ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
+            : 'KIRMIZI',
           is_telegram: (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) || (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
         },
         geometry: {
