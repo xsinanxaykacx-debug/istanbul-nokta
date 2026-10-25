@@ -3018,6 +3018,9 @@ select option { background: var(--surface); color: var(--text-dark); }
 }
 
 
+/* Keep desktop layout unchanged; mobile replaces this with a single control stack. */
+.map-mobile-control-stack { display: contents; }
+
 /* Mobile controls: one right-side vertical stack, ordered view switch, mic, GPS, route, traffic. */
 @media (max-width: 768px) {
   .map-frame .map-action-left-group {
