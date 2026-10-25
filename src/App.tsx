@@ -9,6 +9,7 @@ import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
+
 // Özel AYTAR Logosu (Hilal + Ses Dalgası)
 const AytarLogo = ({ size = 24, className = "" }) => (
   <svg
@@ -23,13 +24,12 @@ const AytarLogo = ({ size = 24, className = "" }) => (
     strokeLinejoin="round"
     className={className}
   >
-    {/* Hilal Şekli */}
     <path d="M15 4.5A8.5 8.5 0 1 0 15 19.5A7 7 0 0 1 15 4.5Z" />
-    {/* Ses Dalgaları (Hilalin içinden dışarı doğru) */}
     <path d="M17 9a4 4 0 0 1 0 6" />
     <path d="M19 7a7 7 0 0 1 0 10" />
   </svg>
 );
+
 type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
 type PinPhoto = { id: string; storage_path: string; public_url: string; sort_order: number };
@@ -143,6 +143,19 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
+// Pinin yaşına göre saydamlık hesaplama
+function getPinOpacity(pin: Pin): number {
+  const createdAt = new Date(pin.created_at).getTime();
+  if (!Number.isFinite(createdAt)) return 1;
+  const ageHours = (Date.now() - createdAt) / (1000 * 60 * 60);
+  
+  if (ageHours <= 1) return 1.0;
+  if (ageHours <= 3) return 0.85;
+  if (ageHours <= 6) return 0.65;
+  if (ageHours <= 12) return 0.4;
+  return 0.2;
+}
+
 function HeatmapLayer({ pins }: { pins: Pin[] }) {
   const map = useMap();
   useEffect(() => {
@@ -190,7 +203,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   return <>{Array.from(cells.entries()).map(([key, group]) => {
     if (group.length === 1) {
       const pin = group[0];
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description)} opacity={Math.min(isDimmed(pin) ? 0.35 : 1, getPinOpacity(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -1218,8 +1231,8 @@ export default function App() {
   const center:[number,number]=[41.0082,28.9784];
 
   return <main className={`app-shell ${isDarkMode ? '' : 'light-theme'}`}>
-        <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><AytarLogo size={33} /></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
-      <button type="button" className="icon-button" onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '20px' }}>
+    <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><AytarLogo size={22} /></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
+      <button type="button" className="icon-button" onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
         {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
       </button>
       {llmLoading && <span style={{fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px', marginRight: '10px'}}><BrainCircuit size={14} className="gps-spinner"/> YZ Yükleniyor...</span>}
@@ -1444,9 +1457,9 @@ export default function App() {
             
             {/* EMOJİ VE OYLAMA YAN YANA */}
             <div className="pin-interactions-row">
-                            <div className="pin-reactions-bar">
+              <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['🚓', '🚨', '🚧', '🚑', '👮‍♂️'].map(emoji => {
+                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => {
                     const count = reactions.filter(r => r.emoji === emoji).length;
                     const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji);
                     return (
@@ -1457,8 +1470,7 @@ export default function App() {
                     );
                   })}
                 </div>
-                
-                {/* YENİ: HAVA DURUMU EMOJİLERİ */}
+
                 <div className="reaction-group weather-group">
                   {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => {
                     const count = reactions.filter(r => r.emoji === emoji).length;

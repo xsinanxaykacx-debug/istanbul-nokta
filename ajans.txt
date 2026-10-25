@@ -1,62 +1,63 @@
-# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U)
+# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U) - AYTAR v1.0
 
-Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda projenin mevcut mimarisi, tamamlanmış özellikleri, alınan kritik kararlar ve senin uyman gereken kurallar özetlenmiştir. Lütfen yeni bir kod yazmadan veya özellik eklemeden önce bu belgeyi dikkatlice oku.
+Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR projesinin mevcut mimarisi, tamamlanmış özellikleri, alınan kritik kararlar ve senin uyman gereken kurallar özetlenmiştir. Lütfen yeni bir kod yazmadan veya özellik eklemeden önce bu belgeyi dikkatlice oku.
 
 ## 1. Proje Künyesi
-- **Uygulama Adı:** AYTAR (Daima İleri) - Eski adı: Gözcü / İstanbul Nokta.
-- **Canlı URL:** https://aytar.vercel.app (Vercel limitlerine takılmamak için ücretsiz alternatif platformlar araştırılıyor).
-- **GitHub Repo:** xsinanxaykacx-debug/istanbul-nokta (main dalı üzerinden çalışıyoruz).
-- **Amaç:** Kullanıcıların 2D/3D haritaya konum (pin), açıklama ve fotoğraf bırakabildiği; davetiyeli, sesli komut (WebLLM destekli) ve yapay zeka destekli bir sosyal harita uygulaması.
+- **Uygulama Adı:** AYTAR (Eski adı: Gözcü / İstanbul Nokta). "Aytar" kelimesi Eski Türkçede "Haberci, sözcü" anlamına gelir.
+- **Canlı URL:** https://aytar.surge.sh (Vercel limitleri nedeniyle ana yayın Surge üzerinden yapılıyor, ancak Vercel linki de yedek olarak güncellenecek).
+- **GitHub Repo:** xsinanxaykacx-debug/istanbul-nokta (main dalı).
+- **Logo:** Özel tasarım SVG. Yeşil yuvarlak bir zemin içinde, beyaz bir "Hilal" ve hilalin içinden yayılan "Ses Dalgaları" (Haberci teması).
 
 ## 2. Teknolojik Altyapı
 - **Frontend:** React, Vite, TypeScript, Leaflet (2D Harita), MapLibre GL (3D Harita), Lucide-React (İkonlar).
-- **Backend:** Supabase (PostgreSQL, Auth, Storage).
-- **Yapay Zeka (Yerel):** WebLLM (Qwen2.5-0.5B) - Tarayıcı üzerinde çalışan, sesli komutları anlamlandıran yerel dil modeli.
-- **Harici API'ler:** TomTom (Canlı Trafik), OpenStreetMap / Nominatim (Mekan Arama ve Ters Coğrafi Kodlama), OSRM (Rota Çizimi).
-- **Hosting:** Vercel (Not: Vercel'in ücretsiz planı günde 100 deploy limitine sahiptir. Limit dolduğunda Netlify, Cloudflare Pages veya Surge.sh gibi ücretsiz alternatiflere yönlendir).
-- **Tasarım:** "Midnight Sapphire" (Koyu lacivert/safir) teması ve "Light Theme" (Gündüz modu) seçeneği. Tam ekran (no-scroll), responsive (mobil öncelikli) tasarım.
+- **Backend:** Supabase (PostgreSQL, Auth, Storage, RLS Politikaları).
+- **Yapay Zeka (Yerel):** WebLLM (Qwen2.5-0.5B). Tamamen tarayıcıda (WebGPU ile) çalışır. *ÖNEMLİ: Model çok küçük olduğu için saçmalayabilir, bu yüzden yedek bir algoritma ile desteklenmiştir.*
+- **Harici API'ler:** TomTom (Canlı Trafik), OSRM (Rota Çizimi), Nominatim (Geocoding).
+- **Hosting:** Surge.sh (Sınırsız, ücretsiz - Ana Üs) ve Vercel (Yedek).
+- **Tasarım:** "Midnight Sapphire" (Koyu lacivert/safir) teması. Tam ekran (no-scroll), mobil öncelikli (mobile-first) tasarım.
 
 ## 3. Tamamlanan ve Çalışan Kritik Özellikler (BUNLARI BOZMA!)
 *(Geçmiş sprintlerde eklenen ve şu an kusursuz çalışan özelliklerdir)*
 
 **Harita ve Görsel Özellikler:**
-1. **Neon Pinler:** Haritadaki pinler, özel SVG'ler ile oluşturulmuş, kategorilerine göre parlayan (glow) Neon renklere sahiptir (Yeşil, Mavi, Kırmızı, Sarı).
-2. **Radar Pinleri (Mor Pinler):** Açıklaması `[AYTAR-RADAR]` ile başlayan pinler otomatik olarak mor (Radar ikonlu) görünür. `owner_id` kontrolü kaldırılmıştır, sadece açıklama metnine bakılır.
-3. **2D / 3D Harita Desteği:** Sağ üstteki buton ile Leaflet (2D) ve MapLibre (3D) arasında geçiş yapılabilir. 3D haritada özel açılı (pitch) görünüm ve 3D pinler mevcuttur.
-4. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve yoğun bölgeler için ısı haritası (Heatmap) katmanı.
-5. **Rota Çizimi:** OSRM API kullanılarak A noktasından B noktasına rota çizimi, rota üzerindeki pinleri listeleme ve rota bilgisi (mesafe/süre) gösterme.
+1. **Neon Pinler:** Haritadaki pinler, özel SVG'ler ile oluşturulmuş, kategorilerine göre parlayan Neon renklere sahiptir.
+2. **2D / 3D Harita Desteği:** Sağ üstteki buton ile Leaflet ve MapLibre arasında geçiş yapılabilir.
+3. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve ısı haritası (Heatmap).
+4. **Rota Çizimi:** OSRM API kullanılarak rota çizimi, rota üzerindeki pinleri listeleme (100 metre yakını).
 
 **Mobil ve UI/UX Özellikleri:**
-6. **Mobil Tam Ekran & Bottom Sheet:** Mobilde harita tam ekrandır. Sağ panel (side-panel), sadece bir pine tıklandığında, filtreler açıldığında veya yeni pin eklenirken `isPanelOpen` state'i ile aşağıdan yukarı (bottom sheet) kayarak açılır. Haritada boş bir alana tıklandığında panel aşağı kayıp gizlenir.
-7. **Açık Adres (Reverse Geocoding):** Pin detayında ve sağ panel listesinde koordinat yerine Nominatim ile çekilen "Mahalle, Cadde, İlçe" bilgisi gösterilir.
-8. **Filtreler ve Zaman Aralığı:** Kategori filtreleri (Tümü, Yeşil, Mavi, Kırmızı, Sarı, Benim Pinlerim) ve zaman filtresi (1dk, 15dk, 1sa, 24sa vb.).
+5. **Mobil Tam Ekran & Bottom Sheet:** Mobilde harita tam ekrandır. Sağ panel (side-panel), `isPanelOpen` state'i ile CSS `transform: translateY(100%)` kullanılarak aşağıdan yukarı kayarak açılır.
+6. **Açık Adres (Reverse Geocoding):** Pin detayında ve sağ panel listesinde koordinat yerine Nominatim ile çekilen adres gösterilir.
+7. **PWA Desteği:** Uygulama telefona indirilebilir (Ana Ekrana Ekle). Favicon ve PWA ikonu özel logodur.
+8. **Filtreler ve Zaman Aralığı:** Kategori filtreleri ve zaman filtresi (Son 1 dk, 1 sa, 24 sa vb.).
 
 **Kullanıcı ve Etkileşim Özellikleri:**
-9. **Pin İşlemleri (CRUD & Oylama):** Pin ekleme, düzenleme (açıklama/kategori/fotoğraf) ve silme. Pinlere artı/eksi oy verme (upvote/downvote) ve skorların listede gösterilmesi.
-10. **Sesli Komut (Web Speech & WebLLM):** Mikrofonla arama yapma ve "Konumuma mavi pin ekle", "Trafiği aç" gibi sesli komutlarla haritayı kontrol etme.
-11. **Admin yetkisi sınırsız kod üretebilir, kullanıcı banlayabilir, raporları inceleyebilir ve toplu pin silebilir.
-12. **Senkronizasyon & 24 Saat Kuralı:** WebSocket yerine Polling (10 saniyede bir) kullanılır. `pg_cron` ile 24 saatten eski pinler arşive taşınır.
+9. **Sesli Not (Voice Note):** Pin eklerken MediaRecorder API ile ses kaydı alınır, Supabase Storage'a yüklenir ve pin detayında `<audio>` oynatıcı ile dinlenir.
+10. **Yorumlar (Pin Chat):** Pinlere yorum yapılabilir (Supabase `pin_comments` tablosu).
+11. **Çoklu Emoji Tepkileri:** Acil durum emojileri (🚓, 🚔, 🚒, 🚑) ve Hava Durumu emojileri (☀️, 🌧️, ❄️, ☁️, ⛈️) yan yana, kompakt bir tasarımla oylanabilir.
+12. **Akıllı Özet (Yapay Zeka + Yedek Sistem):** Haritadaki son 10-15 pini analiz eden bir "Akıllı Özet" butonu vardır. 
+    *   *Kritik Detay:* WebLLM saçmalarsa, devreye giren **"Fallback" (Yedek) Algoritma** pin açıklamalarını tarayıp "🚨 2 kaza, 🚗 1 trafik yoğunluğu" gibi kusursuz bir metin analizi raporu çıkarır.
+13. **Oylama Sistemi:** Pinlere artı/eksi oy verilebilir.
+14. **24 Saat Kuralı:** `pg_cron` ile 24 saatten eski pinler arşive taşınır.
 
 ## 4. Alınan Önemli Kararlar ve Vazgeçilenler
-- **Pin Sürükleme (Drag):** React-Leaflet çakışmaları yüzünden iptal edildi. Yerine haritaya tıklayarak konum değiştirme getirildi.
-- **Realtime (WebSocket):** Stabil çalışmadığı için Polling ile değiştirildi.
-- **Mobil Panel (Side Panel):** CSS `transform: translateY(100%)` ve React state (`isPanelOpen`) kullanılarak tam bir "Bottom Sheet" davranışı kazandırıldı.
-- **Hosting Limitleri:** Vercel ve Netlify ücretsiz planlarında katı limitler (günlük 100 deploy vb.) getirdi. Proje tamamen ücretsiz (0 TL) devam etmelidir. Gerekirse Cloudflare Pages veya Surge.sh kullanılacaktır.
-- **Fotoğraf Zorunluluğu:** İsteğe bağlı ve max 3 fotoğraf sınırı getirildi.
+- **Hava Durumu API'leri:** RainViewer ve OpenWeatherMap gibi ücretsiz API'ler, haritada yüksek zoom seviyelerinde "Zoom Level Not Supported" damgası bastığı için **iptal edildi**. Yerine "Kitle Kaynaklı" (Crowdsourced) hava durumu emojileri getirildi (B.çekmece'deki ❄️, Üsküdar'daki ☀️ basar).
+- **Pin Sürükleme (Drag):** İptal edildi, yerine haritaya tıklayarak konum değiştirme getirildi.
+- **Yapay Zeka (WebLLM):** Chrome'da `chrome://flags/#enable-unsafe-webgpu` açılmadan çalışmaz. Çalışmadığı durumlar için kodda Fallback (Yedek Algoritma) zorunludur.
+- **Hosting:** Vercel (günlük 100 deploy limiti) ve Netlify (kredi sistemi) sıkıntı çıkardığı için **Surge.sh** kullanılıyor.
 
 ## 5. Sana Verilecek Görevler İçin Çalışma Kuralları (Guardrails)
 - **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme, bottom sheet ve 3D harita mantığına dokunma.
 - **Dosya Sınırlaması:** Genellikle `src/App.tsx`, `src/styles.css` ve `src/Map3D.tsx` üzerinden ilerle.
-- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import veya değişken bırakma. `supabase` null kontrolünü her zaman yap (`if (!supabase) return;`).
-- **Build Zorunluluğu:** `npm run build` çalıştırmadan kodu bitmiş sayma. Hata varsa düzelt.
-- **Yeni Kütüphane:** Zorunlu kalmadıkça yeni npm paketi ekleme.
-- **API Limitleri:** Nominatim isteklerinde rate-limit (429) yememek için istekler arasına gecikme koy.
+- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import (`MapPin`, `MicOff` vb.) bırakma. `supabase` null kontrolünü her zaman yap.
+- **Build Zorunluluğu:** `npm run build` çalıştırıp `✓ built in ...` yazısını görmeden kodu canlıya almayı önerme.
+- **Parça Kod Verme:** Değişiklikler çok kapsamlıysa, kafa karışıklığını önlemek için dosyanın **tamamını** ver.
 
 ## 6. Gelecek Yol Haritası (Sıradaki Olası Adımlar)
-- Kullanıcı Profil Sayfası ve istatistikleri.
-- Pinlere yorum yapma ve yorumları beğenme.
-- PWA (Progressive Web App) desteğini tamamlama (çevrimdışı çalışma).
-- Yapay zeka sesli komutlarını genişletme.
+İhtiyaç halinde şu özellikler eklenebilir:
+- Kullanıcı Profil Sayfası ve Oyunlaştırma (Rozetler).
+- Arkadaş / Takip Sistemi (Sadece takip edilenlerin pinlerini görme).
+- Pin Ömrü Görselleştirmesi (Pinler yaşlandıkça soluklaşsın).
 
 ## Görevin:
-Yukarıdaki kurallara sadık kalarak, sana verilecek bir sonraki görevi (yeni özellik, hata düzeltmesi veya UI değişikliği) yerine getir. Kodu yazmadan önce mevcut yapıyı bozmayacağından emin ol ve çıktı olarak her zaman temiz bir kod ver.
+Yukarıdaki kurallara sadık kalarak, sana verilecek bir sonraki görevi yerine getir. Kodu yazmadan önce mevcut yapıyı bozmayacağından emin ol ve çıktı olarak her zaman temiz bir kod ver.
