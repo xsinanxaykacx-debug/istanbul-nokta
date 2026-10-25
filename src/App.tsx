@@ -285,7 +285,22 @@ export default function App() {
         let query=supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)').gte('created_at',cutoff).order('created_at',{ascending:false}).range(offset,offset+pageSize-1);
         if(since)query=query.gt('created_at',since);
         const {data,error}=await query;
-        if(error){if(silent)console.warn('Pinler yüklenemedi:',error);else setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});return;}
+        if(error){
+          // A nested relation/column missing from the deployed Supabase schema must not hide every map pin.
+          const fallbackQuery=supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at').gte('created_at',cutoff).order('created_at',{ascending:false}).range(offset,offset+pageSize-1);
+          if(since)fallbackQuery.gt('created_at',since);
+          const fallback=await fallbackQuery;
+          if(fallback.error){
+            console.error('Pin sorgusu ve sade sorgu başarısız:',{primary:error,fallback:fallback.error});
+            if(silent)console.warn('Pinler yüklenemedi:',fallback.error);else setNotice({kind:'error',text:'Pinler yüklenemedi. Bağlantı veya veritabanı şemasını kontrol edin.'});
+            return;
+          }
+          const fallbackBatch=(fallback.data??[]) as unknown as Pin[];
+          rows.push(...fallbackBatch.map(pin=>({...pin,pin_photos:[],pin_votes:[]})));
+          if(fallbackBatch.length<pageSize)break;
+          offset+=fallbackBatch.length;
+          continue;
+        }
         const batch=(data??[]) as unknown as Pin[];rows.push(...batch);
         if(batch.length<pageSize)break;offset+=batch.length;
       }
