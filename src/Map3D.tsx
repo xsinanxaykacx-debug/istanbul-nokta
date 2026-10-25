@@ -25,7 +25,16 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
-const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
+
+function normalizePinCategory(category: unknown): 'YEŞİL' | 'MAVİ' | 'SARI' | 'KIRMIZI' {
+  const normalized = typeof category === 'string'
+    ? category.trim().toLocaleUpperCase('tr-TR')
+    : '';
+  if (['YEŞİL', 'YESIL', 'YEŞİLLER', 'YESILLER'].includes(normalized)) return 'YEŞİL';
+  if (['MAVİ', 'MAVI', 'MAVİLER', 'MAVILER'].includes(normalized)) return 'MAVİ';
+  if (['SARI', 'GRİ', 'GRI', 'SİVİLLER', 'SIVILLER', 'SİVİL', 'SIVIL'].includes(normalized)) return 'SARI';
+  return 'KIRMIZI';
+}
 
 const PIN_ICON_IMAGES = [
   { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjMzlGRjE0IiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiMzOUZGMTQiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PHRleHQgeD0iMjQiIHk9IjI0IiBmaWxsPSIjMzlGRjE0IiBzdHJva2U9IiMzOUZGMTQiIHN0cm9rZS13aWR0aD0iMC40NSIgcGFpbnQtb3JkZXI9InN0cm9rZSIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iODAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
@@ -111,10 +120,9 @@ export default function Map3D({
         id: String(pin.id),
         properties: {
           pin_id: String(pin.id),
-          category: typeof pin.category === 'string'
-            ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
-            : 'KIRMIZI',
-          is_telegram: (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) || (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
+          category: normalizePinCategory(pin.category),
+          // Owner IDs never change the icon. Only an explicit description marker does.
+          is_telegram: typeof pin.description === 'string' && pin.description.includes(TELEGRAM_PIN_MARKER),
         },
         geometry: {
           type: 'Point' as const,
