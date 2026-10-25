@@ -49,19 +49,7 @@ function createNeonLetter(color: string, letter: string): string {
   return `<text x="24" y="24" fill="${color}" stroke="${color}" stroke-width="0.45" paint-order="stroke" filter="url(#neonGlow)" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="400" text-anchor="middle" dominant-baseline="central">${letter}</text>`;
 }
 
-const pinIcons: Record<string, L.DivIcon> = {
-  'YEŞİL': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#39FF14', createNeonLetter('#39FF14', 'Y'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
-  'MAVİ': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#00E5FF', createNeonLetter('#00E5FF', 'M'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
-  'KIRMIZI': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#FF1744', createNeonLetter('#FF1744', 'K'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
-  'SARI': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#FFEA00', createNeonLetter('#FFEA00', 'S'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
-};
 
-const telegramPinIcon = new L.DivIcon({
-  className: 'pin-icon-wrap telegram-pin-icon-wrap',
-  html: `<div class="neon-pin-icon">${createNeonPinSvg('#B026FF', '<circle cx="24" cy="22" r="10.5" fill="none" stroke="#B026FF" stroke-width="1.8" filter="url(#neonGlow)"/><path d="M24 11.5v10.5l7 4M16 15l16 14M32 15 16 29" fill="none" stroke="#B026FF" stroke-width="1.7" stroke-linecap="round" filter="url(#neonGlow)"/><circle cx="24" cy="22" r="2.5" fill="#0f172a" stroke="#B026FF" stroke-width="1.5" filter="url(#neonGlow)"/>')}</div>`,
-  iconSize: [32, 40],
-  iconAnchor: [16, 38],
-});
 
 function isTelegramPin(description?: string | null, ownerId?: string | null): boolean {
   return (
@@ -93,8 +81,16 @@ function categoryClass(category?: string | null): string {
   const normalized = normalizeCategory(category);
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'SARI' ? 'sari' : 'kirmizi'}`;
 }
-function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false): L.DivIcon { 
-  if (isTelegramPin(description, ownerId)) return telegramPinIcon;
+function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false, opacity: number = 1): L.DivIcon { 
+  if (isTelegramPin(description, ownerId)) {
+    return new L.DivIcon({
+      className: 'pin-icon-wrap',
+      html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg('#B026FF', '<circle cx="24" cy="22" r="10.5" fill="none" stroke="#B026FF" stroke-width="1.8" filter="url(#neonGlow)"/><path d="M24 11.5v10.5l7 4M16 15l16 14M32 15 16 29" fill="none" stroke="#B026FF" stroke-width="1.7" stroke-linecap="round" filter="url(#neonGlow)"/><circle cx="24" cy="22" r="2.5" fill="#0f172a" stroke="#B026FF" stroke-width="1.5" filter="url(#neonGlow)"/>')}</div>`,
+      iconSize: [32, 40],
+      iconAnchor: [16, 38]
+    });
+  }
+  
   const normCat = normalizeCategory(category);
   const color = categoryFilterColors[normCat] || '#FF1744';
   const letter = normCat === 'YEŞİL' ? 'Y' : normCat === 'MAVİ' ? 'M' : normCat === 'SARI' ? 'S' : 'K';
@@ -102,12 +98,18 @@ function getPinIcon(category?: string | null, description?: string | null, owner
   if (isFresh) {
     return new L.DivIcon({
       className: 'pin-icon-wrap',
-      html: `<div class="neon-pin-icon">${createNeonPinSvg(color, createNeonLetter(color, letter), true)}</div>`,
+      html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg(color, createNeonLetter(color, letter), true)}</div>`,
       iconSize: [32, 40],
       iconAnchor: [16, 38]
     });
   }
-  return pinIcons[normCat];
+  
+  return new L.DivIcon({
+    className: 'pin-icon-wrap',
+    html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg(color, createNeonLetter(color, letter))}</div>`,
+    iconSize: [32, 40],
+    iconAnchor: [16, 38]
+  });
 }
 
 const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div class="draft-pin-target"><span class="draft-pin-halo"></span><div class="pin-icon"><span></span></div></div>', iconSize:[44,50], iconAnchor:[22,48] });
@@ -165,11 +167,12 @@ function getPinOpacity(pin: Pin): number {
   const createdAt = new Date(pin.created_at).getTime();
   if (!Number.isFinite(createdAt)) return 1;
   const ageHours = (Date.now() - createdAt) / (1000 * 60 * 60);
-  if (ageHours <= 1) return 1.0;
-  if (ageHours <= 3) return 0.85;
-  if (ageHours <= 6) return 0.65;
-  if (ageHours <= 12) return 0.4;
-  return 0.2;
+  if (ageHours <= 1) return 1.0;     
+  if (ageHours <= 3) return 0.8;     
+  if (ageHours <= 6) return 0.6;     
+  if (ageHours <= 12) return 0.35;   
+  if (ageHours <= 20) return 0.15;   
+  return 0.05;                       
 }
 
 function getUserBadge(profile: Profile | null) {
@@ -229,7 +232,8 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
     if (group.length === 1) {
       const pin = group[0];
       const isFresh = (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000;
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh)} opacity={Math.min(isDimmed(pin) ? 0.35 : 1, getPinOpacity(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      const calculatedOpacity = Math.min(isDimmed(pin) ? 0.3 : 1, getPinOpacity(pin));
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh, calculatedOpacity)} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -1412,14 +1416,14 @@ export default function App() {
               <div>
                 <p className="eyebrow">KONUM DETAYI</p>
                 <span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>
-                {isTelegramPin(selected.description, selected.owner_id) && <span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
+                {isTelegramPin(selected.description, selected.owner_id)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
                 <h2>{pinTitle(selected)}</h2>
               </div>
               <button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button>
             </div>
             <p className="pin-date">{relativeTime(selected.created_at)}</p>
             <p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
-            {selected.voice_note_url && ( <div className="pin-voice-note-player"><Volume2 size={18} className="voice-note-icon" /><audio controls src={selected.voice_note_url} className="voice-note-audio">Tarayıcınız ses oynatmayı desteklemiyor.</audio></div> )}
+            {selected.voice_note_url && ( <div className="pin-voice-note-player"><Volume2 size={18} className="voice-note-icon" /><audio controls src={selected.voice_note_url} className="voice-note-audio">Tarayıcınız ses oynatmayı desteklemiyor.</audio></div> ) }
             <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>
               {selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}
             </div>

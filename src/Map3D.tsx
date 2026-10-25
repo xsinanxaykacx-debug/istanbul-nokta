@@ -112,21 +112,19 @@ export default function Map3D({
           category: typeof pin.category === 'string'
             ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
             : 'KIRMIZI',
-          
-          // DÜZELTME: Telegram pinleri için description ve owner_id kontrolü eklendi
           is_telegram: (
             (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)) ||
             (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX))
           ),
-          
           is_fresh: (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000,
           opacity: (() => {
             const ageHours = (Date.now() - new Date(pin.created_at).getTime()) / (1000 * 60 * 60);
             if (ageHours <= 1) return 1.0;
-            if (ageHours <= 3) return 0.85;
-            if (ageHours <= 6) return 0.65;
-            if (ageHours <= 12) return 0.4;
-            return 0.2;
+            if (ageHours <= 3) return 0.8;
+            if (ageHours <= 6) return 0.6;
+            if (ageHours <= 12) return 0.35;
+            if (ageHours <= 20) return 0.15;
+            return 0.05;
           })(),
         },
         geometry: {
