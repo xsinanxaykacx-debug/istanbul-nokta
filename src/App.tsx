@@ -143,7 +143,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
-// Pinin yaşına göre saydamlık hesaplama
+// Pinin yaşına göre saydamlık hesaplama (Soluklaşma Efekti)
 function getPinOpacity(pin: Pin): number {
   const createdAt = new Date(pin.created_at).getTime();
   if (!Number.isFinite(createdAt)) return 1;
@@ -267,6 +267,9 @@ export default function App() {
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [bulkSelectedPins, setBulkSelectedPins] = useState<string[]>([]);
 
+  // Yeni Pinleri Takip Etme (1km uyarısı için)
+  const knownPinIdsRef = useRef<Set<string>>(new Set());
+
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
   useEffect(() => { draftPositionRef.current = draftPosition; }, [draftPosition]);
   useEffect(() => { categoryRef.current = category; }, [category]);
@@ -276,6 +279,42 @@ export default function App() {
   useEffect(() => {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
   }, [selected, showFilterOptions, editPinMode, draftPosition]);
+
+  // Çevrede (1 km içinde) yeni pin eklendiğinde uyarı ver
+  useEffect(() => {
+    if (!pins.length) return;
+    
+    if (!userPosition) {
+      pins.forEach(p => knownPinIdsRef.current.add(p.id));
+      return;
+    }
+
+    if (knownPinIdsRef.current.size === 0) {
+      pins.forEach(p => knownPinIdsRef.current.add(p.id));
+      return;
+    }
+
+    const newPins = pins.filter(p => !knownPinIdsRef.current.has(p.id));
+
+    if (newPins.length > 0) {
+      let alerted = false;
+      for (const pin of newPins) {
+        knownPinIdsRef.current.add(pin.id);
+        const dist = haversineMeters(userPosition, [pin.lat, pin.lng]);
+        
+        if (dist <= 1000) {
+          alerted = true;
+        }
+      }
+
+      if (alerted) {
+        setNotice({ kind: 'info', text: '📍 Yakınınızda (1 km içinde) yeni bir konum eklendi!' });
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      }
+    }
+  }, [pins, userPosition]);
   
   const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
   

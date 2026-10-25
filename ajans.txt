@@ -34,7 +34,7 @@ Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR pr
 **Kullanıcı ve Etkileşim Özellikleri:**
 9. **Sesli Not (Voice Note):** Pin eklerken MediaRecorder API ile ses kaydı alınır, Supabase Storage'a yüklenir ve pin detayında `<audio>` oynatıcı ile dinlenir.
 10. **Yorumlar (Pin Chat):** Pinlere yorum yapılabilir (Supabase `pin_comments` tablosu).
-11. **Çoklu Emoji Tepkileri:** Acil durum emojileri (🚓, 🚔, 🚒, 🚑) ve Hava Durumu emojileri (☀️, 🌧️, ❄️, ☁️, ⛈️) yan yana, kompakt bir tasarımla oylanabilir.
+11. **Çoklu Emoji Tepkileri:** Acil durum emojileri ['👮‍♂️','🚓', '🧑‍✈️', '🚒', '🚧'] ve Hava Durumu emojileri (☀️, 🌧️, ❄️, ☁️, ⛈️) yan yana, kompakt bir tasarımla oylanabilir.
 12. **Akıllı Özet (Yapay Zeka + Yedek Sistem):** Haritadaki son 10-15 pini analiz eden bir "Akıllı Özet" butonu vardır. 
     *   *Kritik Detay:* WebLLM saçmalarsa, devreye giren **"Fallback" (Yedek) Algoritma** pin açıklamalarını tarayıp "🚨 2 kaza, 🚗 1 trafik yoğunluğu" gibi kusursuz bir metin analizi raporu çıkarır.
 13. **Oylama Sistemi:** Pinlere artı/eksi oy verilebilir.
