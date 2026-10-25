@@ -3382,3 +3382,29 @@ select option { background: var(--surface); color: var(--text-dark); }
     height: 38px;
   }
 }
+/* Rota bilgisi kartındaki sıkışmayı (yazıların alt alta düşmesini) engelle */
+.panel-top-controls .route-info-copy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.panel-top-controls .route-info-copy p {
+  margin: 0;
+  font-size: 12px;
+  white-space: normal;
+  word-break: normal;
+}
+
+.panel-top-controls .route-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.panel-top-controls .route-card-actions button {
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-size: 11px;
+}

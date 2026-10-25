@@ -10,6 +10,7 @@ interface Map3DProps {
   userPosition: [number, number] | null;
   flyToCoords: [number, number] | null;
   flyToUserCoords: [number, number] | null;
+  isNavigating?: boolean;
   draftPosition: [number, number] | null;
   routeLine: [number, number][] | null;
   routeStart: [number, number] | null;
@@ -69,6 +70,7 @@ export default function Map3D({
   userPosition,
   flyToCoords,
   flyToUserCoords,
+  isNavigating = false,
   draftPosition,
   routeLine,
   routeStart,
@@ -646,15 +648,22 @@ export default function Map3D({
       !isNaN(flyToUserCoords[0]) &&
       !isNaN(flyToUserCoords[1])
     ) {
-      map.current.flyTo({
-        center: [flyToUserCoords[1], flyToUserCoords[0]],
-        zoom: 16,
-        pitch: 60,
-        bearing: -20,
-        duration: 1500,
-      });
+      if (isNavigating) {
+        map.current.easeTo({
+          center: [flyToUserCoords[1], flyToUserCoords[0]],
+          duration: 500,
+        });
+      } else {
+        map.current.flyTo({
+          center: [flyToUserCoords[1], flyToUserCoords[0]],
+          zoom: 16,
+          pitch: 60,
+          bearing: -20,
+          duration: 1500,
+        });
+      }
     }
-  }, [flyToUserCoords, mapLoaded]);
+  }, [flyToUserCoords, mapLoaded, isNavigating]);
 
   return (
     <div

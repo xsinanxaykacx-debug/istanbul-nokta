@@ -49,8 +49,6 @@ function createNeonLetter(color: string, letter: string): string {
   return `<text x="24" y="24" fill="${color}" stroke="${color}" stroke-width="0.45" paint-order="stroke" filter="url(#neonGlow)" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="400" text-anchor="middle" dominant-baseline="central">${letter}</text>`;
 }
 
-
-
 function isTelegramPin(description?: string | null, ownerId?: string | null): boolean {
   return (
     (typeof ownerId === 'string' && ownerId.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) ||
@@ -216,7 +214,21 @@ function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number,
   useEffect(() => { publish(); return () => { if (timerRef.current !== undefined) window.clearTimeout(timerRef.current); }; }, [publish]);
   return null;
 }
-function FlyTo({ position, zoom }: { position:[number,number]|null; zoom?:number }) { const map=useMap(); useEffect(()=>{ if(position) map.flyTo(position,zoom??Math.max(map.getZoom(),14),{duration:.5}); },[map,position,zoom]); return null; }
+
+// Navigasyon sırasında haritanın daha yumuşak takip etmesi için FlyTo'yu güncelledik
+function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null; zoom?:number; isNavigating?: boolean }) { 
+  const map=useMap(); 
+  useEffect(()=>{ 
+    if(position) {
+      if (isNavigating) {
+        map.panTo(position, { animate: true, duration: 0.5 });
+      } else {
+        map.flyTo(position, zoom ?? Math.max(map.getZoom(), 14), { duration: .5 });
+      }
+    } 
+  },[map,position,zoom,isNavigating]); 
+  return null; 
+}
 
 function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; selectedId: string | null; isDimmed: (pin: Pin) => boolean; onSelect: (pin: Pin) => void }) {
   const [, setRevision] = useState(0);
@@ -264,6 +276,10 @@ export default function App() {
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
+  
+  // YENİ: Canlı Navigasyon State'leri
+  const [isNavigating, setIsNavigating] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
 
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const wasShowingContentRef = useRef(false);
@@ -1166,7 +1182,7 @@ export default function App() {
       case 'CHANGE_CATEGORY': void changeSelectedPinCategory(command.category); return;
       case 'ZOOM':
         if (mapRef.current) { command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut(); setNotice({ kind: 'success', text: command.action === 'in' ? 'Yakınlaştırıldı.' : 'Uzaklaştırıldı.' }); } return;
-      case 'CLEAR_ROUTE': setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null); setIsPanelOpen(false); setNotice({ kind: 'success', text: 'Rota temizlendi.' }); return;
+      case 'CLEAR_ROUTE': setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null); setIsPanelOpen(false); if(isNavigating) stopNavigation(); setNotice({ kind: 'success', text: 'Rota temizlendi.' }); return;
       case 'THEME': setIsDarkMode(command.mode === 'dark'); setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' }); return;
       case 'SEARCH_PLACE':
         setNotice({ kind: 'info', text: `"${command.query}" aranıyor...` });
@@ -1242,7 +1258,9 @@ export default function App() {
     voicePinRecognitionRef.current=recognition;
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı.'});}
   }
-    useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
+  
+  useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
+
   function locateUser(useForDraft=false){
     if(locating)return;
     if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}
@@ -1262,6 +1280,68 @@ export default function App() {
       {enableHighAccuracy:true,timeout:12000,maximumAge:30000}
     );
   }
+
+  // YENİ: Canlı Navigasyon Fonksiyonları
+    function startNavigation() {
+    if (!navigator.geolocation) {
+      setNotice({ kind: 'error', text: 'Tarayıcınız konum takibini desteklemiyor.' });
+      return;
+    }
+    if (!routeLine) {
+      setNotice({ kind: 'error', text: 'Lütfen önce bir rota oluşturun.' });
+      return;
+    }
+    
+    setIsNavigating(true);
+    setNotice({ kind: 'success', text: 'Canlı navigasyon başladı. İyi yolculuklar!' });
+
+    // Konumu hemen alıp haritayı oraya odakla
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setUserPosition(coords);
+        setFlyToUserCoords(coords);
+        if (!is3D && mapRef.current) {
+          mapRef.current.flyTo(coords, 17);
+        }
+      },
+      () => {},
+      { enableHighAccuracy: true }
+    );
+
+    // Sürekli takip başlat
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setUserPosition(coords);
+        setFlyToUserCoords(coords);
+      },
+      (error) => {
+        console.error('Navigasyon konum hatası:', error);
+        setNotice({ kind: 'error', text: 'Navigasyon sırasında konum alınamadı.' });
+        stopNavigation();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+      function stopNavigation() {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setIsNavigating(false);
+    setNotice({ kind: 'info', text: 'Navigasyon durduruldu.' });
+  }
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
   function openAddPinAt(initialCoords:{lat:number;lng:number}){setDraftPosition([initialCoords.lat,initialCoords.lng]);setSelected(null);setLightboxIndex(null);setIsPanelOpen(true);}
   
   const center:[number,number]=[41.0082,28.9784];
@@ -1326,7 +1406,7 @@ export default function App() {
             />
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
             <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
-            <FlyTo position={userPosition} zoom={16}/>
+            <FlyTo position={userPosition} zoom={16} isNavigating={isNavigating}/>
             <ClusteredPins pins={canSeePins?visiblePins:[]} selectedId={selected?.id??null} isDimmed={pin=>!!debouncedQuery.trim()&&!matchingIds.has(pin.id)} onSelect={pin=>{ if(editPinMode)return; if(bulkSelectMode)setBulkSelectedPins(prev=>prev.includes(pin.id)?prev.filter(id=>id!==pin.id):[...prev,pin.id]); else {setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);setIsPanelOpen(true);} }} />
             {draftPosition&&<Marker position={draftPosition} icon={draftPinIcon} />}
             {!selected&&searchPlace&&<Marker position={[Number(searchPlace.lat),Number(searchPlace.lon)]} icon={searchPlaceIcon} keyboard><Popup><div className="user-location-popup"><strong>{searchPlace.display_name.split(',').slice(0,3).join(',')}</strong><button type="button" onClick={()=>{openAddPinAt({lat:Number(searchPlace.lat),lng:Number(searchPlace.lon)});setSearchPlace(null);}}>Buraya Nokta Ekle</button></div></Popup></Marker>}
@@ -1375,11 +1455,24 @@ export default function App() {
             userPosition={userPosition}
             flyToCoords={flyToCoords}
             flyToUserCoords={flyToUserCoords}
+            isNavigating={isNavigating}
             draftPosition={draftPosition}
             routeLine={routeLine} routeStart={routeStart} routeEnd={routeEnd}
             showTraffic={showTraffic} showHeatmap={showHeatmap}
             tomtomApiKey={tomtomApiKey}
           />
+        )}
+
+        {/* YENİ: Navigasyon Sırasında Görünecek Kırmızı Buton */}
+        {isNavigating && (
+          <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
+            <button 
+              onClick={stopNavigation}
+              style={{ backgroundColor: '#ef4444', color: 'white', padding: '12px 24px', borderRadius: '999px', border: 'none', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            >
+              <X size={18} /> Navigasyonu Bitir
+            </button>
+          </div>
         )}
 
         <div className="map-top-right-controls">
@@ -1391,7 +1484,7 @@ export default function App() {
           <button type="button" className="map-list-button" onClick={() => { setSelected(null); setDraftPosition(null); setEditPinMode(false); setShowFilterOptions(false); setIsPanelOpen(true); }} aria-label="Pin listesini aç" title="Pin listesi"><SlidersHorizontal size={16}/></button>
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
-          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{ if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);setIsPanelOpen(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);setIsPanelOpen(true);} }} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/></button>
+          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{ if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);setIsPanelOpen(false); if(isNavigating) stopNavigation();}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);setIsPanelOpen(true);} }} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/></button>
           <button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>{const nextTraffic=!showTraffic;setShowTraffic(nextTraffic);if(nextTraffic&&!tomtomApiKey)setNotice({kind:'error',text:'Trafik katmanı için VITE_TOMTOM_API_KEY yapılandırılmalı.'});}} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':tomtomApiKey?'Trafik':'Trafik (API anahtarı gerekli)'}>🚦</button>
         </div>
         </div>
@@ -1432,7 +1525,7 @@ export default function App() {
             <div className="pin-interactions-row">
               <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['🚓', '🧑‍✈️', '🚒', '👮‍♂️', '🚧'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
+                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
                 </div>
                 <div className="reaction-group weather-group">
                   {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
@@ -1478,7 +1571,19 @@ export default function App() {
         </form>
         :<div className="empty-panel">
           <div className="panel-top-controls">
-            {routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır.</p>}</section>}
+            {routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div>
+            
+            {/* YENİ: Rota çizildiğinde çıkan "Başlat" butonu */}
+            <div className="route-card-actions" style={{ display: 'flex', gap: '8px' }}>
+              {routeInfo && !isNavigating && (
+                <button type="button" className="primary-button" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={startNavigation}>
+                  <Navigation size={14} style={{ marginRight: '4px' }}/> Başlat
+                </button>
+              )}
+              <button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false); if(isNavigating) stopNavigation();}}>Rota Temizle</button>
+            </div>
+            
+            </div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır.</p>}</section>}
             <div className="panel-filter-search-row">
               <div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>
                 <div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>
