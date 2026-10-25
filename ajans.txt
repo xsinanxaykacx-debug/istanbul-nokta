@@ -1,63 +1,64 @@
-# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U) - AYTAR v1.0
+# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U) - AYTAR v1.1
 
 Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR projesinin mevcut mimarisi, tamamlanmış özellikleri, alınan kritik kararlar ve senin uyman gereken kurallar özetlenmiştir. Lütfen yeni bir kod yazmadan veya özellik eklemeden önce bu belgeyi dikkatlice oku.
 
 ## 1. Proje Künyesi
 - **Uygulama Adı:** AYTAR (Eski adı: Gözcü / İstanbul Nokta). "Aytar" kelimesi Eski Türkçede "Haberci, sözcü" anlamına gelir.
-- **Canlı URL:** https://aytar.surge.sh (Vercel limitleri nedeniyle ana yayın Surge üzerinden yapılıyor, ancak Vercel linki de yedek olarak güncellenecek).
+- **Canlı URL:** https://aytar.surge.sh (Ana yayın) ve https://aytar.vercel.app (Yedek ve API testleri).
 - **GitHub Repo:** xsinanxaykacx-debug/istanbul-nokta (main dalı).
 - **Logo:** Özel tasarım SVG. Yeşil yuvarlak bir zemin içinde, beyaz bir "Hilal" ve hilalin içinden yayılan "Ses Dalgaları" (Haberci teması).
 
 ## 2. Teknolojik Altyapı
 - **Frontend:** React, Vite, TypeScript, Leaflet (2D Harita), MapLibre GL (3D Harita), Lucide-React (İkonlar).
-- **Backend:** Supabase (PostgreSQL, Auth, Storage, RLS Politikaları).
-- **Yapay Zeka (Yerel):** WebLLM (Qwen2.5-0.5B). Tamamen tarayıcıda (WebGPU ile) çalışır. *ÖNEMLİ: Model çok küçük olduğu için saçmalayabilir, bu yüzden yedek bir algoritma ile desteklenmiştir.*
+- **Backend:** Supabase (PostgreSQL, Auth, Storage, RLS Politikaları, Database Triggers).
+- **Yapay Zeka (Yerel):** WebLLM (Qwen2.5-0.5B). Tamamen tarayıcıda (WebGPU ile) çalışır.
 - **Harici API'ler:** TomTom (Canlı Trafik), OSRM (Rota Çizimi), Nominatim (Geocoding).
-- **Hosting:** Surge.sh (Sınırsız, ücretsiz - Ana Üs) ve Vercel (Yedek).
-- **Tasarım:** "Midnight Sapphire" (Koyu lacivert/safir) teması. Tam ekran (no-scroll), mobil öncelikli (mobile-first) tasarım.
+- **Hosting & Serverless:** Surge.sh (Frontend), Vercel (API Routes ve Yedek Frontend).
+- **Bot Altyapısı:** Telegram Webhook + Vercel Serverless Functions (Node.js).
 
 ## 3. Tamamlanan ve Çalışan Kritik Özellikler (BUNLARI BOZMA!)
-*(Geçmiş sprintlerde eklenen ve şu an kusursuz çalışan özelliklerdir)*
 
 **Harita ve Görsel Özellikler:**
-1. **Neon Pinler:** Haritadaki pinler, özel SVG'ler ile oluşturulmuş, kategorilerine göre parlayan Neon renklere sahiptir.
-2. **2D / 3D Harita Desteği:** Sağ üstteki buton ile Leaflet ve MapLibre arasında geçiş yapılabilir.
-3. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve ısı haritası (Heatmap).
-4. **Rota Çizimi:** OSRM API kullanılarak rota çizimi, rota üzerindeki pinleri listeleme (100 metre yakını).
+1. **Neon Pinler:** Haritadaki pinler, kategorilerine göre parlayan Neon renklere sahiptir.
+2. **2D / 3D Harita Desteği:** Leaflet ve MapLibre arasında geçiş yapılabilir.
+3. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve ısı haritası.
+4. **Rota Çizimi:** OSRM API kullanılarak rota çizimi ve rota üzerindeki pinleri listeleme.
+5. **Uydu Görüntüsü:** (İptal Edildi/Gelecek Planı) - Şimdilik ertelendi, 3D vektörel harita kullanılıyor.
 
 **Mobil ve UI/UX Özellikleri:**
-5. **Mobil Tam Ekran & Bottom Sheet:** Mobilde harita tam ekrandır. Sağ panel (side-panel), `isPanelOpen` state'i ile CSS `transform: translateY(100%)` kullanılarak aşağıdan yukarı kayarak açılır.
-6. **Açık Adres (Reverse Geocoding):** Pin detayında ve sağ panel listesinde koordinat yerine Nominatim ile çekilen adres gösterilir.
-7. **PWA Desteği:** Uygulama telefona indirilebilir (Ana Ekrana Ekle). Favicon ve PWA ikonu özel logodur.
-8. **Filtreler ve Zaman Aralığı:** Kategori filtreleri ve zaman filtresi (Son 1 dk, 1 sa, 24 sa vb.).
+6. **Mobil Tam Ekran & Bottom Sheet:** Sağ panel, mobilde aşağıdan yukarı kayarak (translateY) açılır.
+7. **Açık Adres:** Pin detayında koordinat yerine Nominatim ile çekilen adres gösterilir.
+8. **PWA Desteği:** Uygulama telefona indirilebilir (Ana Ekrana Ekle).
+9. **Filtreler ve Zaman Aralığı:** Kategori filtreleri ve zaman filtresi (Son 1 dk, 1 sa, 24 sa vb.).
 
-**Kullanıcı ve Etkileşim Özellikleri:**
-9. **Sesli Not (Voice Note):** Pin eklerken MediaRecorder API ile ses kaydı alınır, Supabase Storage'a yüklenir ve pin detayında `<audio>` oynatıcı ile dinlenir.
-10. **Yorumlar (Pin Chat):** Pinlere yorum yapılabilir (Supabase `pin_comments` tablosu).
-11. **Çoklu Emoji Tepkileri:** Acil durum emojileri ['👮‍♂️','🚓', '🧑‍✈️', '🚒', '🚧'] ve Hava Durumu emojileri (☀️, 🌧️, ❄️, ☁️, ⛈️) yan yana, kompakt bir tasarımla oylanabilir.
-12. **Akıllı Özet (Yapay Zeka + Yedek Sistem):** Haritadaki son 10-15 pini analiz eden bir "Akıllı Özet" butonu vardır. 
-    *   *Kritik Detay:* WebLLM saçmalarsa, devreye giren **"Fallback" (Yedek) Algoritma** pin açıklamalarını tarayıp "🚨 2 kaza, 🚗 1 trafik yoğunluğu" gibi kusursuz bir metin analizi raporu çıkarır.
+**Kullanıcı, Etkileşim ve Oyunlaştırma Özellikleri:**
+10. **Sesli Not:** Pin eklerken MediaRecorder API ile ses kaydı alınır, Supabase Storage'a yüklenir.
+11. **Yorumlar ve Tepkiler:** Pinlere yorum yapılabilir, Acil Durum ve Hava Durumu emojileriyle oylanabilir.
+12. **Akıllı Özet (YZ + Yedek):** WebLLM analizi (Fallback metin analizi ile desteklenir).
 13. **Oylama Sistemi:** Pinlere artı/eksi oy verilebilir.
 14. **24 Saat Kuralı:** `pg_cron` ile 24 saatten eski pinler arşive taşınır.
+15. **Profil ve Rozet Sistemi (Oyunlaştırma):** Kullanıcılar ekledikleri pin sayısına (Gözcü -> Mahalle Muhabiri -> Şehir Efsanesi) ve aldıkları oylara göre profil pencerelerinde rozet kazanırlar. Sayımlar **Supabase Database Trigger** ile otomatik yapılır.
+16. **Telegram Botu (AYTAR RADAR):** Telegram kanallarından/gruplarından gelen ihbarlar, Vercel Serverless API üzerinden Nominatim ile konuma çevrilir, Supabase'e `[AYTAR-RADAR]` etiketiyle ve mor radar ikonuyla eklenir. Bot, başarılı veya başarısız durumları kanala geri bildirir.
 
 ## 4. Alınan Önemli Kararlar ve Vazgeçilenler
-- **Hava Durumu API'leri:** RainViewer ve OpenWeatherMap gibi ücretsiz API'ler, haritada yüksek zoom seviyelerinde "Zoom Level Not Supported" damgası bastığı için **iptal edildi**. Yerine "Kitle Kaynaklı" (Crowdsourced) hava durumu emojileri getirildi (B.çekmece'deki ❄️, Üsküdar'daki ☀️ basar).
-- **Pin Sürükleme (Drag):** İptal edildi, yerine haritaya tıklayarak konum değiştirme getirildi.
-- **Yapay Zeka (WebLLM):** Chrome'da `chrome://flags/#enable-unsafe-webgpu` açılmadan çalışmaz. Çalışmadığı durumlar için kodda Fallback (Yedek Algoritma) zorunludur.
-- **Hosting:** Vercel (günlük 100 deploy limiti) ve Netlify (kredi sistemi) sıkıntı çıkardığı için **Surge.sh** kullanılıyor.
+- **Uydu Görüntüsü:** 3D binalar/ağaçlar olmadan sadece düz fotoğraf olacağı için şimdilik vazgeçildi. Mevcut "Liberty" vektör stili kullanılıyor.
+- **Hava Durumu API'leri:** Zoom sorunu nedeniyle iptal edildi, kitle kaynaklı (crowdsourced) emojiler kullanılıyor.
+- **Telegram Bot Mimarisi:** Bot doğrudan `pins` tablosuna `INSERT` yapmaz. Supabase RLS ve yetki sorunlarını aşmak için `create_pin_with_photos` **RPC** fonksiyonunu kullanır ve yetki için `p_owner_id` parametresini gönderir.
+- **Veritabanı Sayaçları:** Profil istatistiklerinin (pin ve oy sayısı) güncellenmesi için yazılan Trigger fonksiyonlarına `SECURITY DEFINER` ve `OWNER TO postgres` yetkisi verildi (RLS engellemelerini aşmak için).
+- **Hosting:** Vercel limitleri nedeniyle Frontend için ana yayın **Surge.sh**, API/Bot işlemleri için **Vercel** kullanılıyor.
 
 ## 5. Sana Verilecek Görevler İçin Çalışma Kuralları (Guardrails)
-- **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme, bottom sheet ve 3D harita mantığına dokunma.
-- **Dosya Sınırlaması:** Genellikle `src/App.tsx`, `src/styles.css` ve `src/Map3D.tsx` üzerinden ilerle.
-- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import (`MapPin`, `MicOff` vb.) bırakma. `supabase` null kontrolünü her zaman yap.
+- **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme, bottom sheet, 3D harita, Telegram Webhook ve profil rozet sistemine dokunma.
+- **Dosya Sınırlaması:** Genellikle `src/App.tsx`, `src/styles.css`, `src/Map3D.tsx` üzerinden ilerle. Bot işlemleri için `api/telegram-webhook.ts` ve `api/_lib/webhook-core.ts` dosyalarını kullan.
+- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import bırakma. `supabase` null kontrolünü her zaman yap. Map3D'de tanımlanan ama kullanılmayan değişkenlerin build'i patlatacağını unutma.
 - **Build Zorunluluğu:** `npm run build` çalıştırıp `✓ built in ...` yazısını görmeden kodu canlıya almayı önerme.
-- **Parça Kod Verme:** Değişiklikler çok kapsamlıysa, kafa karışıklığını önlemek için dosyanın **tamamını** ver.
+- **Parça Kod Verme:** Değişiklikler çok kapsamlıysa, dosyanın **tamamını** ver.
 
 ## 6. Gelecek Yol Haritası (Sıradaki Olası Adımlar)
 İhtiyaç halinde şu özellikler eklenebilir:
-- Kullanıcı Profil Sayfası ve Oyunlaştırma (Rozetler).
-- Arkadaş / Takip Sistemi (Sadece takip edilenlerin pinlerini görme).
-- Pin Ömrü Görselleştirmesi (Pinler yaşlandıkça soluklaşsın).
+- **Takip / Arkadaş Sistemi:** Sadece takip edilenlerin pinlerini haritada görme.
+- **Pin Ömrü Görselleştirmesi:** Pinler yaşlandıkça soluklaşsın (kodda `getPinOpacity` mevcut ancak görsel olarak güçlendirilebilir).
+- **Profil Sayfası Detaylandırması:** Profil penceresine kullanıcının kendi eklediği son pinlerin listesini eklemek.
 
 ## Görevin:
 Yukarıdaki kurallara sadık kalarak, sana verilecek bir sonraki görevi yerine getir. Kodu yazmadan önce mevcut yapıyı bozmayacağından emin ol ve çıktı olarak her zaman temiz bir kod ver.

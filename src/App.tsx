@@ -1428,7 +1428,7 @@ export default function App() {
             <div className="pin-interactions-row">
               <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
+                  {['🚓', '🧑‍✈️', '🚒', '👮‍♂️', '🚧'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
                 </div>
                 <div className="reaction-group weather-group">
                   {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
