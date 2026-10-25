@@ -1216,20 +1216,20 @@ export default function App() {
           {adminLoading ? <p style={{textAlign:'center', padding:'20px'}}>Yükleniyor...</p> : adminTab === 'users' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminProfiles.map((p) => (<div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}><div><strong style={{ display: 'block', fontSize: '14px' }}>{p.username || `Kullanıcı: ${p.id.slice(0,8)}...`}</strong><span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}</span>{p.role === 'admin' && <span style={{ marginLeft: '10px', fontSize: '10px', background: '#3b82f6', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}</div><div style={{ display: 'flex', gap: '8px' }}>{p.status !== 'active' && <button onClick={() => void updateUserStatus(p.id, 'active')} className="primary-button" style={{ padding: '6px 12px', fontSize: '12px' }}>Onayla</button>}{p.status === 'active' && p.role !== 'admin' && <button onClick={() => void updateUserStatus(p.id, 'disabled')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Banla</button>}</div></div>))}</div>
           ) : adminTab === 'pins' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: pins.length ? 'pointer' : 'default', flex: 1, minWidth: '150px' }}>
+            <div className="admin-pin-management"> 
+              <div className="admin-pin-toolbar">
+                <label className="admin-pin-select-all">
                   <input type="checkbox" checked={pins.length > 0 && bulkSelectedPins.length === pins.length} disabled={pins.length === 0 || busy} onChange={event => setBulkSelectedPins(event.target.checked ? pins.map(pin => pin.id) : [])} />
                   <strong>Tümünü Seç ({pins.length})</strong>
                 </label>
                 <button type="button" className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} onClick={() => void deleteBulkPins()} style={{ marginTop: 0, padding: '8px 12px' }}>{busy ? 'Siliniyor…' : `Seçilenleri Sil (${bulkSelectedPins.length})`}</button>
               </div>
               {pins.length === 0 ? <p style={{ textAlign: 'center', color: '#94a3b8', padding: '16px' }}>Listelenecek pin bulunamadı.</p> : pins.map(pin => (
-                <label key={pin.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: bulkSelectedPins.includes(pin.id) ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={bulkSelectedPins.includes(pin.id)} disabled={busy} onChange={event => setBulkSelectedPins(current => event.target.checked ? (current.includes(pin.id) ? current : [...current, pin.id]) : current.filter(id => id !== pin.id))} style={{ marginTop: '4px', accentColor: '#ef4444' }} />
-                  <span style={{ minWidth: 0, flex: 1 }}>
-                    <strong style={{ display: 'block', fontSize: '13px', overflowWrap: 'anywhere' }}>{(pinDescription(pin).trim() || 'Açıklamasız konum').slice(0, 30)}</strong>
-                    <span style={{ display: 'block', marginTop: '4px', color: '#94a3b8', fontSize: '12px' }}>Kategori: {pin.category || 'Belirtilmemiş'} · {new Date(pin.created_at).toLocaleString('tr-TR')}</span>
+                <label key={pin.id} className={`admin-pin-row${bulkSelectedPins.includes(pin.id) ? ' is-selected' : ''}`}>
+                  <input className="admin-pin-checkbox" type="checkbox" checked={bulkSelectedPins.includes(pin.id)} disabled={busy} onChange={event => setBulkSelectedPins(current => event.target.checked ? (current.includes(pin.id) ? current : [...current, pin.id]) : current.filter(id => id !== pin.id))} />
+                  <span className="admin-pin-info">
+                    <strong className="admin-pin-title">{(pinDescription(pin).trim() || 'Açıklamasız konum').slice(0, 30)}</strong>
+                    <span className="admin-pin-meta">Kategori: {pin.category || 'Belirtilmemiş'} · {new Date(pin.created_at).toLocaleString('tr-TR')}</span>
                   </span>
                 </label>
               ))}
