@@ -2435,7 +2435,7 @@ select option { background: var(--surface); color: var(--text-dark); }
 /* Unified map controls: one vertical stack at the upper-right on desktop and mobile. */
 .map-top-right-controls {
   position: absolute;
-  top: 60px;
+  top: 15px;
   right: 16px;
   z-index: 1000;
   display: flex;
@@ -2549,7 +2549,7 @@ select option { background: var(--surface); color: var(--text-dark); }
 
 @media (max-width: 768px) {
   .map-top-right-controls {
-    top: 60px;
+    top: 10px;
     right: 16px;
     gap: 10px;
   }
