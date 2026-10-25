@@ -1459,7 +1459,7 @@ export default function App() {
             <div className="pin-interactions-row">
               <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => {
+                  {['👮‍♂️','🚓', '🧑‍✈️', '🚒', '🚧'].map(emoji => {
                     const count = reactions.filter(r => r.emoji === emoji).length;
                     const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji);
                     return (
