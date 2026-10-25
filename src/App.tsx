@@ -23,16 +23,25 @@ type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlt
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
+function createNeonPinSvg(color: string, inner: string): string {
+  const path = 'M24 2C12.4 2 3 11.4 3 23c0 14.6 21 34 21 34s21-19.4 21-34C45 11.4 35.6 2 24 2Z';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 48 58" overflow="visible"><defs><filter id="neonGlow" x="-60%" y="-50%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.2" result="blur"/><feFlood flood-color="${color}" flood-opacity="1" result="neonColor"/><feComposite in="neonColor" in2="blur" operator="in" result="neonBlur"/><feMerge><feMergeNode in="neonBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="${path}" fill="#0f172a" fill-opacity="0.94" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" filter="url(#neonGlow)"/>${inner}</svg>`;
+}
+
+function createNeonLetter(color: string, letter: string): string {
+  return `<text x="24" y="24" fill="${color}" stroke="${color}" stroke-width="0.45" paint-order="stroke" filter="url(#neonGlow)" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="800" text-anchor="middle" dominant-baseline="central">${letter}</text>`;
+}
+
 const pinIcons: Record<string, L.DivIcon> = {
-  'YEŞİL': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8 0-14 4-14 11a5 5 0 0 0 5 5c7 0 11-6 9-16Z"/><path d="M4 20c4-5 7-7 12-10"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
-  'MAVİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-mavi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 10 6 14a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
-  'KIRMIZI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-kirmizi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
-  'SARI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-sari"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="17" text-anchor="middle" font-size="17" font-weight="800" fill="#111827" stroke="none">S</text></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
+  'YEŞİL': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#39FF14', createNeonLetter('#39FF14', 'Y'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
+  'MAVİ': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#00E5FF', createNeonLetter('#00E5FF', 'M'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
+  'KIRMIZI': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#FF1744', createNeonLetter('#FF1744', 'K'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
+  'SARI': new L.DivIcon({ className: 'pin-icon-wrap', html: `<div class="neon-pin-icon">${createNeonPinSvg('#FFEA00', createNeonLetter('#FFEA00', 'S'))}</div>`, iconSize: [32, 40], iconAnchor: [16, 38] }),
 };
 
 const telegramPinIcon = new L.DivIcon({
   className: 'pin-icon-wrap telegram-pin-icon-wrap',
-  html: '<div class="pin-icon pin-icon-telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg></div>',
+  html: `<div class="neon-pin-icon">${createNeonPinSvg('#B026FF', '<circle cx="24" cy="22" r="10.5" fill="none" stroke="#B026FF" stroke-width="1.8" filter="url(#neonGlow)"/><path d="M24 11.5v10.5l7 4M16 15l16 14M32 15 16 29" fill="none" stroke="#B026FF" stroke-width="1.7" stroke-linecap="round" filter="url(#neonGlow)"/><circle cx="24" cy="22" r="2.5" fill="#0f172a" stroke="#B026FF" stroke-width="1.5" filter="url(#neonGlow)"/>')}</div>`,
   iconSize: [32, 40],
   iconAnchor: [16, 38],
 });
