@@ -1932,6 +1932,7 @@ select option { background: var(--surface); color: var(--text-dark); }
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
 }
 .pin-list-meta {
   display: flex;
