@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Flame, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
@@ -1111,18 +1111,9 @@ export default function App() {
           />
         )}
 
-        <div className="map-action-left-group">
-          {profile?.role === 'admin' && (
-            <button className={`map-add-button ${bulkSelectMode ? 'is-active' : ''}`} style={{ backgroundColor: bulkSelectMode ? '#ef4444' : undefined, color: '#fff' }} onClick={() => { setBulkSelectMode(!bulkSelectMode); setBulkSelectedPins([]); }}>
-              <Check size={17}/> <span>{bulkSelectMode ? 'Seçimi İptal Et' : 'Toplu Seç'}</span>
-            </button>
-          )}
-          {canAdd&&<button className="map-add-button map-add-location-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
-        </div>
-
-        <div className="map-mobile-control-stack">
+        <div className="map-top-right-controls">
         <div className="map-view-switch" style={{
-          position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
+          position: 'relative', top: 'auto', right: 'auto', zIndex: 1000, 
           display: 'flex', alignItems: 'center', gap: '2px',
           background: 'var(--surface)', border: '1px solid var(--border-color)',
           padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
@@ -1152,12 +1143,11 @@ export default function App() {
             3D
           </button>
         </div>
-        <div className="map-action-right-group">
+        <div className="map-top-right-actions">
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
-          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>
-          <button type="button" className={`traffic-button heatmap-button ${showHeatmap ? 'is-active' : ''}`} onClick={()=>setShowHeatmap(current=>!current)} aria-pressed={showHeatmap} aria-label={showHeatmap?'Isı haritasını kapat':'Isı haritasını aç'} title={showHeatmap?'Isı haritasını kapat':'Isı Haritası'}><Flame size={17}/><span>Isı Haritası</span></button>
-          {tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>T</span></button>}
+          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/></button>
+          <button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>{if(tomtomApiKey)setShowTraffic(current=>!current);}} disabled={!tomtomApiKey} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={!tomtomApiKey?'Trafik için API anahtarı gerekli':showTraffic?'Trafiği kapat':'Trafik'}>🚦</button>
         </div>
         </div>
 
