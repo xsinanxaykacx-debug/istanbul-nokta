@@ -3016,3 +3016,142 @@ select option { background: var(--surface); color: var(--text-dark); }
     top: 10px !important;
   }
 }
+
+
+/* Keep desktop layout unchanged; mobile replaces this with a single control stack. */
+.map-mobile-control-stack { display: contents; }
+
+/* Mobile controls: one right-side vertical stack, ordered view switch, mic, GPS, route, traffic. */
+@media (max-width: 768px) {
+  .map-frame .map-action-left-group {
+    display: none !important;
+  }
+
+  .map-frame .map-mobile-control-stack {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    z-index: 1250 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .map-frame .map-mobile-control-stack .map-view-switch {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1px !important;
+    width: auto !important;
+    min-width: max-content !important;
+    padding: 2px !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    box-sizing: border-box !important;
+  }
+
+  .map-frame .map-mobile-control-stack .map-view-switch button {
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  .map-frame .map-mobile-control-stack .map-action-right-group {
+    position: static !important;
+    inset: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-pin-control,
+  .map-frame .map-mobile-control-stack .voice-pin-button,
+  .map-frame .map-mobile-control-stack .locate-button,
+  .map-frame .map-mobile-control-stack .route-button,
+  .map-frame .map-mobile-control-stack .traffic-button:not(.heatmap-button) {
+    position: relative !important;
+    inset: auto !important;
+    display: inline-flex !important;
+    flex: 0 0 32px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+    gap: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-pin-control {
+    overflow: visible !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-pin-button {
+    overflow: hidden !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-pin-button > span,
+  .map-frame .map-mobile-control-stack .route-button > span,
+  .map-frame .map-mobile-control-stack .traffic-button:not(.heatmap-button) > span {
+    display: none !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-tooltip,
+  .map-frame .map-mobile-control-stack .traffic-button.heatmap-button {
+    display: none !important;
+  }
+
+  .map-frame .map-mobile-control-stack .voice-pin-button svg,
+  .map-frame .map-mobile-control-stack .locate-button svg,
+  .map-frame .map-mobile-control-stack .route-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .map-frame .map-mobile-control-stack .traffic-button:not(.heatmap-button) {
+    font-size: 15px !important;
+    line-height: 1 !important;
+  }
+
+  .map-frame .place-search-wrap {
+    top: 10px !important;
+  }
+}
