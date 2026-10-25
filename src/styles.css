@@ -2432,12 +2432,6 @@ select option { background: var(--surface); color: var(--text-dark); }
 }
 
 
-@media (max-width: 768px) {
-  .map-action-right-group .voice-pin-button > span {
-    display: none !important;
-  }
-}
-
 /* Unified map controls: one vertical stack at the upper-right on desktop and mobile. */
 .map-top-right-controls {
   position: absolute;
