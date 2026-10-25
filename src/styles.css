@@ -237,6 +237,8 @@
 .pin-icon.pin-icon-kirmizi { background: #FF1744; }
 .pin-icon.pin-icon-sari { background: #FFEA00; }
 .pin-icon.pin-icon-sari svg { stroke: #111827; }
+.pin-icon.pin-icon-sari svg { transform: none; }
+.pin-icon.pin-icon-sari svg text { fill: #111827; stroke: none; }
 
 .category-select {
   display: block;
