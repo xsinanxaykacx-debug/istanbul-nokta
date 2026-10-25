@@ -2876,3 +2876,19 @@ select option { background: var(--surface); color: var(--text-dark); }
     pointer-events: none;
   }
 }
+
+
+/* Mobile map is the fixed canvas; the panel is an overlay, never a flex sibling. */
+@media (max-width: 768px) {
+  html, body, #root { width: 100%; min-width: 320px; height: 100%; min-height: 100%; margin: 0; overflow: hidden; }
+  .app-shell { position: relative !important; display: flex !important; flex-direction: column !important; width: 100% !important; max-width: none !important; height: 100vh !important; height: 100dvh !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important; }
+  .app-shell > .topbar { position: relative !important; z-index: 1100 !important; flex: 0 0 60px !important; height: 60px !important; min-height: 60px !important; padding: 0 12px !important; }
+  .app-shell > .workspace { position: relative !important; display: block !important; flex: 1 1 auto !important; width: 100% !important; min-width: 0 !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+  .app-shell > .workspace > .map-frame { position: absolute !important; inset: 0 !important; z-index: 1 !important; display: block !important; width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important; flex: none !important; border: 0 !important; border-radius: 0 !important; }
+  .app-shell > .workspace > .map-frame .map { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
+  .app-shell > .workspace > .side-panel { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 1000 !important; display: flex !important; flex-direction: column !important; width: 100% !important; max-width: none !important; max-height: 60vh !important; max-height: 60dvh !important; min-height: 0 !important; margin: 0 !important; border-radius: 18px 18px 0 0 !important; overflow: auto !important; overscroll-behavior: contain !important; box-shadow: 0 -8px 32px #0003 !important; }
+  .app-shell > .workspace > .side-panel.is-hidden { transform: translateY(calc(100% - 48px)) !important; visibility: visible !important; pointer-events: auto !important; }
+  .app-shell > .workspace > .side-panel.is-open { transform: translateY(0) !important; visibility: visible !important; pointer-events: auto !important; }
+  .app-shell > .workspace > .side-panel:not(.is-open):not(.is-hidden) { transform: translateY(calc(100% - 48px)) !important; }
+  .app-shell > footer { display: none !important; }
+}
