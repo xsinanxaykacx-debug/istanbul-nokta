@@ -2802,3 +2802,77 @@ select option { background: var(--surface); color: var(--text-dark); }
     transition: none;
   }
 }
+
+/* Final mobile layout override: force the map to occupy the complete workspace.
+   These selectors intentionally outrank older mobile sizing rules above. */
+@media (max-width: 768px) {
+  .app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  .app-shell > .topbar {
+    flex: 0 0 60px !important;
+    height: 60px !important;
+    min-height: 60px !important;
+  }
+
+  .app-shell > .workspace {
+    position: relative !important;
+    display: block !important;
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .app-shell > .workspace > .map-frame {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .app-shell > .workspace > .side-panel {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 60vh !important;
+    max-height: 60dvh !important;
+    min-height: 0 !important;
+    flex: none !important;
+    margin: 0 !important;
+    transform: translateY(100%);
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1000 !important;
+  }
+
+  .app-shell > .workspace > .side-panel.is-open {
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .app-shell > .workspace > .side-panel.is-hidden {
+    transform: translateY(100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
