@@ -2700,7 +2700,7 @@ select option { background: var(--surface); color: var(--text-dark); }
     border: 0;
     border-radius: 0;
     overflow: hidden;
-    z-index: 1;
+    z-index: auto;
   }
 
   .place-search-wrap {
