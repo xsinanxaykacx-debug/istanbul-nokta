@@ -1,4 +1,4 @@
-# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U) - AYTAR v1.1
+# PROJE DURUM BELGESİ VE DEVİR TESLİM (SİSTEM PROMPT'U) - AYTAR v1.2
 
 Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR projesinin mevcut mimarisi, tamamlanmış özellikleri, alınan kritik kararlar ve senin uyman gereken kurallar özetlenmiştir. Lütfen yeni bir kod yazmadan veya özellik eklemeden önce bu belgeyi dikkatlice oku.
 
@@ -23,7 +23,7 @@ Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR pr
 2. **2D / 3D Harita Desteği:** Leaflet ve MapLibre arasında geçiş yapılabilir.
 3. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve ısı haritası.
 4. **Rota Çizimi:** OSRM API kullanılarak rota çizimi ve rota üzerindeki pinleri listeleme.
-5. **Uydu Görüntüsü:** (İptal Edildi/Gelecek Planı) - Şimdilik ertelendi, 3D vektörel harita kullanılıyor.
+5. **Pin Ömrü Görselleştirmesi (Opacity):** Pinler yaşlandıkça (1 saat, 3 saat, 6 saat...) görsel olarak şeffaflaşır ve 20 saati geçenler "hayalet" görünümüne bürünür. Hem 2D hem 3D haritada sorunsuz çalışır.
 
 **Mobil ve UI/UX Özellikleri:**
 6. **Mobil Tam Ekran & Bottom Sheet:** Sağ panel, mobilde aşağıdan yukarı kayarak (translateY) açılır.
@@ -37,28 +37,28 @@ Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda AYTAR pr
 12. **Akıllı Özet (YZ + Yedek):** WebLLM analizi (Fallback metin analizi ile desteklenir).
 13. **Oylama Sistemi:** Pinlere artı/eksi oy verilebilir.
 14. **24 Saat Kuralı:** `pg_cron` ile 24 saatten eski pinler arşive taşınır.
-15. **Profil ve Rozet Sistemi (Oyunlaştırma):** Kullanıcılar ekledikleri pin sayısına (Gözcü -> Mahalle Muhabiri -> Şehir Efsanesi) ve aldıkları oylara göre profil pencerelerinde rozet kazanırlar. Sayımlar **Supabase Database Trigger** ile otomatik yapılır.
-16. **Telegram Botu (AYTAR RADAR):** Telegram kanallarından/gruplarından gelen ihbarlar, Vercel Serverless API üzerinden Nominatim ile konuma çevrilir, Supabase'e `[AYTAR-RADAR]` etiketiyle ve mor radar ikonuyla eklenir. Bot, başarılı veya başarısız durumları kanala geri bildirir.
+15. **Profil ve Rozet Sistemi (Oyunlaştırma):** Kullanıcılar ekledikleri pin sayısına (Gözcü -> Mahalle Muhabiri -> Şehir Efsanesi) ve aldıkları oylara göre profil pencerelerinde rozet kazanırlar. Bu sayımlar **Supabase Database Trigger** ile otomatik yapılır.
+16. **Telegram Botu (AYTAR RADAR):** Telegram kanallarından/gruplarından gelen ihbarlar, Vercel Serverless API üzerinden Nominatim ile konuma çevrilir, Supabase'e `[AYTAR-RADAR]` etiketiyle ve mor radar ikonuyla eklenir. Bot, hem başarılı hem de hatalı durumları (örn: adres bulunamadı) kanala geri bildirir.
 
 ## 4. Alınan Önemli Kararlar ve Vazgeçilenler
+- **Güvenlik (Anahtar Rotasyonu):** Sızan eski `SUPABASE_SERVICE_ROLE_KEY` ve `TELEGRAM_BOT_TOKEN` değiştirilmiş ve Vercel'deki tüm ortamlara (Prod, Dev, Preview) yeni anahtarlar tanıtılmıştır.
+- **Telegram Bot Mimarisi:** Bot doğrudan `pins` tablosuna `INSERT` yapmaz. Supabase RLS ve yetki sorunlarını aşmak için `create_pin_with_photos` **RPC** fonksiyonunu kullanır ve yetki için `p_owner_id` parametresini gönderir.
+- **Veritabanı Sayaçları (RLS Bypass):** Profil istatistiklerinin (pin ve oy sayısı) güncellenmesi için yazılan Trigger fonksiyonlarına `SECURITY DEFINER` ve `OWNER TO postgres` yetkisi verilmiştir. Bu sayede normal kullanıcılar pin eklerken RLS engeline takılmadan profilleri güncellenir.
 - **Uydu Görüntüsü:** 3D binalar/ağaçlar olmadan sadece düz fotoğraf olacağı için şimdilik vazgeçildi. Mevcut "Liberty" vektör stili kullanılıyor.
 - **Hava Durumu API'leri:** Zoom sorunu nedeniyle iptal edildi, kitle kaynaklı (crowdsourced) emojiler kullanılıyor.
-- **Telegram Bot Mimarisi:** Bot doğrudan `pins` tablosuna `INSERT` yapmaz. Supabase RLS ve yetki sorunlarını aşmak için `create_pin_with_photos` **RPC** fonksiyonunu kullanır ve yetki için `p_owner_id` parametresini gönderir.
-- **Veritabanı Sayaçları:** Profil istatistiklerinin (pin ve oy sayısı) güncellenmesi için yazılan Trigger fonksiyonlarına `SECURITY DEFINER` ve `OWNER TO postgres` yetkisi verildi (RLS engellemelerini aşmak için).
-- **Hosting:** Vercel limitleri nedeniyle Frontend için ana yayın **Surge.sh**, API/Bot işlemleri için **Vercel** kullanılıyor.
 
 ## 5. Sana Verilecek Görevler İçin Çalışma Kuralları (Guardrails)
 - **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme, bottom sheet, 3D harita, Telegram Webhook ve profil rozet sistemine dokunma.
 - **Dosya Sınırlaması:** Genellikle `src/App.tsx`, `src/styles.css`, `src/Map3D.tsx` üzerinden ilerle. Bot işlemleri için `api/telegram-webhook.ts` ve `api/_lib/webhook-core.ts` dosyalarını kullan.
-- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import bırakma. `supabase` null kontrolünü her zaman yap. Map3D'de tanımlanan ama kullanılmayan değişkenlerin build'i patlatacağını unutma.
+- **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import veya değişken bırakma (Örn: `pinIcons` ve `telegramPinIcon` silinmişti). `Map3D.tsx` içindeki `TELEGRAM_OWNER_ID_PREFIX` gibi sabitlerin tanımlı ve kullanılıyor olduğundan emin ol.
 - **Build Zorunluluğu:** `npm run build` çalıştırıp `✓ built in ...` yazısını görmeden kodu canlıya almayı önerme.
 - **Parça Kod Verme:** Değişiklikler çok kapsamlıysa, dosyanın **tamamını** ver.
 
 ## 6. Gelecek Yol Haritası (Sıradaki Olası Adımlar)
 İhtiyaç halinde şu özellikler eklenebilir:
 - **Takip / Arkadaş Sistemi:** Sadece takip edilenlerin pinlerini haritada görme.
-- **Pin Ömrü Görselleştirmesi:** Pinler yaşlandıkça soluklaşsın (kodda `getPinOpacity` mevcut ancak görsel olarak güçlendirilebilir).
 - **Profil Sayfası Detaylandırması:** Profil penceresine kullanıcının kendi eklediği son pinlerin listesini eklemek.
+- **Bildirim Sistemi:** Pinlere yorum veya oy geldiğinde kullanıcıya bildirim zili çıkması.
 
 ## Görevin:
 Yukarıdaki kurallara sadık kalarak, sana verilecek bir sonraki görevi yerine getir. Kodu yazmadan önce mevcut yapıyı bozmayacağından emin ol ve çıktı olarak her zaman temiz bir kod ver.
