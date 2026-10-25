@@ -19,9 +19,10 @@ type Notice = { kind: 'success'|'error'|'info'; text: string };
 type PlaceResult = { place_id: number; lat: string; lon: string; display_name: string; address?: Record<string,string> };
 type SpeechSetter = (value: string | ((current: string) => string)) => void;
 type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlternatives: number; onstart: (() => void) | null; onresult: ((event: any) => void) | null; onerror: ((event: any) => void) | null; onend: (() => void) | null; start: () => void; stop: () => void };
+type PinComment = { id: string; pin_id: string; user_id: string; content: string; created_at: string; profiles: { username: string | null } };
+type PinReaction = { id: string; pin_id: string; user_id: string; emoji: string };
 
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
-const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
 function createNeonPinSvg(color: string, inner: string): string {
   const path = 'M24 2C12.4 2 3 11.4 3 23c0 14.6 21 34 21 34s21-19.4 21-34C45 11.4 35.6 2 24 2Z';
@@ -49,6 +50,7 @@ const telegramPinIcon = new L.DivIcon({
 function isTelegramPin(description?: string | null): boolean {
   return typeof description === 'string' && description.startsWith(`${TELEGRAM_PIN_MARKER} `);
 }
+
 function pinDescription(pin: Pick<Pin, 'description'>): string {
   return isTelegramPin(pin.description)
     ? pin.description.slice(TELEGRAM_PIN_MARKER.length).trimStart()
@@ -168,7 +170,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   return <>{Array.from(cells.entries()).map(([key, group]) => {
     if (group.length === 1) {
       const pin = group[0];
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description)} opacity={isDimmed(pin) ? 0.35 : 1} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -200,9 +202,13 @@ export default function App() {
   const mapRef = useRef<L.Map | null>(null);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
 
-  // YENİ: mobil bottom sheet açık/kapalı state'i
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const wasShowingContentRef = useRef(false);
+
+  const [comments, setComments] = useState<PinComment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [reactions, setReactions] = useState<PinReaction[]>([]);
+  const [busyComment, setBusyComment] = useState(false);
 
   const [llmEngine, setLlmEngine] = useState<MLCEngine | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
@@ -224,7 +230,6 @@ export default function App() {
   useEffect(() => { descriptionRef.current = description; }, [description]);
   useEffect(() => { filesRef.current = files; }, [files]);
 
-  // Panel içerik gösteriyor mu (kapatma kararı için)
   useEffect(() => {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
   }, [selected, showFilterOptions, editPinMode, draftPosition]);
@@ -476,6 +481,52 @@ export default function App() {
   useEffect(()=>{if(!selected)return;void ensurePhotoUrls((selected.pin_photos??[]).map(photo=>photo.storage_path));},[selected,ensurePhotoUrls]);
   const selectedPhotos=useMemo(()=>selected?[...(selected.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order):[],[selected]);
   useEffect(()=>{if(lightboxIndex===null)return;const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setLightboxIndex(null);else if(event.key==='ArrowRight')setLightboxIndex(index=>index===null?null:(index+1)%selectedPhotos.length);else if(event.key==='ArrowLeft')setLightboxIndex(index=>index===null?null:(index-1+selectedPhotos.length)%selectedPhotos.length);};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey);},[lightboxIndex,selectedPhotos.length]);
+
+  const loadCommentsAndReactions = useCallback(async (pinId: string) => {
+    if (!supabase) return;
+    const { data: commentsData } = await supabase.from('pin_comments').select('*, profiles(username)').eq('pin_id', pinId).order('created_at', { ascending: true });
+    if (commentsData) setComments(commentsData as any);
+
+    const { data: reactionsData } = await supabase.from('pin_reactions').select('*').eq('pin_id', pinId);
+    if (reactionsData) setReactions(reactionsData as PinReaction[]);
+  }, []);
+
+  useEffect(() => {
+    if (selected) {
+      void loadCommentsAndReactions(selected.id);
+    } else {
+      setComments([]);
+      setReactions([]);
+    }
+  }, [selected, loadCommentsAndReactions]);
+
+  async function submitComment(e: FormEvent) {
+    e.preventDefault();
+    if (!supabase || !selected || !session?.user || !newComment.trim() || busyComment) return;
+    setBusyComment(true);
+    try {
+      const { error } = await supabase.from('pin_comments').insert({ pin_id: selected.id, user_id: session.user.id, content: newComment.trim() });
+      if (error) throw error;
+      setNewComment('');
+      await loadCommentsAndReactions(selected.id);
+    } catch (err) {
+      setNotice({ kind: 'error', text: 'Yorum eklenemedi.' });
+    } finally {
+      setBusyComment(false);
+    }
+  }
+
+  async function toggleReaction(emoji: string) {
+    if (!supabase || !selected || !session?.user) return;
+    const existing = reactions.find(r => r.user_id === session.user.id && r.emoji === emoji);
+    if (existing) {
+      setReactions(prev => prev.filter(r => r.id !== existing.id));
+      await supabase.from('pin_reactions').delete().eq('id', existing.id);
+    } else {
+      const { data } = await supabase.from('pin_reactions').insert({ pin_id: selected.id, user_id: session.user.id, emoji }).select().single();
+      if (data) setReactions(prev => [...prev, data as PinReaction]);
+    }
+  }
 
   async function submitAuth(e:FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);setNotice(null);try{if(authMode==='signup'){const {error}=await supabase.auth.signUp({email,password});if(error)throw error;setNotice({kind:'success',text:'Kayıt oluşturuldu. Giriş yapabilirsiniz.'});}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;setAuthOpen(false);setNotice({kind:'success',text:'Giriş yapıldı.'});}}catch(err){const message=err instanceof Error?err.message:'';setNotice({kind:'error',text:authMode==='login'&&/invalid login credentials|invalid_credentials/i.test(message)?'E-posta veya şifre hatalı. Lütfen tekrar deneyin veya yeni kayıt olun.':message||'İşlem başarısız.'});}finally{setBusy(false);}}
 
@@ -1239,13 +1290,81 @@ export default function App() {
             {editFiles.length>0&&<div className="file-list">{editFiles.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label="Yeni fotoğrafı kaldır" onClick={()=>{setEditFiles(current=>current.filter((_,i)=>i!==index));setEditError(null);}}><X size={14}/></button></div>)}</div>}
             {editError&&<p className="form-error edit-form-error" role="alert">{editError}</p>}<div className="edit-form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}}>İptal</button><button type="submit" className="primary-button" disabled={busy||editPhotos.length+editFiles.length>3||containsProfanity(editDescription)}>{busy?<><LoaderCircle size={15} className="gps-spinner"/> Kaydediliyor…</>:'Değişiklikleri Kaydet'}</button></div>
           </form>:<>
-            <div className="panel-heading"><div><p className="eyebrow">KONUM DETAYI</p><span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>{isTelegramPin(selected.description)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}<h2>{pinTitle(selected)}</h2></div><button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button></div><p className="pin-date">{relativeTime(selected.created_at)}</p><p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
-            {(()=>{const votes=selected.pin_votes??[];const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0);const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0;const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id;return <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}><button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button><strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong><button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button>{ownPin&&<small>Kendi noktanı oylayamazsın</small>}{!session?.user&&<small>Oy vermek için giriş yap</small>}</div>;})()}
-            <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>{selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}</div>
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">KONUM DETAYI</p>
+                <span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>
+                {isTelegramPin(selected.description)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
+                <h2>{pinTitle(selected)}</h2>
+              </div>
+              <button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button>
+            </div>
+            
+            <p className="pin-date">{relativeTime(selected.created_at)}</p>
+            <p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
+            
+            <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>
+              {selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}
+            </div>
+            
             <div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div>
             <p className="coordinates selected-coordinates">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+            {/* EMOJİ VE OYLAMA YAN YANA */}
+            <div className="pin-interactions-row">
+              <div className="pin-reactions-bar">
+                {['👮‍♂️', '🚑', '🚓', '🚒','⚠️'].map(emoji => {
+                  const count = reactions.filter(r => r.emoji === emoji).length;
+                  const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji);
+                  return (
+                    <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}>
+                      <span>{emoji}</span>
+                      {count > 0 && <span>{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(()=>{
+                const votes=selected.pin_votes??[];
+                const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0);
+                const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0;
+                const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id;
+                return (
+                  <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}>
+                    <button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button>
+                    <strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong>
+                    <button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* YORUMLAR BÖLÜMÜ */}
+            <div className="pin-comments-section">
+              <h3 className="comments-title">Yorumlar ({comments.length})</h3>
+              <div className="comments-list">
+                {comments.length === 0 && <p className="comments-empty">Henüz yorum yok. İlk yorumu sen yap!</p>}
+                {comments.map(c => (
+                  <div key={c.id} className="comment-item">
+                    <div className="comment-header">
+                      <strong>{c.profiles?.username || 'Kullanıcı'}</strong>
+                      <small>{relativeTime(c.created_at)}</small>
+                    </div>
+                    <p className="comment-text">{c.content}</p>
+                  </div>
+                ))}
+              </div>
+              {session?.user && (
+                <form className="comment-form" onSubmit={submitComment}>
+                  <input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Bir yorum yaz..." maxLength={500} />
+                  <button type="submit" disabled={busyComment || !newComment.trim()}>{busyComment ? '...' : 'Gönder'}</button>
+                </form>
+              )}
+            </div>
+
+            {/* BUTONLAR */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
               <a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer" style={{ textAlign: 'center', width: '100%', display: 'block' }}>Yol tarifi</a>
               {session?.user && (
                 <button type="button" className="primary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px' }} onClick={() => { if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setRouteStart([pos.coords.latitude, pos.coords.longitude]); setRouteEnd([selected.lat, selected.lng]); setRouteMode(true); setSelected(null); setIsPanelOpen(true); }, () => setNotice({kind:'error', text:'Rota oluşturmak için konum izni gerekli.'})); } }}><Navigation size={16} style={{ marginRight: '8px' }}/> Buraya Rota Oluştur</button>

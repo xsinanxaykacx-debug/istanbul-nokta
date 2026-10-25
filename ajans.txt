@@ -4,84 +4,59 @@ Merhaba, bu projenin baş geliştiricisiyle devam ediyorsun. Aşağıda projenin
 
 ## 1. Proje Künyesi
 - **Uygulama Adı:** AYTAR (Daima İleri) - Eski adı: Gözcü / İstanbul Nokta.
-- **Canlı URL:** https://aytar.vercel.app
+- **Canlı URL:** https://aytar.vercel.app (Vercel limitlerine takılmamak için ücretsiz alternatif platformlar araştırılıyor).
 - **GitHub Repo:** xsinanxaykacx-debug/istanbul-nokta (main dalı üzerinden çalışıyoruz).
-- **Amaç:** Kullanıcıların haritaya konum (pin), açıklama ve isteğe bağlı (max 1) fotoğraf bırakabildiği; davetiyeli, sesli komut destekli, canlı trafik gösteren bir sosyal harita uygulaması.
+- **Amaç:** Kullanıcıların 2D/3D haritaya konum (pin), açıklama ve fotoğraf bırakabildiği; davetiyeli, sesli komut (WebLLM destekli) ve yapay zeka destekli bir sosyal harita uygulaması.
 
 ## 2. Teknolojik Altyapı
-- **Frontend:** React, Vite, TypeScript, Leaflet (Harita), Lucide-React (İkonlar).
+- **Frontend:** React, Vite, TypeScript, Leaflet (2D Harita), MapLibre GL (3D Harita), Lucide-React (İkonlar).
 - **Backend:** Supabase (PostgreSQL, Auth, Storage).
-- **Hosting:** Vercel (Netlify limitleri yüzünden Vercel'e taşındık).
-- **Harici API'ler:** TomTom (Canlı Trafik), OpenStreetMap / Nominatim (Mekan Arama ve Ters Coğrafi Kodlama).
-- **Tasarım:** "Midnight Sapphire" (Koyu lacivert/safir) teması. Tam ekran (no-scroll), responsive (mobil öncelikli) tasarım.
+- **Yapay Zeka (Yerel):** WebLLM (Qwen2.5-0.5B) - Tarayıcı üzerinde çalışan, sesli komutları anlamlandıran yerel dil modeli.
+- **Harici API'ler:** TomTom (Canlı Trafik), OpenStreetMap / Nominatim (Mekan Arama ve Ters Coğrafi Kodlama), OSRM (Rota Çizimi).
+- **Hosting:** Vercel (Not: Vercel'in ücretsiz planı günde 100 deploy limitine sahiptir. Limit dolduğunda Netlify, Cloudflare Pages veya Surge.sh gibi ücretsiz alternatiflere yönlendir).
+- **Tasarım:** "Midnight Sapphire" (Koyu lacivert/safir) teması ve "Light Theme" (Gündüz modu) seçeneği. Tam ekran (no-scroll), responsive (mobil öncelikli) tasarım.
 
-## 3. Tamamlanan ve Çalışan Kritik Özellikler (Bunları Bozma!)
-1. **Kimlik Doğrulama:** Supabase Auth. Kayıt olan kullanıcı `pending` başlar. Davet kodu girince `active` olur. Admin yetkisi (xazdozx@gmail.com) sınırsız kod üretebilir ve herkesin pinini silebilir.
-2. **Harita & Konum:** GPS ile konum bulma (mavi nokta). Haritaya tıklayarak konum seçme ve pin bırakma.
-3. **Kategoriler & Filtreler:** Yeşiller, Maviler, Siviller, Hepsi. Akıllı filtre menüsü (Tümü seçiliyse sadece o görünür, tıklayınca menü açılır).
-4. **Akıllı Arama:** Nominatim ile mekan/adres arama ve sağ panelde kendi pinleri arasında arama.
-5. **Sesli Komut:** Web Speech API (tr-TR) ile mikrofonla arama yapma ve açıklama yazma.
-6. **Açık Adres:** Pin detayında ve sağ panel listesinde koordinat yerine "Mahalle, Cadde, İlçe" gösterimi (Reverse Geocoding).
-7. **Canlı Trafik:** TomTom `relative-delay` katmanı ile sadece tıkanan yolların kırmızı/sarı gösterilmesi (İkon: Trafik Lambası).
-8. **Canlı Senkronizasyon:** WebSocket (Realtime) yerine **Polling** (10 saniyede bir) + **Visibility API** (sayfa öne gelince anında yenile) kullanılıyor. Tarayıcı önbelleğini kırmak için `cache: 'no-store'` aktif.
-9. **24 Saat Kuralı:** `pg_cron` ile her saat başı 24 saatten eski pinler `archived_pins` tablosuna taşınır. Eski pinlerin fotoğrafları Storage'dan silinir. Haritada sadece son 24 saatlik pinler görünür.
+## 3. Tamamlanan ve Çalışan Kritik Özellikler (BUNLARI BOZMA!)
+*(Geçmiş sprintlerde eklenen ve şu an kusursuz çalışan özelliklerdir)*
+
+**Harita ve Görsel Özellikler:**
+1. **Neon Pinler:** Haritadaki pinler, özel SVG'ler ile oluşturulmuş, kategorilerine göre parlayan (glow) Neon renklere sahiptir (Yeşil, Mavi, Kırmızı, Sarı).
+2. **Radar Pinleri (Mor Pinler):** Açıklaması `[AYTAR-RADAR]` ile başlayan pinler otomatik olarak mor (Radar ikonlu) görünür. `owner_id` kontrolü kaldırılmıştır, sadece açıklama metnine bakılır.
+3. **2D / 3D Harita Desteği:** Sağ üstteki buton ile Leaflet (2D) ve MapLibre (3D) arasında geçiş yapılabilir. 3D haritada özel açılı (pitch) görünüm ve 3D pinler mevcuttur.
+4. **Canlı Trafik & Isı Haritası:** TomTom API ile tıkanan yolların gösterilmesi ve yoğun bölgeler için ısı haritası (Heatmap) katmanı.
+5. **Rota Çizimi:** OSRM API kullanılarak A noktasından B noktasına rota çizimi, rota üzerindeki pinleri listeleme ve rota bilgisi (mesafe/süre) gösterme.
+
+**Mobil ve UI/UX Özellikleri:**
+6. **Mobil Tam Ekran & Bottom Sheet:** Mobilde harita tam ekrandır. Sağ panel (side-panel), sadece bir pine tıklandığında, filtreler açıldığında veya yeni pin eklenirken `isPanelOpen` state'i ile aşağıdan yukarı (bottom sheet) kayarak açılır. Haritada boş bir alana tıklandığında panel aşağı kayıp gizlenir.
+7. **Açık Adres (Reverse Geocoding):** Pin detayında ve sağ panel listesinde koordinat yerine Nominatim ile çekilen "Mahalle, Cadde, İlçe" bilgisi gösterilir.
+8. **Filtreler ve Zaman Aralığı:** Kategori filtreleri (Tümü, Yeşil, Mavi, Kırmızı, Sarı, Benim Pinlerim) ve zaman filtresi (1dk, 15dk, 1sa, 24sa vb.).
+
+**Kullanıcı ve Etkileşim Özellikleri:**
+9. **Pin İşlemleri (CRUD & Oylama):** Pin ekleme, düzenleme (açıklama/kategori/fotoğraf) ve silme. Pinlere artı/eksi oy verme (upvote/downvote) ve skorların listede gösterilmesi.
+10. **Sesli Komut (Web Speech & WebLLM):** Mikrofonla arama yapma ve "Konumuma mavi pin ekle", "Trafiği aç" gibi sesli komutlarla haritayı kontrol etme.
+11. **Admin yetkisi sınırsız kod üretebilir, kullanıcı banlayabilir, raporları inceleyebilir ve toplu pin silebilir.
+12. **Senkronizasyon & 24 Saat Kuralı:** WebSocket yerine Polling (10 saniyede bir) kullanılır. `pg_cron` ile 24 saatten eski pinler arşive taşınır.
 
 ## 4. Alınan Önemli Kararlar ve Vazgeçilenler
-- **Pin Sürükleme (Drag):** React-Leaflet çakışmaları yüzünden çalışmadı, iptal edildi. Yerine "Haritaya tıklayarak konum değiştir" özelliği getirildi.
-- **Realtime (WebSocket):** Stabil çalışmadığı için Polling sistemiyle değiştirildi.
-- **Fotoğraf Zorunluluğu:** Başta 1-3 zorunluydu, şimdi isteğe bağlı ve max 1 tane.
+- **Pin Sürükleme (Drag):** React-Leaflet çakışmaları yüzünden iptal edildi. Yerine haritaya tıklayarak konum değiştirme getirildi.
+- **Realtime (WebSocket):** Stabil çalışmadığı için Polling ile değiştirildi.
+- **Mobil Panel (Side Panel):** CSS `transform: translateY(100%)` ve React state (`isPanelOpen`) kullanılarak tam bir "Bottom Sheet" davranışı kazandırıldı.
+- **Hosting Limitleri:** Vercel ve Netlify ücretsiz planlarında katı limitler (günlük 100 deploy vb.) getirdi. Proje tamamen ücretsiz (0 TL) devam etmelidir. Gerekirse Cloudflare Pages veya Surge.sh kullanılacaktır.
+- **Fotoğraf Zorunluluğu:** İsteğe bağlı ve max 3 fotoğraf sınırı getirildi.
 
 ## 5. Sana Verilecek Görevler İçin Çalışma Kuralları (Guardrails)
-- **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme gibi çalışan hiçbir mantığa dokunma.
-- **Dosya Sınırlaması:** Genellikle sadece `src/App.tsx` ve `src/styles.css` üzerinden ilerle.
+- **Mevcut Çalışan Kodu Bozma:** Harita, GPS, auth, polling, trafik, filtreleme, bottom sheet ve 3D harita mantığına dokunma.
+- **Dosya Sınırlaması:** Genellikle `src/App.tsx`, `src/styles.css` ve `src/Map3D.tsx` üzerinden ilerle.
 - **TypeScript Katı Kuralları:** `noUnusedLocals` açık. Kullanılmayan hiçbir import veya değişken bırakma. `supabase` null kontrolünü her zaman yap (`if (!supabase) return;`).
 - **Build Zorunluluğu:** `npm run build` çalıştırmadan kodu bitmiş sayma. Hata varsa düzelt.
 - **Yeni Kütüphane:** Zorunlu kalmadıkça yeni npm paketi ekleme.
-- **API Limitleri:** OpenStreetMap/Nominatim isteklerinde rate-limit (429) yememek için istekler arasına gecikme koy.
+- **API Limitleri:** Nominatim isteklerinde rate-limit (429) yememek için istekler arasına gecikme koy.
 
 ## 6. Gelecek Yol Haritası (Sıradaki Olası Adımlar)
-İhtiyaç halinde şu özellikler eklenebilir:
-- Kullanıcı Profil Sayfası (Benim Pinlerim).
-- Pin Düzenleme / Güncelleme.
-- Pinlere Yorum Yapma.
-- Admin Paneli.
+- Kullanıcı Profil Sayfası ve istatistikleri.
+- Pinlere yorum yapma ve yorumları beğenme.
+- PWA (Progressive Web App) desteğini tamamlama (çevrimdışı çalışma).
+- Yapay zeka sesli komutlarını genişletme.
 
 ## Görevin:
 Yukarıdaki kurallara sadık kalarak, sana verilecek bir sonraki görevi (yeni özellik, hata düzeltmesi veya UI değişikliği) yerine getir. Kodu yazmadan önce mevcut yapıyı bozmayacağından emin ol ve çıktı olarak her zaman temiz bir kod ver.
-
-PROJE: AYTAR - Sosyal Harita Uygulaması
-CANLI: https://aytar.vercel.app
-GITHUB: xsinanxaykacx-debug/istanbul-nokta
-
-TEKNOLOJİ:
-- React + Vite + TypeScript
-- Supabase (PostgreSQL + Auth + Storage)
-- Vercel (hosting)
-- Leaflet (harita)
-- TomTom (trafik)
-- Nominatim (adres/mekan arama)
-- pg_cron (24 saatlik arşivleme)
-
-TEMEL ÖZELLİKLER:
-- Pin ekleme (konum + açıklama + isteğe bağlı 1 fotoğraf)
-- Kategoriler: Yeşiller, Maviler, Siviller, Hepsi
-- Zaman filtresi: 1dk/15dk/30dk/1sa/6sa/12sa/24sa
-- Nominatim mekan arama + sesli komut
-- Reverse Geocoding (mahalle/sokak adresi)
-- TomTom canlı trafik katmanı
-- 24 saatlik pin ömrü + archived_pins arşivi
-- Polling (10sn) + Visibility API senkronizasyon
-- Küfür filtresi (banned_words tablosu + check_profanity RPC)
-- Davet kodu ile üyelik sistemi (pending → active)
-- Admin yetkisi (xazdozx@gmail.com)
-
-KURALLAR:
-- Sadece src/App.tsx ve src/styles.css üzerinde çalış
-- Mevcut çalışan özellikleri bozma
-- npm run build hatasız çalışmalı
-- Supabase null kontrolünü her zaman yap
-- TypeScript strict modda çalışıyor (noUnusedLocals aktif)
-
-
-
-

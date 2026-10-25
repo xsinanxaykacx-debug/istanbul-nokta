@@ -24,7 +24,7 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
-const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
+
 
 // Harflerin kendisinde parlama (filter) YOK. Sadece pinin dış hattında var.
 // Font boyutu 26'ya çıkarıldı ve font-weight 300 (en ince) yapıldı.

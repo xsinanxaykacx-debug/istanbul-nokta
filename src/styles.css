@@ -3015,3 +3015,105 @@ select option { background: var(--surface); color: var(--text-dark); }
     display: none !important;
   }
 }
+/* ============================================
+   EMOJİ TEPKİLERİ VE YORUMLAR (CHAT)
+   ============================================ */
+.pin-reactions-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 15px 0; }
+.reaction-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border-color); cursor: pointer; font-size: 14px; transition: all .2s ease; color: var(--text-dark); }
+.reaction-btn:hover:not(:disabled) { background: rgba(148, 163, 184, 0.1); transform: translateY(-1px); }
+.reaction-btn.is-active { border-color: var(--primary); background: rgba(16, 185, 129, 0.15); color: var(--primary); font-weight: 700; }
+.reaction-btn span { font-size: 12px; font-weight: 800; }
+
+.pin-comments-section { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+.comments-title { font-size: 14px; margin-bottom: 12px; color: var(--text-dark); }
+.comments-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+.comments-empty { font-size: 12px; color: var(--text-muted); text-align: center; font-style: italic; padding: 10px 0; }
+.comment-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+.comment-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.comment-header strong { font-size: 12px; color: var(--primary); }
+.comment-header small { font-size: 10px; color: var(--text-muted); }
+.comment-text { font-size: 13px; color: var(--text-dark); margin: 0; line-height: 1.4; white-space: pre-wrap; }
+.comment-form { display: flex; gap: 8px; }
+.comment-form input { flex: 1; min-width: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); font-size: 13px; outline: none; }
+.comment-form input:focus { border-color: var(--primary); }
+.comment-form button { padding: 8px 16px; border-radius: 8px; border: none; background: var(--primary); color: #05251d; font-weight: 700; cursor: pointer; transition: all .2s; }
+.comment-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Emojiler ve Oylama Yan Yana Düzen */
+.pin-interactions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Oylama Kutusunu Küçültme */
+.pin-vote-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  border: 1px solid var(--border-color) !important;
+  width: fit-content;
+}
+
+.pin-vote-button {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 18px !important;
+  border-radius: 50% !important;
+}
+
+.pin-vote-score {
+  font-size: 14px !important;
+  min-width: 18px !important;
+  text-align: center;
+}
+
+/* Emoji Çubuğu Boşluklarını Sıfırla */
+.pin-reactions-bar {
+  margin: 0 !important; 
+  padding: 0 !important;
+}
+
+/* Yorumlar Başlığı ve Kutusu */
+.pin-comments-section {
+  margin-top: 5px !important;
+}
+.comments-title {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: var(--text-dark);
+}
+/* Emojilerin Boyut ve Hiza Standardizasyonu */
+.reaction-btn {
+  height: 34px; /* Buton yüksekliğini sabitle */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Emojinin kendisi */
+.reaction-btn span:first-child {
+  font-size: 16px; /* Emojileri büyüt */
+  line-height: 1; /* Dikey hizayı düzelt */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Emojinin yanındaki sayı (örn: 1) */
+.reaction-btn span:last-child {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
