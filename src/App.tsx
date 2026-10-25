@@ -212,7 +212,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminProfiles, setAdminProfiles] = useState<any[]>([]);
   const [adminReports, setAdminReports] = useState<any[]>([]);
-  const [adminTab, setAdminTab] = useState<'users'|'reports'>('users');
+  const [adminTab, setAdminTab] = useState<'users'|'reports'|'pins'>('users');
   const [adminLoading, setAdminLoading] = useState(false);
   
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
@@ -1212,9 +1212,28 @@ export default function App() {
       <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAdminOpen(false);}}>
         <div className="invite-modal" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
           <div className="modal-head"><div><p className="eyebrow">YÖNETİCİ PANELİ</p><h2>Yönetim Merkezi</h2></div><button type="button" className="icon-button" onClick={()=>setAdminOpen(false)} aria-label="Kapat"><X size={18}/></button></div>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}><button onClick={() => setAdminTab('users')} style={{ background: 'none', border: 'none', color: adminTab==='users'?'#fff':'#94a3b8', borderBottom: adminTab==='users'?'2px solid #3b82f6':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Kullanıcılar</button><button onClick={() => setAdminTab('reports')} style={{ background: 'none', border: 'none', color: adminTab==='reports'?'#fff':'#94a3b8', borderBottom: adminTab==='reports'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Raporlar ({adminReports.length})</button></div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}><button onClick={() => setAdminTab('users')} style={{ background: 'none', border: 'none', color: adminTab==='users'?'#fff':'#94a3b8', borderBottom: adminTab==='users'?'2px solid #3b82f6':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Kullanıcılar</button><button onClick={() => setAdminTab('reports')} style={{ background: 'none', border: 'none', color: adminTab==='reports'?'#fff':'#94a3b8', borderBottom: adminTab==='reports'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Raporlar ({adminReports.length})</button><button onClick={() => setAdminTab('pins')} style={{ background: 'none', border: 'none', color: adminTab==='pins'?'#fff':'#94a3b8', borderBottom: adminTab==='pins'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Pin Yönetimi ({pins.length})</button></div>
           {adminLoading ? <p style={{textAlign:'center', padding:'20px'}}>Yükleniyor...</p> : adminTab === 'users' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminProfiles.map((p) => (<div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}><div><strong style={{ display: 'block', fontSize: '14px' }}>{p.username || `Kullanıcı: ${p.id.slice(0,8)}...`}</strong><span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}</span>{p.role === 'admin' && <span style={{ marginLeft: '10px', fontSize: '10px', background: '#3b82f6', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}</div><div style={{ display: 'flex', gap: '8px' }}>{p.status !== 'active' && <button onClick={() => void updateUserStatus(p.id, 'active')} className="primary-button" style={{ padding: '6px 12px', fontSize: '12px' }}>Onayla</button>}{p.status === 'active' && p.role !== 'admin' && <button onClick={() => void updateUserStatus(p.id, 'disabled')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Banla</button>}</div></div>))}</div>
+          ) : adminTab === 'pins' ? (
+            <div className="admin-pin-management"> 
+              <div className="admin-pin-toolbar">
+                <label className="admin-pin-select-all">
+                  <input type="checkbox" checked={pins.length > 0 && bulkSelectedPins.length === pins.length} disabled={pins.length === 0 || busy} onChange={event => setBulkSelectedPins(event.target.checked ? pins.map(pin => pin.id) : [])} />
+                  <strong>Tümünü Seç ({pins.length})</strong>
+                </label>
+                <button type="button" className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} onClick={() => void deleteBulkPins()} style={{ marginTop: 0, padding: '8px 12px' }}>{busy ? 'Siliniyor…' : `Seçilenleri Sil (${bulkSelectedPins.length})`}</button>
+              </div>
+              {pins.length === 0 ? <p style={{ textAlign: 'center', color: '#94a3b8', padding: '16px' }}>Listelenecek pin bulunamadı.</p> : pins.map(pin => (
+                <label key={pin.id} className={`admin-pin-row${bulkSelectedPins.includes(pin.id) ? ' is-selected' : ''}`}>
+                  <input className="admin-pin-checkbox" type="checkbox" checked={bulkSelectedPins.includes(pin.id)} disabled={busy} onChange={event => setBulkSelectedPins(current => event.target.checked ? (current.includes(pin.id) ? current : [...current, pin.id]) : current.filter(id => id !== pin.id))} />
+                  <span className="admin-pin-info">
+                    <strong className="admin-pin-title">{(pinDescription(pin).trim() || 'Açıklamasız konum').slice(0, 30)}</strong>
+                    <span className="admin-pin-meta">Kategori: {pin.category || 'Belirtilmemiş'} · {new Date(pin.created_at).toLocaleString('tr-TR')}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminReports.length === 0 && <p style={{textAlign:'center'}}>Harika, rapor edilen pin yok!</p>}{adminReports.map((r) => (<div key={r.id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}><strong style={{ display: 'block', fontSize: '14px' }}>Şikayet Edilen Pin: {r.pin_description ? `${r.pin_description.slice(0,30)}...` : (r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Açıklama Yok')}</strong><span style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Tarih: {new Date(r.created_at).toLocaleDateString('tr-TR')}</span><div style={{ display: 'flex', gap: '8px' }}>{r.pin_id && (<button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>)}<button onClick={() => void resolveReport(r.id, 'ignore')} className="secondary-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Yoksay</button></div></div>))}</div>
           )}
