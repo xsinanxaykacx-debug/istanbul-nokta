@@ -1,0 +1,30 @@
+tlgrm bot api ;
+Use this token to access the HTTP API:
+8845470239:AAFaJ5Hjc5Yuvn4vWU4LQACmuVh1CgXI6pI
+Keep your token secure and store it safely, it can be used by anyone to control your bot.
+
+
+
+$token = "8375798373:AAG0ZRwvoL26J9g3J3hBAqePPSALqI1gTf8" 
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
+$hash = $sha256.ComputeHash($bytes)
+[System.BitConverter]::ToString($hash) -replace '-', ''
+
+
+PS C:\Users\bzdye\Downloads\aytar> $token = "8375798373:AAG0ZRwvoL26J9g3J3hBAqePPSALqI1gTf8"
+PS C:\Users\bzdye\Downloads\aytar> $sha256 = [System.Security.Cryptography.SHA256]::Create()
+PS C:\Users\bzdye\Downloads\aytar> $bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
+PS C:\Users\bzdye\Downloads\aytar> $hash = $sha256.ComputeHash($bytes)
+PS C:\Users\bzdye\Downloads\aytar> [System.BitConverter]::ToString($hash) -replace '-', ''
+078F853CBE6B99EB2FAD0F1050725C36514D8B62A9EEBC0CA31DED8D3F1FD359
+
+https://api.telegram.org/bot<8375798373:AAG0ZRwvoL26J9g3J3hBAqePPSALqI1gTf8>/setWebhook?url=https://aytar.vercel.app/api/telegram-webhook&secret_token=<078F853CBE6B99EB2FAD0F1050725C36514D8B62A9EEBC0CA31DED8D3F1FD359>
+
+Invoke-RestMethod -Uri "https://api.telegram.org/bot8375798373:AAG0ZRwvoL26J9g3J3hBAqePPSALqI1gTf8/getMe"
+
+
+078F853CBE6B99EB2FAD0F1050725C36514D8B62A9EEBC0CA31DED8D3F1FD359
+
+
+Invoke-RestMethod -Uri "https://api.telegram.org/bot8375798373:AAG0ZRwvoL26J9g3J3hBAqePPSALqI1gTf8/setWebhook?url=https://aytar.vercel.app/api/telegram-webhook&secret_token=<078f853cbe6b99eb2fad0f1050725c36514d8b62a9eebc0ca31ded8d3f1fd359>"
