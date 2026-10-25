@@ -25,7 +25,7 @@ const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
 function createNeonPinSvg(color: string, inner: string): string {
   const path = 'M24 2C12.4 2 3 11.4 3 23c0 14.6 21 34 21 34s21-19.4 21-34C45 11.4 35.6 2 24 2Z';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="58" viewBox="0 0 48 58"><defs><filter id="neonGlow" x="-60%" y="-50%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.2" result="blur"/><feFlood flood-color="${color}" flood-opacity="1" result="neonColor"/><feComposite in="neonColor" in2="blur" operator="in" result="neonBlur"/><feMerge><feMergeNode in="neonBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="${path}" fill="#0f172a" fill-opacity="0.94" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" filter="url(#neonGlow)"/>${inner}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 48 58" overflow="visible"><defs><filter id="neonGlow" x="-60%" y="-50%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.2" result="blur"/><feFlood flood-color="${color}" flood-opacity="1" result="neonColor"/><feComposite in="neonColor" in2="blur" operator="in" result="neonBlur"/><feMerge><feMergeNode in="neonBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="${path}" fill="#0f172a" fill-opacity="0.94" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" filter="url(#neonGlow)"/>${inner}</svg>`;
 }
 
 function createNeonLetter(color: string, letter: string): string {
