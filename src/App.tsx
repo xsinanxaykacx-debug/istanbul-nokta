@@ -71,7 +71,7 @@ function normalizeCategory(category?: string | null): string {
     case 'YEŞİL': case 'YESIL': case 'YEŞİLLER': case 'YESILLER': return 'YEŞİL';
     case 'MAVİ': case 'MAVI': case 'MAVİLER': case 'MAVILER': return 'MAVİ';
     case 'GRİ': case 'GRI':
-    case 'SARI': case 'SİVİLLER': case 'SIVILLER': case 'SİVİL': case 'SIVIL': return 'SARI';
+    case 'SARI': case 'SARILAR': case 'SİVİLLER': case 'SIVILLER': case 'SİVİL': case 'SIVIL': return 'SARI';
     case 'KIRMIZI': case 'HEPSİ': case 'HEPSI': return 'KIRMIZI';
     default: return 'KIRMIZI';
   }
