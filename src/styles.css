@@ -3117,3 +3117,268 @@ select option { background: var(--surface); color: var(--text-dark); }
   display: flex;
   align-items: center;
 }
+/* ============================================
+   SESLİ NOT & YAPAY ZEKA ÖZETLEME (v3)
+   ============================================ */
+
+/* Ses Kayıt Alanı */
+.voice-note-recorder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(148, 163, 184, 0.05);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+  margin-bottom: 15px;
+}
+
+.record-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.record-btn:hover {
+  background: #dc2626;
+}
+
+.record-btn.is-recording {
+  background: #b91c1c;
+  animation: pulse-bg 1.5s infinite;
+}
+
+@keyframes pulse-bg {
+  0% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(185, 28, 28, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
+}
+
+.recording-pulse {
+  width: 10px;
+  height: 10px;
+  background-color: #fff;
+  border-radius: 50%;
+  animation: blink 1s infinite alternate;
+}
+
+@keyframes blink {
+  from { opacity: 1; }
+  to { opacity: 0.2; }
+}
+
+/* Ses Oynatıcı (Önizleme) */
+.voice-note-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.voice-note-audio-preview {
+  flex: 1;
+  height: 36px;
+  outline: none;
+}
+
+.clear-voice-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #fee2e2;
+  color: #ef4444;
+  cursor: pointer;
+}
+
+/* Detay Ekranındaki Ses Oynatıcı */
+.pin-voice-note-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  margin: 15px 0;
+}
+
+.voice-note-icon {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.voice-note-audio {
+  flex: 1;
+  height: 36px;
+  outline: none;
+}
+
+/* Yapay Zeka Özet Butonu */
+.ai-summary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #8b5cf6;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-summary-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.app-shell.light-theme .ai-summary-btn {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #c4b5fd;
+}
+/* ============================================
+   MODAL Z-INDEX VE MOBİL DÜZELTME
+   ============================================ */
+
+/* 1. Tüm modalların arka planını en öne çıkar (Alttaki panelin üzerine) */
+.modal-backdrop {
+  z-index: 100000 !important; 
+}
+
+/* 2. Özet Modalının kendisi */
+.summary-modal {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 92% !important;
+  max-width: 500px !important;
+  max-height: 80vh !important; /* Ekranın %80'ini geçmesin */
+  margin: auto !important;
+  background: var(--surface, #151f32) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
+  padding: 0 !important; /* Padding'i içerideki elemanlara dağıtacağız */
+}
+
+/* 3. Modalın Başlık Kısmı (Sabit kalacak) */
+.summary-modal .modal-head {
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  flex-shrink: 0 !important;
+}
+
+/* 4. Modalın İçerik Kısmı (Sadece burası kaydırılacak) */
+.summary-modal-content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  padding: 20px !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+/* Mobilde (bottom sheet açıkken) arkada kalan panellerin tıklanmasını engelle */
+@media (max-width: 768px) {
+  .summary-modal {
+    max-height: 85dvh !important; /* Dinamik ekran yüksekliğine tam oturması için */
+  }
+}
+.weather-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .24);
+  font-size: 16px;
+  cursor: pointer;
+}
+.weather-button.is-active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+/* ============================================
+   HAVA DURUMU EMOJİ GRUPLARI
+   ============================================ */
+.reaction-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.weather-group {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.2);
+}
+
+.weather-btn {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+.weather-btn.is-active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Mobilde emojilerin biraz daha kompakt olması için */
+@media (max-width: 768px) {
+  .reaction-group {
+    gap: 4px;
+  }
+  .weather-group {
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+}
+/* AYTAR Özel Logo Efekti ve Tam Yuvarlak Yapı */
+.brand-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: 50% !important; /* Kareyi tam yuvarlağa çevirir */
+  background: var(--primary, #10b981); /* Temanın yeşil rengi */
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.brand-mark svg {
+  color: #ffffff; /* Hilal ve dalgaların rengi beyaz */
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6));
+}
+
+/* Mobil ekranda boyut biraz daha küçülsün */
+@media (max-width: 760px) {
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+}
