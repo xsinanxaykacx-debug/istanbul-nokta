@@ -2899,3 +2899,62 @@ select option { background: var(--surface); color: var(--text-dark); }
   .app-shell > .workspace { position: absolute !important; inset: 0 !important; display: block !important; width: 100% !important; height: 100% !important; min-height: 0 !important; flex: none !important; }
   .app-shell > .workspace > .map-frame { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important; }
 }
+
+
+/* Mobile: keep the 2D/3D switch visible immediately to the right of search. */
+@media (max-width: 768px) {
+  .place-search-wrap {
+    left: 10px !important;
+    right: 86px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .map-top-right-controls {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    z-index: 1200 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    width: max-content !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .map-top-right-controls .map-view-switch {
+    position: relative !important;
+    display: flex !important;
+    flex: 0 0 auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    height: 34px !important;
+    padding: 3px !important;
+    background: var(--surface, #151f32) !important;
+    border: 1px solid var(--border-color, #334155) !important;
+    border-radius: 999px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25) !important;
+  }
+  .map-top-right-controls .map-view-switch button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    min-height: 26px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .map-top-right-controls .map-top-right-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+}
