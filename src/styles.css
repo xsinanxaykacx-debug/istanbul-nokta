@@ -3018,10 +3018,14 @@ select option { background: var(--surface); color: var(--text-dark); }
 }
 
 
-/* Keep desktop layout unchanged; mobile replaces this with a single control stack. */
-.map-mobile-control-stack { display: contents; }
+/* Desktop safeguard: leave the established bottom-left and bottom-right flex groups unchanged. */
+@media (min-width: 769px) {
+  .map-mobile-control-stack {
+    display: contents;
+  }
+}
 
-/* Mobile controls: one right-side vertical stack, ordered view switch, mic, GPS, route, traffic. */
+/* Mobile-only layout: one right-side stack in the requested order. */
 @media (max-width: 768px) {
   .map-frame .map-action-left-group {
     display: none !important;
@@ -3031,17 +3035,17 @@ select option { background: var(--surface); color: var(--text-dark); }
     position: absolute !important;
     top: 10px !important;
     right: 10px !important;
-    left: auto !important;
     bottom: auto !important;
+    left: auto !important;
     z-index: 1250 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
     gap: 8px !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    max-width: 32px !important;
+    width: max-content !important;
+    min-width: 0 !important;
+    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -3049,19 +3053,16 @@ select option { background: var(--surface); color: var(--text-dark); }
 
   .map-frame .map-mobile-control-stack .map-view-switch {
     position: relative !important;
-    top: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: auto !important;
+    inset: auto !important;
     display: flex !important;
     flex: 0 0 auto !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 1px !important;
-    width: auto !important;
-    min-width: max-content !important;
-    padding: 2px !important;
+    width: max-content !important;
+    min-width: 0 !important;
     margin: 0 !important;
+    padding: 2px !important;
     border-radius: 999px !important;
     box-sizing: border-box !important;
   }
@@ -3084,6 +3085,7 @@ select option { background: var(--surface); color: var(--text-dark); }
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
     gap: 8px !important;
     width: 32px !important;
     min-width: 32px !important;
@@ -3110,8 +3112,8 @@ select option { background: var(--surface); color: var(--text-dark); }
     height: 32px !important;
     min-height: 32px !important;
     max-height: 32px !important;
-    padding: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     border-radius: 50% !important;
     box-sizing: border-box !important;
     gap: 0 !important;
@@ -3130,10 +3132,7 @@ select option { background: var(--surface); color: var(--text-dark); }
 
   .map-frame .map-mobile-control-stack .voice-pin-button > span,
   .map-frame .map-mobile-control-stack .route-button > span,
-  .map-frame .map-mobile-control-stack .traffic-button:not(.heatmap-button) > span {
-    display: none !important;
-  }
-
+  .map-frame .map-mobile-control-stack .traffic-button:not(.heatmap-button) > span,
   .map-frame .map-mobile-control-stack .voice-tooltip,
   .map-frame .map-mobile-control-stack .traffic-button.heatmap-button {
     display: none !important;
@@ -3153,5 +3152,7 @@ select option { background: var(--surface); color: var(--text-dark); }
 
   .map-frame .place-search-wrap {
     top: 10px !important;
+    left: 10px !important;
+    right: auto !important;
   }
 }
