@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as maplibregl from 'maplibre-gl';
-// Vite'ın worker dosyasını paketlemesini ve bize URL vermesini sağlıyoruz
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 interface Map3DProps {
@@ -27,12 +26,14 @@ const PIN_POINT_LAYER_ID = 'pin-points';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
+// Harflerin kendisinde parlama (filter) YOK. Sadece pinin dış hattında var.
+// Font boyutu 26'ya çıkarıldı ve font-weight 300 (en ince) yapıldı.
 const PIN_ICON_IMAGES = [
-  { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjMzlGRjE0IiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiMzOUZGMTQiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PHRleHQgeD0iMjQiIHk9IjI0IiBmaWxsPSIjMzlGRjE0IiBzdHJva2U9IiMzOUZGMTQiIHN0cm9rZS13aWR0aD0iMC40NSIgcGFpbnQtb3JkZXI9InN0cm9rZSIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
-  { name: 'pin-mavi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjMDBFNUZGIiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiMwMEU1RkYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PHRleHQgeD0iMjQiIHk9IjI0IiBmaWxsPSIjMDBFNUZGIiBzdHJva2U9IiMwMEU1RkYiIHN0cm9rZS13aWR0aD0iMC40NSIgcGFpbnQtb3JkZXI9InN0cm9rZSIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+TTwvdGV4dD48L3N2Zz4=' },
-  { name: 'pin-kirmizi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjRkYxNzQ0IiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiNGRjE3NDQiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PHRleHQgeD0iMjQiIHk9IjI0IiBmaWxsPSIjRkYxNzQ0IiBzdHJva2U9IiNGRjE3NDQiIHN0cm9rZS13aWR0aD0iMC40NSIgcGFpbnQtb3JkZXI9InN0cm9rZSIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+SzwvdGV4dD48L3N2Zz4=' },
-  { name: 'pin-radar', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjQjAyNkZGIiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiNCMDI2RkYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyMiIgcj0iMTAuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQjAyNkZGIiBzdHJva2Utd2lkdGg9IjEuOCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjxwYXRoIGQ9Ik0yNCAxMS41djEwLjVsNyA0TTE2IDE1bDE2IDE0TTMyIDE1IDE2IDI5IiBmaWxsPSJub25lIiBzdHJva2U9IiNCMDI2RkYiIHN0cm9rZS13aWR0aD0iMS43IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbHRlcj0idXJsKCNuZW9uR2xvdykiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjIyIiByPSIyLjUiIGZpbGw9IiMwZjE3MmEiIHN0cm9rZT0iI0IwMjZGRiIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbHRlcj0idXJsKCNuZW9uR2xvdykiLz48L3N2Zz4=' },
-  { name: 'pin-sari', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48ZGVmcz48ZmlsdGVyIGlkPSJuZW9uR2xvdyIgeD0iLTYwJSIgeT0iLTUwJSIgd2lkdGg9IjIyMCUiIGhlaWdodD0iMjIwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzLjIiIHJlc3VsdD0iYmx1ciIvPjxmZUZsb29kIGZsb29kLWNvbG9yPSIjRkZFQTAwIiBmbG9vZC1vcGFjaXR5PSIxIiByZXN1bHQ9Im5lb25Db2xvciIvPjxmZUNvbXBvc2l0ZSBpbj0ibmVvbkNvbG9yIiBpbjI9ImJsdXIiIG9wZXJhdG9yPSJpbiIgcmVzdWx0PSJuZW9uQmx1ciIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0ibmVvbkJsdXIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+PC9kZWZzPjxwYXRoIGQ9Ik0yNCAyQzEyLjQgMiAzIDExLjQgMyAyM2MwIDE0LjYgMjEgMzQgMjEgMzRzMjEtMTkuNCAyMS0zNEM0NSAxMS40IDM1LjYgMiAyNCAyWiIgZmlsbD0iIzBmMTcyYSIgZmlsbC1vcGFjaXR5PSIwLjk0IiBzdHJva2U9IiNGRkVBMDAiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PHRleHQgeD0iMjQiIHk9IjI0IiBmaWxsPSIjRkZFQTAwIiBzdHJva2U9IiNGRkVBMDAiIHN0cm9rZS13aWR0aD0iMC40NSIgcGFpbnQtb3JkZXI9InN0cm9rZSIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+UzwvdGV4dD48L3N2Zz4=' }
+  { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzM5RkYxNCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMzlGRjE0IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzM5RkYxNCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
+  { name: 'pin-mavi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzAwRTVGRiIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMDBFNUZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzAwRTVGRiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+TTwvdGV4dD48L3N2Zz4=' },
+  { name: 'pin-kirmizi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iI0ZGMTc0NCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjRkYxNzQ0IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iI0ZGMTc0NCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+SzwvdGV4dD48L3N2Zz4=' },
+  { name: 'pin-radar', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iI0IwMjZGRiIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjQjAyNkZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjxjaXJjbGUgY3g9IjI0IiBjeT0iMjIiIHI9IjEwLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0IwMjZGRiIgc3Ryb2tlLXdpZHRoPSIxLjgiIGZpbHRlcj0idXJsKCNuZW9uR2xvdykiLz48cGF0aCBkPSJNMjQgMTEuNXYxMC41bDcgNE0xNiAxNWwxNiAxNE0zMiAxNSAxNiAyOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQjAyNkZGIiBzdHJva2Utd2lkdGg9IjEuNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyMiIgcj0iMi41IiBmaWxsPSIjMGYxNzJhIiBzdHJva2U9IiNCMDI2RkYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWx0ZXI9InVybCgjbmVvbkdsb3cpIi8+PC9zdmc+' },
+  { name: 'pin-sari', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iI0ZGRUEwMCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjRkZFQTAwIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iI0ZGRUEwMCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+UzwvdGV4dD48L3N2Zz4=' }
 ] as const;
 
 async function registerSvgPinIcon(
@@ -40,8 +41,6 @@ async function registerSvgPinIcon(
   name: string,
   dataUrl: string
 ): Promise<void> {
-  // MapLibre loadImage SVG kabul etmez; SVG'yi tarayıcıda PNG'ye rasterize edip
-  // desteklenen PNG veri URL'sini loadImage ile yükle.
   const svgImage = new Image();
   svgImage.src = dataUrl;
   await svgImage.decode();
@@ -114,7 +113,7 @@ export default function Map3D({
           category: typeof pin.category === 'string'
             ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
             : 'KIRMIZI',
-          is_telegram: (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) || (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
+          is_telegram: (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
         },
         geometry: {
           type: 'Point' as const,
@@ -132,11 +131,9 @@ export default function Map3D({
     pinsRef.current = pins;
   }, [pins]);
 
-  // Haritayı başlat
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
-    // KRİTİK: Worker yolunu MapLibre'ye veriyoruz (Harita oluşmadan önce)
     maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
     map.current = new maplibregl.Map({
@@ -191,7 +188,6 @@ export default function Map3D({
     };
   }, []);
 
-  // Pinler: MapLibre GeoJSON clustering (DOM marker yerine GPU katmanları)
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded || mapInstance.getSource(PIN_SOURCE_ID)) return;
@@ -204,7 +200,6 @@ export default function Map3D({
       clusterRadius: 50,
     });
 
-    // Yakın pinleri bir küme dairesi olarak çiz.
     mapInstance.addLayer({
       id: PIN_CLUSTER_LAYER_ID,
       type: 'circle',
@@ -234,7 +229,6 @@ export default function Map3D({
       },
     });
 
-    // Kümenin içindeki pin sayısını göster.
     mapInstance.addLayer({
       id: PIN_CLUSTER_COUNT_LAYER_ID,
       type: 'symbol',
@@ -251,7 +245,6 @@ export default function Map3D({
       },
     });
 
-    // Küme dışında kalan tek pinleri renkli, harfli damla ikonlarıyla çiz.
     mapInstance.addLayer({
       id: PIN_POINT_LAYER_ID,
       type: 'symbol',
@@ -298,7 +291,6 @@ export default function Map3D({
     }
 
     mapInstance.on('click', (event) => {
-      // Cluster click: zoom to the cluster expansion level.
       const clusterFeatures = mapInstance.queryRenderedFeatures(event.point, {
         layers: [PIN_CLUSTER_LAYER_ID],
       });
@@ -330,7 +322,6 @@ export default function Map3D({
         return;
       }
 
-      // Single pin click: pass the original pin object to the existing selection flow.
       const pinFeatures = mapInstance.queryRenderedFeatures(event.point, {
         layers: [PIN_POINT_LAYER_ID],
       });
@@ -344,12 +335,10 @@ export default function Map3D({
         return;
       }
 
-      // Only a click on empty map space should create a draft or pick a route point.
       onMapClickRef.current(event.lngLat.lat, event.lngLat.lng);
     });
   }, [mapLoaded, pinFeatureCollection]);
 
-  // Update the existing GeoJSON source when the visible pin list changes.
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -364,7 +353,6 @@ export default function Map3D({
     });
   }, [pinFeatureCollection, mapLoaded]);
 
-  // Kullanıcının GPS konumu ayrı bir marker olarak kalır; pin clustering'e dahil edilmez.
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -395,7 +383,6 @@ export default function Map3D({
     }
   }, [userPosition, mapLoaded]);
 
-  // Taslak Pin Çiz
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -437,7 +424,6 @@ export default function Map3D({
     }
   }, [draftPosition, mapLoaded]);
 
-  // Rota Çizgisi
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -523,7 +509,6 @@ export default function Map3D({
     }
   }, [routeLine, routeStart, routeEnd, mapLoaded]);
 
-  // Trafik Katmanı
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -548,7 +533,6 @@ export default function Map3D({
     }
   }, [showTraffic, tomtomApiKey, mapLoaded]);
 
-  // Isı Haritası Katmanı
   useEffect(() => {
     const mapInstance = map.current;
     if (!mapInstance || !mapLoaded) return;
@@ -604,7 +588,6 @@ export default function Map3D({
     }
   }, [showHeatmap, pins, mapLoaded]);
 
-  // FlyTo (arama sonucu / seçili pin)
   useEffect(() => {
     if (
       map.current &&
@@ -625,7 +608,6 @@ export default function Map3D({
     }
   }, [flyToCoords, mapLoaded]);
 
-  // FlyTo (GPS konumu)
   useEffect(() => {
     if (
       map.current &&

@@ -2833,7 +2833,7 @@ select option { background: var(--surface); color: var(--text-dark); }
     background: var(--surface, #151f32) !important;
     border: none !important;
     border-top: 1px solid var(--border-color, #334155) !important;
-    transform: translateY(110%) !important;
+    transform: translateY(100%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     pointer-events: none !important;
     will-change: transform !important;
@@ -2895,14 +2895,123 @@ select option { background: var(--surface); color: var(--text-dark); }
   flex: 0 0 auto;
 }
 
+/* ============================================
+   MOBILE FULL-SCREEN MAP + BOTTOM SHEET (FINAL)
+   ============================================ */
 @media (max-width: 768px) {
-  .map-top-right-controls .map-list-button {
-    width: 32px;
-    min-width: 32px;
-    max-width: 32px;
-    height: 32px;
-    min-height: 32px;
-    max-height: 32px;
-    border-radius: 50%;
+  html, body, #root {
+    height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .topbar {
+    flex: 0 0 auto !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    padding: 0 12px !important;
+  }
+
+  .workspace {
+    flex: 1 1 auto !important;
+    display: block !important;
+    position: relative !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .map-frame {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+  }
+
+  /* BOTTOM SHEET - KESİN ÇÖZÜM */
+  .side-panel {
+    position: fixed !important; /* absolute yerine fixed kullanıyoruz ki tam otursun */
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 60vh !important; /* Yüksekliği netleştirdik */
+    max-height: 50vh !important;
+    min-height: 50vh !important;
+    z-index: 9999 !important; /* Diğer her şeyin üstünde */
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 20px 20px 0 0 !important;
+    background: var(--surface, #151f32) !important;
+    border: none !important;
+    border-top: 1px solid var(--border-color, #334155) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) !important;
+    
+    /* Animasyon ve Kesin Gizleme */
+    transform: translateY(100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    pointer-events: none !important;
+    visibility: hidden !important; /* KESİN ÇÖZÜM: En altta kalan yazıyı yok eder */
+  }
+
+  /* Panel açıldığında */
+  .side-panel.is-open {
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+
+  /* Tutamaç Çizgisi */
+  .side-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 4px;
+    border-radius: 2px;
+    background: rgba(148, 163, 184, 0.4);
+    flex: 0 0 auto;
+  }
+
+  /* İçeriğin Kaydırılabilir Olması */
+  .side-panel > .empty-panel,
+  .side-panel > .panel-content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  footer {
+    display: none !important;
   }
 }
