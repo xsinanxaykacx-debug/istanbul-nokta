@@ -1048,38 +1048,6 @@ export default function App() {
     <section className="workspace">
       <div className="map-frame">
         
-        <div className="map-view-switch" style={{
-          position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
-          display: 'flex', alignItems: 'center', gap: '2px',
-          background: 'var(--surface)', border: '1px solid var(--border-color)',
-          padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}>
-          <button 
-            onClick={() => setIs3D(false)}
-            style={{
-              padding: '6px 14px', borderRadius: '999px', border: 'none',
-              background: !is3D ? '#3b82f6' : 'transparent',
-              color: !is3D ? '#fff' : 'var(--text-muted)',
-              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
-              fontSize: '12px'
-            }}
-          >
-            2D
-          </button>
-          <button 
-            onClick={() => setIs3D(true)}
-            style={{
-              padding: '6px 14px', borderRadius: '999px', border: 'none',
-              background: is3D ? '#ef4444' : 'transparent',
-              color: is3D ? '#fff' : 'var(--text-muted)',
-              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
-              fontSize: '12px'
-            }}
-          >
-            3D
-          </button>
-        </div>
-
         <div className="place-search-wrap">
           <div className="searchbox place-searchbox">
             <Search size={17}/>
@@ -1152,12 +1120,45 @@ export default function App() {
           {canAdd&&<button className="map-add-button map-add-location-button" onClick={()=>setNotice({kind:'info',text:'Konum seçmek için harita üzerinde istediğin noktaya tıkla.'})}><Plus size={17}/> <span>Konum Seç</span></button>}
         </div>
 
+        <div className="map-mobile-control-stack">
+        <div className="map-view-switch" style={{
+          position: 'absolute', top: '15px', right: '15px', zIndex: 1000, 
+          display: 'flex', alignItems: 'center', gap: '2px',
+          background: 'var(--surface)', border: '1px solid var(--border-color)',
+          padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        }}>
+          <button 
+            onClick={() => setIs3D(false)}
+            style={{
+              padding: '6px 14px', borderRadius: '999px', border: 'none',
+              background: !is3D ? '#3b82f6' : 'transparent',
+              color: !is3D ? '#fff' : 'var(--text-muted)',
+              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
+              fontSize: '12px'
+            }}
+          >
+            2D
+          </button>
+          <button 
+            onClick={() => setIs3D(true)}
+            style={{
+              padding: '6px 14px', borderRadius: '999px', border: 'none',
+              background: is3D ? '#ef4444' : 'transparent',
+              color: is3D ? '#fff' : 'var(--text-muted)',
+              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
+              fontSize: '12px'
+            }}
+          >
+            3D
+          </button>
+        </div>
         <div className="map-action-right-group">
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
           <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);}}} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/><span>Rota Oluştur</span></button>
           <button type="button" className={`traffic-button heatmap-button ${showHeatmap ? 'is-active' : ''}`} onClick={()=>setShowHeatmap(current=>!current)} aria-pressed={showHeatmap} aria-label={showHeatmap?'Isı haritasını kapat':'Isı haritasını aç'} title={showHeatmap?'Isı haritasını kapat':'Isı Haritası'}><Flame size={17}/><span>Isı Haritası</span></button>
           {tomtomApiKey&&<button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>setShowTraffic(current=>!current)} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':'Trafik'}>🚦<span>T</span></button>}
+        </div>
         </div>
 
         {!canSeePins&&!is3D&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
