@@ -280,41 +280,52 @@ export default function App() {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
   }, [selected, showFilterOptions, editPinMode, draftPosition]);
 
-  // Çevrede (1 km içinde) yeni pin eklendiğinde uyarı ver
+  // Çevrede (1 km içinde) yeni pin eklendiğinde uyarı ver (Dinamik Sayı ile)
   useEffect(() => {
-    if (!pins.length) return;
-    
-    if (!userPosition) {
-      pins.forEach(p => knownPinIdsRef.current.add(p.id));
-      return;
-    }
+    if (!pins.length || !userPosition) return;
 
+    // İlk yüklemede tüm mevcut pinleri hafızaya al
     if (knownPinIdsRef.current.size === 0) {
       pins.forEach(p => knownPinIdsRef.current.add(p.id));
       return;
     }
 
+    // Sadece hafızada olmayan yeni pinleri bul
     const newPins = pins.filter(p => !knownPinIdsRef.current.has(p.id));
 
     if (newPins.length > 0) {
-      let alerted = false;
+      let nearbyCount = 0;
       for (const pin of newPins) {
         knownPinIdsRef.current.add(pin.id);
-        const dist = haversineMeters(userPosition, [pin.lat, pin.lng]);
         
+        // Kendi eklediğimiz pinler için uyarı verme
+        if (pin.owner_id === session?.user?.id) continue;
+
+        const dist = haversineMeters(userPosition, [pin.lat, pin.lng]);
         if (dist <= 1000) {
-          alerted = true;
+          nearbyCount++;
         }
       }
 
-      if (alerted) {
-        setNotice({ kind: 'info', text: '📍 Yakınınızda (1 km içinde) yeni bir konum eklendi!' });
+      if (nearbyCount > 0) {
+        const message = nearbyCount === 1 
+          ? '📍 Yakınınızda (1 km içinde) yeni bir konum eklendi!' 
+          : `📍 Yakınınızda (1 km içinde) ${nearbyCount} yeni konum eklendi!`;
+
+        setNotice({ kind: 'info', text: message });
+        
+        // Tarayıcı bildirimi gönder (izin varsa)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try { new Notification('AYTAR', { body: message }); } catch(e) {}
+        }
+
+        // Titreşim (Destekleyen cihazlarda)
         if (navigator.vibrate) {
           navigator.vibrate([200, 100, 200]);
         }
       }
     }
-  }, [pins, userPosition]);
+  }, [pins, userPosition, session?.user?.id]);
   
   const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
   
@@ -438,6 +449,10 @@ export default function App() {
         const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,line).distanceMeters<=100).map(pin=>pin.id);
         setRouteLine(line); setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
+        
+        // Rota hesaplandığında mobilde panelin açık kalmasını (veya açılmasını) sağla
+        setIsPanelOpen(true);
+
       }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, OSRM API anahtarını kontrol edin.'); }
       finally{if(!controller.signal.aborted)setRouteLoading(false);}
     };
@@ -1233,10 +1248,16 @@ export default function App() {
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı.'});}
   }
     useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
+  
   function locateUser(useForDraft=false){
     if(locating)return;
     if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}
     setLocating(true);
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      void Notification.requestPermission();
+    }
+
     navigator.geolocation.getCurrentPosition(
       position=>{
         const coords:[number,number]=[position.coords.latitude,position.coords.longitude];
@@ -1307,6 +1328,10 @@ export default function App() {
               onMapClick={()=>{
                 setPlaceDropdownOpen(false);
                 setSearchPlace(null);
+                
+                // EĞER ROTA MODUNDAYSA PANELİ KAPATMA!
+                if (routeMode) return; 
+
                 if (selected || showFilterOptions || editPinMode || draftPosition) {
                   wasShowingContentRef.current = true;
                   setSelected(null);
@@ -1345,6 +1370,21 @@ export default function App() {
               if(editPinMode)return;
               setPlaceDropdownOpen(false);
               setSearchPlace(null);
+
+              // EĞER ROTA MODUNDAYSA PANELİ KAPATMA!
+              if (routeMode) {
+                 if (!routeStart) {
+                  setRouteStart([lat, lng]);
+                  setRouteEnd(null);
+                  setRouteLine(null);
+                  setRouteInfo(null);
+                  setRouteError(null);
+                } else {
+                  setRouteEnd([lat, lng]);
+                }
+                return; // <--- BURAYI EKLE
+              }
+
               if (selected || showFilterOptions || editPinMode || draftPosition) {
                 wasShowingContentRef.current = true;
                 setSelected(null);
@@ -1356,21 +1396,10 @@ export default function App() {
               }
               wasShowingContentRef.current = false;
               setIsPanelOpen(false);
-              if (routeMode) {
-                if (!routeStart) {
-                  setRouteStart([lat, lng]);
-                  setRouteEnd(null);
-                  setRouteLine(null);
-                  setRouteInfo(null);
-                  setRouteError(null);
-                } else {
-                  setRouteEnd([lat, lng]);
-                }
-              } else {
-                setDraftPosition([lat, lng]);
-                setSelected(null);
-                setIsPanelOpen(true);
-              }
+              
+              setDraftPosition([lat, lng]);
+              setSelected(null);
+              setIsPanelOpen(true);
             }}
             onPinSelect={(pin: any) => { if(editPinMode)return; setSelected(pin); setSearchPlace(null); setDraftPosition(null); setIsPanelOpen(true); }}
             userPosition={userPosition}
