@@ -91,7 +91,7 @@ begin
 
     if v_path is null
        or split_part(v_path, '/', 1) <> v_uid::text
-       or v_path !~ '\\.jpg$' then
+       or v_path !~ '\.jpg$' then
       raise exception 'Fotoğraf yolu geçersiz.';
     end if;
 
