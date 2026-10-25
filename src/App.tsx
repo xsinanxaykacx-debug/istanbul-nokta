@@ -29,7 +29,7 @@ function createNeonPinSvg(color: string, inner: string): string {
 }
 
 function createNeonLetter(color: string, letter: string): string {
-  return `<text x="24" y="24" fill="${color}" stroke="${color}" stroke-width="0.45" paint-order="stroke" filter="url(#neonGlow)" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="800" text-anchor="middle" dominant-baseline="central">${letter}</text>`;
+  return `<text x="24" y="24" fill="${color}" stroke="${color}" stroke-width="0.45" paint-order="stroke" filter="url(#neonGlow)" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="400" text-anchor="middle" dominant-baseline="central">${letter}</text>`;
 }
 
 const pinIcons: Record<string, L.DivIcon> = {
