@@ -23,6 +23,7 @@ const PIN_SOURCE_ID = 'pin-clusters-source';
 const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
+const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 
 const PIN_ICON_IMAGES = [
@@ -110,6 +111,7 @@ export default function Map3D({
             ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
             : 'KIRMIZI',
           is_telegram: (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
+          is_fresh: (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000,
           opacity: (() => {
             const ageHours = (Date.now() - new Date(pin.created_at).getTime()) / (1000 * 60 * 60);
             if (ageHours <= 1) return 1.0;
@@ -247,6 +249,20 @@ export default function Map3D({
       paint: {
         'text-color': '#ffffff',
       },
+    });
+
+    // Yeni eklenen pinler için parlama katmanı (MapLibre'de animasyon canvas'ta zor olduğu için statik parlama kullanıyoruz)
+    mapInstance.addLayer({
+      id: FRESH_PULSE_LAYER_ID,
+      type: 'circle',
+      source: PIN_SOURCE_ID,
+      filter: ['==', ['get', 'is_fresh'], true],
+      paint: {
+        'circle-color': '#ffffff',
+        'circle-radius': 22,
+        'circle-opacity': 0.25,
+        'circle-blur': 1,
+      }
     });
 
     mapInstance.addLayer({

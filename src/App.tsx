@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit, Sparkles, Volume2 } from 'lucide-react';
+import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit, Sparkles, Volume2, Award, Trophy, Star } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
@@ -12,25 +12,14 @@ import Map3D from './Map3D';
 
 // Özel AYTAR Logosu (Hilal + Ses Dalgası)
 const AytarLogo = ({ size = 24, className = "" }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M15 4.5A8.5 8.5 0 1 0 15 19.5A7 7 0 0 1 15 4.5Z" />
     <path d="M17 9a4 4 0 0 1 0 6" />
     <path d="M19 7a7 7 0 0 1 0 10" />
   </svg>
 );
 
-type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null };
+type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null; total_pins_created?: number; total_votes_received?: number };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
 type PinPhoto = { id: string; storage_path: string; public_url: string; sort_order: number };
 type PinVote = { vote_type: number; user_id: string };
@@ -43,10 +32,17 @@ type PinComment = { id: string; pin_id: string; user_id: string; content: string
 type PinReaction = { id: string; pin_id: string; user_id: string; emoji: string };
 
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
+const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
-function createNeonPinSvg(color: string, inner: string): string {
+function createNeonPinSvg(color: string, inner: string, isFresh: boolean = false): string {
   const path = 'M24 2C12.4 2 3 11.4 3 23c0 14.6 21 34 21 34s21-19.4 21-34C45 11.4 35.6 2 24 2Z';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 48 58" overflow="visible"><defs><filter id="neonGlow" x="-60%" y="-50%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.2" result="blur"/><feFlood flood-color="${color}" flood-opacity="1" result="neonColor"/><feComposite in="neonColor" in2="blur" operator="in" result="neonBlur"/><feMerge><feMergeNode in="neonBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="${path}" fill="#0f172a" fill-opacity="0.94" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" filter="url(#neonGlow)"/>${inner}</svg>`;
+  const pulseRing = isFresh 
+    ? `<circle cx="24" cy="24" r="14" fill="none" stroke="${color}" stroke-width="2">
+         <animate attributeName="r" values="10;26" dur="1.5s" repeatCount="indefinite" />
+         <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+       </circle>` 
+    : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 48 58" overflow="visible"><defs><filter id="neonGlow" x="-60%" y="-50%" width="220%" height="220%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3.2" result="blur"/><feFlood flood-color="${color}" flood-opacity="1" result="neonColor"/><feComposite in="neonColor" in2="blur" operator="in" result="neonBlur"/><feMerge><feMergeNode in="neonBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${pulseRing}<path d="${path}" fill="#0f172a" fill-opacity="0.94" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" filter="url(#neonGlow)"/>${inner}</svg>`;
 }
 
 function createNeonLetter(color: string, letter: string): string {
@@ -67,8 +63,11 @@ const telegramPinIcon = new L.DivIcon({
   iconAnchor: [16, 38],
 });
 
-function isTelegramPin(description?: string | null): boolean {
-  return typeof description === 'string' && description.startsWith(`${TELEGRAM_PIN_MARKER} `);
+function isTelegramPin(description?: string | null, ownerId?: string | null): boolean {
+  return (
+    (typeof ownerId === 'string' && ownerId.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) ||
+    (typeof description === 'string' && description.startsWith(`${TELEGRAM_PIN_MARKER} `))
+  );
 }
 
 function pinDescription(pin: Pick<Pin, 'description'>): string {
@@ -94,7 +93,22 @@ function categoryClass(category?: string | null): string {
   const normalized = normalizeCategory(category);
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'SARI' ? 'sari' : 'kirmizi'}`;
 }
-function getPinIcon(category?: string | null, description?: string | null): L.DivIcon { return isTelegramPin(description) ? telegramPinIcon : pinIcons[normalizeCategory(category)]; }
+function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false): L.DivIcon { 
+  if (isTelegramPin(description, ownerId)) return telegramPinIcon;
+  const normCat = normalizeCategory(category);
+  const color = categoryFilterColors[normCat] || '#FF1744';
+  const letter = normCat === 'YEŞİL' ? 'Y' : normCat === 'MAVİ' ? 'M' : normCat === 'SARI' ? 'S' : 'K';
+  
+  if (isFresh) {
+    return new L.DivIcon({
+      className: 'pin-icon-wrap',
+      html: `<div class="neon-pin-icon">${createNeonPinSvg(color, createNeonLetter(color, letter), true)}</div>`,
+      iconSize: [32, 40],
+      iconAnchor: [16, 38]
+    });
+  }
+  return pinIcons[normCat];
+}
 
 const draftPinIcon = new L.DivIcon({ className:'draft-pin-icon-wrap', html:'<div class="draft-pin-target"><span class="draft-pin-halo"></span><div class="pin-icon"><span></span></div></div>', iconSize:[44,50], iconAnchor:[22,48] });
 const userLocationIcon = new L.DivIcon({ className:'user-location-marker', html:'<span class="user-location-dot"></span>', iconSize:[24,24], iconAnchor:[12,12] });
@@ -143,17 +157,24 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
-// Pinin yaşına göre saydamlık hesaplama (Soluklaşma Efekti)
 function getPinOpacity(pin: Pin): number {
   const createdAt = new Date(pin.created_at).getTime();
   if (!Number.isFinite(createdAt)) return 1;
   const ageHours = (Date.now() - createdAt) / (1000 * 60 * 60);
-  
   if (ageHours <= 1) return 1.0;
   if (ageHours <= 3) return 0.85;
   if (ageHours <= 6) return 0.65;
   if (ageHours <= 12) return 0.4;
   return 0.2;
+}
+
+function getUserBadge(profile: Profile | null) {
+  if (!profile) return { name: 'Gözcü', icon: <UserRound size={14}/>, color: '#64748b' };
+  const pins = profile.total_pins_created || 0;
+  if (pins >= 20) return { name: 'Şehir Efsanesi', icon: <Trophy size={14}/>, color: '#eab308' };
+  if (pins >= 5) return { name: 'Mahalle Muhabiri', icon: <Award size={14}/>, color: '#a855f7' };
+  if (pins >= 1) return { name: 'Yeni Gözcü', icon: <Star size={14}/>, color: '#3b82f6' };
+  return { name: 'Gözcü', icon: <UserRound size={14}/>, color: '#64748b' };
 }
 
 function HeatmapLayer({ pins }: { pins: Pin[] }) {
@@ -203,7 +224,8 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   return <>{Array.from(cells.entries()).map(([key, group]) => {
     if (group.length === 1) {
       const pin = group[0];
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description)} opacity={Math.min(isDimmed(pin) ? 0.35 : 1, getPinOpacity(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      const isFresh = (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh)} opacity={Math.min(isDimmed(pin) ? 0.35 : 1, getPinOpacity(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -230,7 +252,7 @@ export default function App() {
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
-  const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
+  const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [profileOpen,setProfileOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
@@ -267,7 +289,6 @@ export default function App() {
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [bulkSelectedPins, setBulkSelectedPins] = useState<string[]>([]);
 
-  // Yeni Pinleri Takip Etme (1km uyarısı için)
   const knownPinIdsRef = useRef<Set<string>>(new Set());
 
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
@@ -280,49 +301,28 @@ export default function App() {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
   }, [selected, showFilterOptions, editPinMode, draftPosition]);
 
-  // Çevrede (1 km içinde) yeni pin eklendiğinde uyarı ver (Dinamik Sayı ile)
   useEffect(() => {
     if (!pins.length || !userPosition) return;
-
-    // İlk yüklemede tüm mevcut pinleri hafızaya al
     if (knownPinIdsRef.current.size === 0) {
       pins.forEach(p => knownPinIdsRef.current.add(p.id));
       return;
     }
-
-    // Sadece hafızada olmayan yeni pinleri bul
     const newPins = pins.filter(p => !knownPinIdsRef.current.has(p.id));
-
     if (newPins.length > 0) {
       let nearbyCount = 0;
       for (const pin of newPins) {
         knownPinIdsRef.current.add(pin.id);
-        
-        // Kendi eklediğimiz pinler için uyarı verme
         if (pin.owner_id === session?.user?.id) continue;
-
         const dist = haversineMeters(userPosition, [pin.lat, pin.lng]);
-        if (dist <= 1000) {
-          nearbyCount++;
-        }
+        if (dist <= 1000) nearbyCount++;
       }
-
       if (nearbyCount > 0) {
-        const message = nearbyCount === 1 
-          ? '📍 Yakınınızda (1 km içinde) yeni bir konum eklendi!' 
-          : `📍 Yakınınızda (1 km içinde) ${nearbyCount} yeni konum eklendi!`;
-
+        const message = nearbyCount === 1 ? '📍 Yakınınızda (1 km içinde) yeni bir konum eklendi!' : `📍 Yakınınızda (1 km içinde) ${nearbyCount} yeni konum eklendi!`;
         setNotice({ kind: 'info', text: message });
-        
-        // Tarayıcı bildirimi gönder (izin varsa)
         if ('Notification' in window && Notification.permission === 'granted') {
           try { new Notification('AYTAR', { body: message }); } catch(e) {}
         }
-
-        // Titreşim (Destekleyen cihazlarda)
-        if (navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-        }
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
       }
     }
   }, [pins, userPosition, session?.user?.id]);
@@ -363,7 +363,7 @@ export default function App() {
   
   const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&filteredPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
-  const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
+  const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username,total_pins_created,total_votes_received').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
   const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
     const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
@@ -449,10 +449,7 @@ export default function App() {
         const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,line).distanceMeters<=100).map(pin=>pin.id);
         setRouteLine(line); setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
-        
-        // Rota hesaplandığında mobilde panelin açık kalmasını (veya açılmasını) sağla
         setIsPanelOpen(true);
-
       }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, OSRM API anahtarını kontrol edin.'); }
       finally{if(!controller.signal.aborted)setRouteLoading(false);}
     };
@@ -470,11 +467,9 @@ export default function App() {
   useEffect(()=>{
     const visibleIds=new Set(addressableVisiblePins.map(pin=>pin.id));
     visiblePinsRef.current=addressableVisiblePins;
-
     for(const pinId of addressAttemptedRef.current){
       if(!visibleIds.has(pinId))addressAttemptedRef.current.delete(pinId);
     }
-
     const activeRequest=addressRequestRef.current;
     if(activeRequest&&!visibleIds.has(activeRequest.pinId)){
       activeRequest.controller.abort();
@@ -643,16 +638,13 @@ export default function App() {
     setIsSummarizing(true);
     setSummaryOpen(true);
     setSummaryText(null);
-
     await new Promise(resolve => setTimeout(resolve, 1000));
-
     const pinsToSummarize = filteredPins.slice(0, 15);
     if (pinsToSummarize.length === 0) {
       setSummaryText('Özetlenecek güncel pin bulunamadı.');
       setIsSummarizing(false);
       return;
     }
-
     const kazaSayisi = pinsToSummarize.filter(p => pinDescription(p).toLowerCase().match(/kaza|çarpışma|yaralı/)).length;
     const trafikSayisi = pinsToSummarize.filter(p => pinDescription(p).toLowerCase().match(/trafik|yoğun|tıkalı|kilit/)).length;
     const yanginSayisi = pinsToSummarize.filter(p => pinDescription(p).toLowerCase().match(/yangın|duman|alev/)).length;
@@ -660,19 +652,13 @@ export default function App() {
     const ekipSayisi = pinsToSummarize.filter(p => pinDescription(p).toLowerCase().match(/polis|ambulans|itfaiye|ekip/)).length;
 
     let summary = `📍 Haritadaki son ${pinsToSummarize.length} olay analiz edildi.\n\n`;
-    
     if (kazaSayisi > 0) summary += `🚨 Bölgede ${kazaSayisi} adet kaza/çarpışma bildirildi. Lütfen yavaşlayın.\n`;
     if (trafikSayisi > 0) summary += `🚗 ${trafikSayisi} noktada trafik yoğunluğu veya tıkanıklık yaşanıyor.\n`;
     if (yanginSayisi > 0) summary += `🔥 ${yanginSayisi} noktada yangın/duman ihbarı var. Bölgeden uzak durun.\n`;
     if (calismaSayisi > 0) summary += `🚧 ${calismaSayisi} noktada yol çalışması veya kapanma mevcut.\n`;
     if (ekipSayisi > 0) summary += `👮 ${ekipSayisi} olay yerinde güvenlik/ekip müdahalesi olduğu bildirildi.\n`;
-    
-    if (kazaSayisi === 0 && trafikSayisi === 0 && yanginSayisi === 0 && calismaSayisi === 0 && ekipSayisi === 0) {
-      summary += `✅ Haritada acil bir durum bildirilmedi. Yollar genel olarak açık görünüyor.\n`;
-    }
-
+    if (kazaSayisi === 0 && trafikSayisi === 0 && yanginSayisi === 0 && calismaSayisi === 0 && ekipSayisi === 0) summary += `✅ Haritada acil bir durum bildirilmedi. Yollar genel olarak açık görünüyor.\n`;
     summary += `\n(Not: Bu özet, AYTAR akıllı metin analizi algoritması ile anında oluşturulmuştur.)`;
-    
     setSummaryText(summary);
     setIsSummarizing(false);
   }
@@ -745,6 +731,7 @@ export default function App() {
       const input=document.getElementById('photo-input') as HTMLInputElement|null;if(input)input.value='';
       setNotice({kind:'success',text:'Konum başarıyla kaydedildi.'});
       setIsPanelOpen(false);
+      await loadProfile(session.user.id);
       await loadPins();
     }catch(err){
       if(paths.length)await supabase.storage.from('pin-photos').remove(paths);
@@ -966,7 +953,7 @@ export default function App() {
     catch (err) {setNotice({ kind: 'error', text: 'Rapor gönderilemedi.' });}
   }
 
-  async function signOut(){if(!supabase)return;setProfileMenuOpen(false);setInviteOpen(false);await supabase.auth.signOut();setIsPanelOpen(false);setNotice({kind:'info',text:'Oturum kapatıldı.'});}
+  async function signOut(){if(!supabase)return;setProfileMenuOpen(false);setInviteOpen(false);setProfileOpen(false);await supabase.auth.signOut();setIsPanelOpen(false);setNotice({kind:'info',text:'Oturum kapatıldı.'});}
   async function loadInviteCodes(){if(!supabase||!session?.user||!active)return;setBusy(true);try{const {data,error}=await supabase.rpc('list_my_reference_codes');if(error)throw error;setInviteCodes((data??[]) as InviteCode[]);}catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Davet kodları yüklenemedi.'});}finally{setBusy(false);}}
   async function openInviteCodes(){setProfileMenuOpen(false);setInviteOpen(true);await loadInviteCodes();}
   async function createInviteCode(){if(!supabase||!session?.user||!active)return;setBusy(true);setNotice(null);try{const {data,error}=await supabase.rpc('create_invite_code');if(error)throw error;const result=Array.isArray(data)?data[0]:data;const code=typeof result==='string'?result:result?.code;if(!code)throw new Error('Kod bilgisi alınamadı.');const row:InviteCode={id:typeof result==='object'&&result?.id?result.id:code,code,created_at:new Date().toISOString(),redeemed_at:null,is_enabled:true};setInviteCodes(current=>[row,...current]);setNotice({kind:'success',text:'Kod başarıyla oluşturuldu!'});}catch(err){setNotice({kind:'error',text:err instanceof Error?err.message:'Davet kodu oluşturulamadı.'});}finally{setBusy(false);}}
@@ -1248,47 +1235,29 @@ export default function App() {
     try{recognition.start();}catch{setVoicePinListening(false);voicePinRecognitionRef.current=null;setNotice({kind:'error',text:'Ses tanıma başlatılamadı.'});}
   }
     useEffect(()=>()=>{voicePinRecognitionRef.current?.stop();if(voicePinTimeoutRef.current!==undefined)window.clearTimeout(voicePinTimeoutRef.current);},[]);
-  
   function locateUser(useForDraft=false){
     if(locating)return;
     if(!navigator.geolocation){setNotice({kind:'error',text:locationErrorText});return;}
     setLocating(true);
-
-    if ('Notification' in window && Notification.permission === 'default') {
-      void Notification.requestPermission();
-    }
-
+    if ('Notification' in window && Notification.permission === 'default') { void Notification.requestPermission(); }
     navigator.geolocation.getCurrentPosition(
       position=>{
         const coords:[number,number]=[position.coords.latitude,position.coords.longitude];
         setUserPosition(coords);
         setFlyToUserCoords(coords);
-
-        if(!is3D && mapRef.current) {
-          mapRef.current.flyTo(coords, 16);
-        }
-
-        if(useForDraft){
-          setDraftPosition(coords);
-          setSelected(null);
-          setIsPanelOpen(true);
-        }else{
-          setSelected(null);
-          if(draftPosition)setDraftPosition(coords);
-        }
-        setNotice(null);
-        setLocating(false);
+        if(!is3D && mapRef.current) { mapRef.current.flyTo(coords, 16); }
+        if(useForDraft){ setDraftPosition(coords); setSelected(null); setIsPanelOpen(true); }
+        else{ setSelected(null); if(draftPosition)setDraftPosition(coords); }
+        setNotice(null); setLocating(false);
       },
-      ()=>{
-        setNotice({kind:'error',text:locationErrorText});
-        setLocating(false);
-      },
+      ()=>{ setNotice({kind:'error',text:locationErrorText}); setLocating(false); },
       {enableHighAccuracy:true,timeout:12000,maximumAge:30000}
     );
   }
   function openAddPinAt(initialCoords:{lat:number;lng:number}){setDraftPosition([initialCoords.lat,initialCoords.lng]);setSelected(null);setLightboxIndex(null);setIsPanelOpen(true);}
   
   const center:[number,number]=[41.0082,28.9784];
+  const badge = getUserBadge(profile);
 
   return <main className={`app-shell ${isDarkMode ? '' : 'light-theme'}`}>
     <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><AytarLogo size={22} /></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
@@ -1296,7 +1265,7 @@ export default function App() {
         {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
       </button>
       {llmLoading && <span style={{fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px', marginRight: '10px'}}><BrainCircuit size={14} className="gps-spinner"/> YZ Yükleniyor...</span>}
-      {session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{profile?.username || (active?'Aktif üye':'Hesap devre dışı')}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{profile?.username || session.user?.email?.split('@')[0] || 'üye'}</strong></p>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
+      {session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{profile?.username || (active?'Aktif üye':'Hesap devre dışı')}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{profile?.username || session.user?.email?.split('@')[0] || 'üye'}</strong></p><div className="profile-badge-inline" style={{margin: '0 7px 10px', padding: '5px 0', color: badge.color, fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'}}>{badge.icon} {badge.name}</div><button type="button" className="profile-menu-item" onClick={() => { setProfileOpen(true); setProfileMenuOpen(false); }}><UserRound size={16}/> Profilim</button>{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
     
     {!isConfigured&&<div className="setup-banner"><strong>Kurulum gerekiyor:</strong> .env dosyasına Supabase URL ve anahtarını ekle; README.md içindeki SQL kurulumunu tamamla.</div>}
     {notice&&<div className={`notice ${notice.kind}`} role="status"><span>{notice.text}</span><button onClick={()=>setNotice(null)} aria-label="Bildirimi kapat"><X size={16}/></button></div>}
@@ -1328,10 +1297,7 @@ export default function App() {
               onMapClick={()=>{
                 setPlaceDropdownOpen(false);
                 setSearchPlace(null);
-                
-                // EĞER ROTA MODUNDAYSA PANELİ KAPATMA!
                 if (routeMode) return; 
-
                 if (selected || showFilterOptions || editPinMode || draftPosition) {
                   wasShowingContentRef.current = true;
                   setSelected(null);
@@ -1370,8 +1336,6 @@ export default function App() {
               if(editPinMode)return;
               setPlaceDropdownOpen(false);
               setSearchPlace(null);
-
-              // EĞER ROTA MODUNDAYSA PANELİ KAPATMA!
               if (routeMode) {
                  if (!routeStart) {
                   setRouteStart([lat, lng]);
@@ -1382,9 +1346,8 @@ export default function App() {
                 } else {
                   setRouteEnd([lat, lng]);
                 }
-                return; // <--- BURAYI EKLE
+                return; 
               }
-
               if (selected || showFilterOptions || editPinMode || draftPosition) {
                 wasShowingContentRef.current = true;
                 setSelected(null);
@@ -1396,7 +1359,6 @@ export default function App() {
               }
               wasShowingContentRef.current = false;
               setIsPanelOpen(false);
-              
               setDraftPosition([lat, lng]);
               setSelected(null);
               setIsPanelOpen(true);
@@ -1413,62 +1375,15 @@ export default function App() {
         )}
 
         <div className="map-top-right-controls">
-        <div className="map-view-switch" style={{
-          position: 'relative', top: 'auto', right: 'auto', zIndex: 1000, 
-          display: 'flex', alignItems: 'center', gap: '2px',
-          background: 'var(--surface)', border: '1px solid var(--border-color)',
-          padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}>
-          <button 
-            onClick={() => setIs3D(false)}
-            style={{
-              padding: '6px 14px', borderRadius: '999px', border: 'none',
-              background: !is3D ? '#3b82f6' : 'transparent',
-              color: !is3D ? '#fff' : 'var(--text-muted)',
-              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
-              fontSize: '12px'
-            }}
-          >
-            2D
-          </button>
-          <button 
-            onClick={() => setIs3D(true)}
-            style={{
-              padding: '6px 14px', borderRadius: '999px', border: 'none',
-              background: is3D ? '#ef4444' : 'transparent',
-              color: is3D ? '#fff' : 'var(--text-muted)',
-              fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease',
-              fontSize: '12px'
-            }}
-          >
-            3D
-          </button>
+        <div className="map-view-switch" style={{ position: 'relative', top: 'auto', right: 'auto', zIndex: 1000, display: 'flex', alignItems: 'center', gap: '2px', background: 'var(--surface)', border: '1px solid var(--border-color)', padding: '4px', borderRadius: '999px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+          <button onClick={() => setIs3D(false)} style={{ padding: '6px 14px', borderRadius: '999px', border: 'none', background: !is3D ? '#3b82f6' : 'transparent', color: !is3D ? '#fff' : 'var(--text-muted)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '12px' }}>2D</button>
+          <button onClick={() => setIs3D(true)} style={{ padding: '6px 14px', borderRadius: '999px', border: 'none', background: is3D ? '#ef4444' : 'transparent', color: is3D ? '#fff' : 'var(--text-muted)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '12px' }}>3D</button>
         </div>
         <div className="map-top-right-actions">
-          <button 
-            type="button" 
-            className="map-list-button" 
-            onClick={() => {
-              setSelected(null);
-              setDraftPosition(null);
-              setEditPinMode(false);
-              setShowFilterOptions(false);
-              setIsPanelOpen(true);
-            }} 
-            aria-label="Pin listesini aç"
-            title="Pin listesi"
-          >
-            <SlidersHorizontal size={16}/>
-          </button>
+          <button type="button" className="map-list-button" onClick={() => { setSelected(null); setDraftPosition(null); setEditPinMode(false); setShowFilterOptions(false); setIsPanelOpen(true); }} aria-label="Pin listesini aç" title="Pin listesi"><SlidersHorizontal size={16}/></button>
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
-          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{
-            if(routeMode){
-              setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);setIsPanelOpen(false);
-            }else{
-              setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);setIsPanelOpen(true);
-            }
-          }} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/></button>
+          <button type="button" className={`route-button ${routeMode?'is-active':''}`} onClick={()=>{ if(routeMode){setRouteMode(false);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);setIsPanelOpen(false);}else{setRouteMode(true);setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setSelected(null);setDraftPosition(null);setIsPanelOpen(true);} }} aria-pressed={routeMode} aria-label={routeMode?'Rota modunu kapat':'Rota oluştur'} title={routeMode?'Rota modunu kapat':'Rota oluştur'}><Navigation size={17}/></button>
           <button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>{const nextTraffic=!showTraffic;setShowTraffic(nextTraffic);if(nextTraffic&&!tomtomApiKey)setNotice({kind:'error',text:'Trafik katmanı için VITE_TOMTOM_API_KEY yapılandırılmalı.'});}} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':tomtomApiKey?'Trafik':'Trafik (API anahtarı gerekli)'}>🚦</button>
         </div>
         </div>
@@ -1477,12 +1392,7 @@ export default function App() {
       </div>
       
       <aside className={`side-panel ${isPanelOpen ? 'is-open' : ''}`}>
-        {bulkSelectMode && (
-          <div style={{ padding: '15px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{bulkSelectedPins.length} Pin Seçildi</span>
-            <button onClick={() => void deleteBulkPins()} className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} style={{ marginTop: 0, padding: '8px 16px' }}><X size={16}/> Seçilenleri Sil</button>
-          </div>
-        )}
+        {bulkSelectMode && ( <div style={{ padding: '15px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ color: '#ef4444', fontWeight: 'bold' }}>{bulkSelectedPins.length} Pin Seçildi</span><button onClick={() => void deleteBulkPins()} className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} style={{ marginTop: 0, padding: '8px 16px' }}><X size={16}/> Seçilenleri Sil</button></div> )}
         {selected&&!routeMode?<div className="panel-content">
           {editPinMode?<form className="pin-edit-form" onSubmit={savePinEdits}>
             <div className="panel-heading"><div><p className="eyebrow">KONUMU DÜZENLE</p><h2>{pinTitle(selected)}</h2><small className="edit-form-subtitle">Değişikliklerin yalnızca bu konuma uygulanır.</small></div><button type="button" className="icon-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}} aria-label="Düzenlemeyi kapat"><X size={18}/></button></div>
@@ -1503,109 +1413,38 @@ export default function App() {
               </div>
               <button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button>
             </div>
-            
             <p className="pin-date">{relativeTime(selected.created_at)}</p>
             <p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
-
-            {selected.voice_note_url && (
-              <div className="pin-voice-note-player">
-                <Volume2 size={18} className="voice-note-icon" />
-                <audio controls src={selected.voice_note_url} className="voice-note-audio">
-                  Tarayıcınız ses oynatmayı desteklemiyor.
-                </audio>
-              </div>
-            )}
-            
+            {selected.voice_note_url && ( <div className="pin-voice-note-player"><Volume2 size={18} className="voice-note-icon" /><audio controls src={selected.voice_note_url} className="voice-note-audio">Tarayıcınız ses oynatmayı desteklemiyor.</audio></div> )}
             <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>
               {selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}
             </div>
-            
             <div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div>
             <p className="coordinates selected-coordinates">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p>
-            
-            {/* EMOJİ VE OYLAMA YAN YANA */}
             <div className="pin-interactions-row">
               <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['👮‍♂️','🚓', '🧑‍✈️', '🚒', '🚧'].map(emoji => {
-                    const count = reactions.filter(r => r.emoji === emoji).length;
-                    const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji);
-                    return (
-                      <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}>
-                        <span>{emoji}</span>
-                        {count > 0 && <span>{count}</span>}
-                      </button>
-                    );
-                  })}
+                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
                 </div>
-
                 <div className="reaction-group weather-group">
-                  {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => {
-                    const count = reactions.filter(r => r.emoji === emoji).length;
-                    const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji);
-                    return (
-                      <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}>
-                        <span>{emoji}</span>
-                        {count > 0 && <span>{count}</span>}
-                      </button>
-                    );
-                  })}
+                  {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
                 </div>
               </div>
-
-              {(()=>{
-                const votes=selected.pin_votes??[];
-                const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0);
-                const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0;
-                const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id;
-                return (
-                  <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}>
-                    <button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button>
-                    <strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong>
-                    <button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button>
-                  </div>
-                );
-              })()}
+              {(()=>{ const votes=selected.pin_votes??[]; const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0); const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0; const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id; return ( <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}> <button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button> <strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong> <button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button> </div> ); })()}
             </div>
-
-            {/* YORUMLAR BÖLÜMÜ */}
             <div className="pin-comments-section">
               <h3 className="comments-title">Yorumlar ({comments.length})</h3>
               <div className="comments-list">
                 {comments.length === 0 && <p className="comments-empty">Henüz yorum yok. İlk yorumu sen yap!</p>}
-                {comments.map(c => (
-                  <div key={c.id} className="comment-item">
-                    <div className="comment-header">
-                      <strong>{c.profiles?.username || 'Kullanıcı'}</strong>
-                      <small>{relativeTime(c.created_at)}</small>
-                    </div>
-                    <p className="comment-text">{c.content}</p>
-                  </div>
-                ))}
+                {comments.map(c => ( <div key={c.id} className="comment-item"> <div className="comment-header"> <strong>{c.profiles?.username || 'Kullanıcı'}</strong> <small>{relativeTime(c.created_at)}</small> </div> <p className="comment-text">{c.content}</p> </div> ))}
               </div>
-              {session?.user && (
-                <form className="comment-form" onSubmit={submitComment}>
-                  <input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Bir yorum yaz..." maxLength={500} />
-                  <button type="submit" disabled={busyComment || !newComment.trim()}>{busyComment ? '...' : 'Gönder'}</button>
-                </form>
-              )}
+              {session?.user && ( <form className="comment-form" onSubmit={submitComment}> <input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Bir yorum yaz..." maxLength={500} /> <button type="submit" disabled={busyComment || !newComment.trim()}>{busyComment ? '...' : 'Gönder'}</button> </form> )}
             </div>
-
-            {/* BUTONLAR */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
               <a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer" style={{ textAlign: 'center', width: '100%', display: 'block' }}>Yol tarifi</a>
-              {session?.user && (
-                <button type="button" className="primary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px' }} onClick={() => { if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setRouteStart([pos.coords.latitude, pos.coords.longitude]); setRouteEnd([selected.lat, selected.lng]); setRouteMode(true); setSelected(null); setIsPanelOpen(true); }, () => setNotice({kind:'error', text:'Rota oluşturmak için konum izni gerekli.'})); } }}><Navigation size={16} style={{ marginRight: '8px' }}/> Buraya Rota Oluştur</button>
-              )}
-              {canDeleteSelected && (
-                <div className="pin-owner-actions">
-                  <button type="button" className="secondary-button" disabled={busy} onClick={beginPinEdit}>Düzenle</button>
-                  <button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deletePinById(selected.id)}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button>
-                </div>
-              )}
-              {session?.user && !canDeleteSelected && (
-                <button type="button" className="secondary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} onClick={() => void reportPin(selected.id, pinDescription(selected), selected.category)}><ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et</button>
-              )}
+              {session?.user && ( <button type="button" className="primary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px' }} onClick={() => { if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setRouteStart([pos.coords.latitude, pos.coords.longitude]); setRouteEnd([selected.lat, selected.lng]); setRouteMode(true); setSelected(null); setIsPanelOpen(true); }, () => setNotice({kind:'error', text:'Rota oluşturmak için konum izni gerekli.'})); } }}><Navigation size={16} style={{ marginRight: '8px' }}/> Buraya Rota Oluştur</button> )}
+              {canDeleteSelected && ( <div className="pin-owner-actions"> <button type="button" className="secondary-button" disabled={busy} onClick={beginPinEdit}>Düzenle</button> <button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deletePinById(selected.id)}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button> </div> )}
+              {session?.user && !canDeleteSelected && ( <button type="button" className="secondary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} onClick={() => void reportPin(selected.id, pinDescription(selected), selected.category)}><ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et</button> )}
             </div>
           </>}
         </div>
@@ -1615,30 +1454,14 @@ export default function App() {
           <p className="draft-location-hint">📍 Konumu değiştirmek için haritada başka bir noktaya tıklayabilir veya yandaki GPS butonunu kullanabilirsiniz.</p>
           <label className="field-label" htmlFor="category">Kategori</label>
           <select id="category" className="category-select" value={category} onChange={e=>setCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="SARI">SARI</option></select>
-          
           <label className="field-label" htmlFor="description">Açıklama</label>
           <div className={`voice-textarea-wrap ${speechSupported?'voice-supported':''}`}><textarea id="description" className={speechSupported?'voice-enabled-input':''} value={description} onChange={e=>setDescription(e.target.value)} maxLength={5000} placeholder={listeningField==='description'?'Dinleniyor...':'Bu konum hakkında ne paylaşmak istersin?'} rows={3}/>{hasProfanity&&<p role="alert" style={{color:"#dc2626",fontSize:"13px",margin:"6px 0 0"}}>⚠️ Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}{speechSupported&&<button type="button" className={`voice-button textarea-voice-button ${listeningField==='description'?'is-listening':''}`} onClick={()=>startListening('description',setDescription)} aria-label={listeningField==='description'?'Dinlemeyi durdur':'Açıklamaya sesli giriş'} title={listeningField==='description'?'Dinleniyor...':'Sesli giriş'}><Mic size={16}/></button>}</div>
-          
           <label className="field-label" style={{marginTop: '12px'}}>Sesli Not <span>İsteğe bağlı</span></label>
           <div className="voice-note-recorder">
-            {!isRecording && !voiceNoteBlob && (
-              <button type="button" className="record-btn" onClick={startRecording}>
-                <Mic size={18}/> Bas ve Konuş
-              </button>
-            )}
-            {isRecording && (
-              <button type="button" className="record-btn is-recording" onClick={stopRecording}>
-                <div className="recording-pulse" /> Kaydı Bitir
-              </button>
-            )}
-            {voiceNotePreviewUrl && !isRecording && (
-              <div className="voice-note-preview">
-                <audio controls src={voiceNotePreviewUrl} className="voice-note-audio-preview" />
-                <button type="button" className="clear-voice-btn" onClick={clearVoiceNote} aria-label="Sesi sil"><X size={16}/></button>
-              </div>
-            )}
+            {!isRecording && !voiceNoteBlob && ( <button type="button" className="record-btn" onClick={startRecording}> <Mic size={18}/> Bas ve Konuş </button> )}
+            {isRecording && ( <button type="button" className="record-btn is-recording" onClick={stopRecording}> <div className="recording-pulse" /> Kaydı Bitir </button> )}
+            {voiceNotePreviewUrl && !isRecording && ( <div className="voice-note-preview"> <audio controls src={voiceNotePreviewUrl} className="voice-note-audio-preview" /> <button type="button" className="clear-voice-btn" onClick={clearVoiceNote} aria-label="Sesi sil"><X size={16}/></button> </div> )}
           </div>
-
           <label className="field-label" htmlFor="photo-input">Fotoğraflar <span>İsteğe bağlı · En fazla 3 adet</span></label>
           <label className="upload-box" htmlFor="photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Görsel dosyası · dosya başına en fazla 12 MB</small><input id="photo-input" type="file" accept="image/*" capture="environment" multiple onChange={e=>{const selectedFiles=Array.from(e.target.files??[]);setFiles(selectedFiles);setNotice(selectedFiles.length>3?{kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}:null);}}/></label>
           {files.length>0&&<div className="file-list">{files.map((file,i)=><div key={`${file.name}-${i}`}><span>{file.name}</span><button type="button" onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Dosyayı kaldır"><X size={14}/></button></div>)}</div>}
@@ -1648,7 +1471,6 @@ export default function App() {
         :<div className="empty-panel">
           <div className="panel-top-controls">
             {routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div><div className="route-card-actions"><button type="button" className="secondary-button" onClick={()=>{setRouteStart(null);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);setRouteLoading(false);}}>Rota Temizle</button></div></div>{routeInfo&&<p className="route-stop-hint">Duraklar başlangıçtan bitişe doğru sıralanır.</p>}</section>}
-            
             <div className="panel-filter-search-row">
               <div className="panel-filters" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>
                 <div className={`category-filter-row ${showFilterOptions?'is-open':''}`} role="group" aria-label="Kategori filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}>
@@ -1656,7 +1478,6 @@ export default function App() {
                 </div>
                 <label className="time-filter-control" aria-label="Zaman filtresi" onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()}><Clock size={15} aria-hidden="true"/><select value={timeFilter} onClick={event=>event.stopPropagation()} onMouseDown={event=>event.stopPropagation()} onChange={event=>setTimeFilter(event.target.value)} aria-label="Pinleri zamana göre filtrele"><option value="all">Tümü (24 Saat)</option><option value="1m">Son 1 Dakika</option><option value="15m">Son 15 Dakika</option><option value="30m">Son 30 Dakika</option><option value="1h">Son 1 Saat</option><option value="6h">Son 6 Saat</option><option value="12h">Son 12 Saat</option></select></label>
               </div>
-              
               <div className="pin-searchbox">
                 <Search size={15}/>
                 <input className={speechSupported?'voice-enabled-input':''} value={query} onChange={e=>setQuery(e.target.value)} placeholder={listeningField==='query'?'Dinleniyor...':'Açıklamalarda ara...'} aria-label="Açıklamalarda ara"/>
@@ -1664,14 +1485,9 @@ export default function App() {
                 {query&&<button className="search-clear" type="button" onClick={()=>{setQuery('');setDebouncedQuery('');setSearchResultIds(null);}} aria-label="Pin aramasını temizle"><X size={14}/></button>}
               </div>
             </div>
-
-            <button type="button" className="ai-summary-btn" onClick={handleSummarize}>
-              <Sparkles size={16}/> Yapay Zeka ile Özetle
-            </button>
-
+            <button type="button" className="ai-summary-btn" onClick={handleSummarize}><Sparkles size={16}/> Yapay Zeka ile Özetle</button>
             {routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}
           </div>
-          
           {filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);const score=pin.pin_votes?.reduce((sum,v)=>sum+v.vote_type,0)||0;return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);setIsPanelOpen(true);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<div className="pin-list-left"><span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))} category={pin.category} />:<span className="mini-pin"><MapPin size={16} style={{ stroke: categoryFilterColors[normalizeCategory(pin.category)], color: categoryFilterColors[normalizeCategory(pin.category)] }} /></span>}</span><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small></div><div className="pin-list-right"><strong className="pin-list-title" title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><div className="pin-list-meta"><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small><span className={`pin-score-badge ${score>0?'score-pos':score<0?'score-neg':'score-zero'}`} aria-label={`Oy skoru: ${score}`}>{score>0?`+${score}`:score}</span></div></div></button>;})}</div>}
           {!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}
         </div>}
@@ -1679,63 +1495,50 @@ export default function App() {
       </aside>
     </section>
     
-    {/* YAPAY ZEKA ÖZET MODALI */}
-    {summaryOpen && (
-      <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSummaryOpen(false); }}>
-        <div className="invite-modal summary-modal">
-          <div className="modal-head" style={{ flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <BrainCircuit size={22} color="#3b82f6" />
-              <h2>Akıllı Özet</h2>
+    {/* PROFİL MODALI */}
+    {profileOpen && profile && (
+      <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setProfileOpen(false); }}>
+        <div className="invite-modal" style={{ maxWidth: '400px', width: '90%' }}>
+          <div className="modal-head">
+            <div>
+              <p className="eyebrow">KULLANICI PROFİLİ</p>
+              <h2>{profile.username || 'Gözcü'}</h2>
             </div>
-            <button type="button" className="icon-button" onClick={() => setSummaryOpen(false)} aria-label="Kapat"><X size={18}/></button>
+            <button type="button" className="icon-button" onClick={() => setProfileOpen(false)} aria-label="Kapat"><X size={18}/></button>
           </div>
-          <div className="summary-modal-content">
-            {isSummarizing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '150px', gap: '12px', color: '#94a3b8' }}>
-                <LoaderCircle size={28} className="gps-spinner" />
-                <span>Yapay Zeka pinleri okuyor ve özetliyor...</span>
-              </div>
-            ) : (
-              <p style={{ lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap', margin: 0 }}>{summaryText}</p>
-            )}
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '15px' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '32px', fontWeight: 'bold' }}>
+              {(profile.username || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', color: badge.color, fontWeight: 'bold', fontSize: '14px' }}>
+              {badge.icon} {badge.name}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{profile.total_pins_created || 0}</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '5px' }}>Toplam Pin</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e' }}>{profile.total_votes_received || 0}</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '5px' }}>Toplam Oy</div>
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+            <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
+              Daha fazla pin ekleyerek yeni rozetler kazanabilirsin!
+            </p>
           </div>
         </div>
       </div>
     )}
 
-    {adminOpen && (
-      <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAdminOpen(false);}}>
-        <div className="invite-modal" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
-          <div className="modal-head"><div><p className="eyebrow">YÖNETİCİ PANELİ</p><h2>Yönetim Merkezi</h2></div><button type="button" className="icon-button" onClick={()=>setAdminOpen(false)} aria-label="Kapat"><X size={18}/></button></div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}><button onClick={() => setAdminTab('users')} style={{ background: 'none', border: 'none', color: adminTab==='users'?'#fff':'#94a3b8', borderBottom: adminTab==='users'?'2px solid #3b82f6':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Kullanıcılar</button><button onClick={() => setAdminTab('reports')} style={{ background: 'none', border: 'none', color: adminTab==='reports'?'#fff':'#94a3b8', borderBottom: adminTab==='reports'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Raporlar ({adminReports.length})</button><button onClick={() => setAdminTab('pins')} style={{ background: 'none', border: 'none', color: adminTab==='pins'?'#fff':'#94a3b8', borderBottom: adminTab==='pins'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Pin Yönetimi ({pins.length})</button></div>
-          {adminLoading ? <p style={{textAlign:'center', padding:'20px'}}>Yükleniyor...</p> : adminTab === 'users' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminProfiles.map((p) => (<div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}><div><strong style={{ display: 'block', fontSize: '14px' }}>{p.username || `Kullanıcı: ${p.id.slice(0,8)}...`}</strong><span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}</span>{p.role === 'admin' && <span style={{ marginLeft: '10px', fontSize: '10px', background: '#3b82f6', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}</div><div style={{ display: 'flex', gap: '8px' }}>{p.status !== 'active' && <button onClick={() => void updateUserStatus(p.id, 'active')} className="primary-button" style={{ padding: '6px 12px', fontSize: '12px' }}>Onayla</button>}{p.status === 'active' && p.role !== 'admin' && <button onClick={() => void updateUserStatus(p.id, 'disabled')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Banla</button>}</div></div>))}</div>
-          ) : adminTab === 'pins' ? (
-            <div className="admin-pin-management"> 
-              <div className="admin-pin-toolbar">
-                <label className="admin-pin-select-all">
-                  <input type="checkbox" checked={pins.length > 0 && bulkSelectedPins.length === pins.length} disabled={pins.length === 0 || busy} onChange={event => setBulkSelectedPins(event.target.checked ? pins.map(pin => pin.id) : [])} />
-                  <strong>Tümünü Seç ({pins.length})</strong>
-                </label>
-                <button type="button" className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} onClick={() => void deleteBulkPins()} style={{ marginTop: 0, padding: '8px 12px' }}>{busy ? 'Siliniyor…' : `Seçilenleri Sil (${bulkSelectedPins.length})`}</button>
-              </div>
-              {pins.length === 0 ? <p style={{ textAlign: 'center', color: '#94a3b8', padding: '16px' }}>Listelenecek pin bulunamadı.</p> : pins.map(pin => (
-                <label key={pin.id} className={`admin-pin-row${bulkSelectedPins.includes(pin.id) ? ' is-selected' : ''}`}>
-                  <input className="admin-pin-checkbox" type="checkbox" checked={bulkSelectedPins.includes(pin.id)} disabled={busy} onChange={event => setBulkSelectedPins(current => event.target.checked ? (current.includes(pin.id) ? current : [...current, pin.id]) : current.filter(id => id !== pin.id))} />
-                  <span className="admin-pin-info">
-                    <strong className="admin-pin-title">{(pinDescription(pin).trim() || 'Açıklamasız konum').slice(0, 30)}</strong>
-                    <span className="admin-pin-meta">Kategori: {pin.category || 'Belirtilmemiş'} · {new Date(pin.created_at).toLocaleString('tr-TR')}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminReports.length === 0 && <p style={{textAlign:'center'}}>Harika, rapor edilen pin yok!</p>}{adminReports.map((r) => (<div key={r.id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}><strong style={{ display: 'block', fontSize: '14px' }}>Şikayet Edilen Pin: {r.pin_description ? `${r.pin_description.slice(0,30)}...` : (r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Açıklama Yok')}</strong><span style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Tarih: {new Date(r.created_at).toLocaleDateString('tr-TR')}</span><div style={{ display: 'flex', gap: '8px' }}>{r.pin_id && (<button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>)}<button onClick={() => void resolveReport(r.id, 'ignore')} className="secondary-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Yoksay</button></div></div>))}</div>
-          )}
-        </div>
-      </div>
-    )}
+    {summaryOpen && ( <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSummaryOpen(false); }}><div className="invite-modal summary-modal"><div className="modal-head" style={{ flexShrink: 0 }}><div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><BrainCircuit size={22} color="#3b82f6" /><h2>Akıllı Özet</h2></div><button type="button" className="icon-button" onClick={() => setSummaryOpen(false)} aria-label="Kapat"><X size={18}/></button></div><div className="summary-modal-content">{isSummarizing ? ( <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '150px', gap: '12px', color: '#94a3b8' }}><LoaderCircle size={28} className="gps-spinner" /><span>Yapay Zeka pinleri okuyor ve özetliyor...</span></div> ) : ( <p style={{ lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap', margin: 0 }}>{summaryText}</p> )}</div></div></div> )}
+
+    {adminOpen && ( <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAdminOpen(false);}}><div className="invite-modal" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}><div className="modal-head"><div><p className="eyebrow">YÖNETİCİ PANELİ</p><h2>Yönetim Merkezi</h2></div><button type="button" className="icon-button" onClick={()=>setAdminOpen(false)} aria-label="Kapat"><X size={18}/></button></div><div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}><button onClick={() => setAdminTab('users')} style={{ background: 'none', border: 'none', color: adminTab==='users'?'#fff':'#94a3b8', borderBottom: adminTab==='users'?'2px solid #3b82f6':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Kullanıcılar</button><button onClick={() => setAdminTab('reports')} style={{ background: 'none', border: 'none', color: adminTab==='reports'?'#fff':'#94a3b8', borderBottom: adminTab==='reports'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Raporlar ({adminReports.length})</button><button onClick={() => setAdminTab('pins')} style={{ background: 'none', border: 'none', color: adminTab==='pins'?'#fff':'#94a3b8', borderBottom: adminTab==='pins'?'2px solid #ef4444':'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Pin Yönetimi ({pins.length})</button></div>{adminLoading ? <p style={{textAlign:'center', padding:'20px'}}>Yükleniyor...</p> : adminTab === 'users' ? ( <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminProfiles.map((p) => (<div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '10px 15px', borderRadius: '8px' }}><div><strong style={{ display: 'block', fontSize: '14px' }}>{p.username || `Kullanıcı: ${p.id.slice(0,8)}...`}</strong><span style={{ fontSize: '12px', color: p.status === 'active' ? '#4ade80' : p.status === 'disabled' ? '#f87171' : '#fbbf24' }}>Durum: {p.status === 'active' ? 'Aktif' : p.status === 'disabled' ? 'Banlı' : 'Onay Bekliyor'}</span>{p.role === 'admin' && <span style={{ marginLeft: '10px', fontSize: '10px', background: '#3b82f6', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}</div><div style={{ display: 'flex', gap: '8px' }}>{p.status !== 'active' && <button onClick={() => void updateUserStatus(p.id, 'active')} className="primary-button" style={{ padding: '6px 12px', fontSize: '12px' }}>Onayla</button>}{p.status === 'active' && p.role !== 'admin' && <button onClick={() => void updateUserStatus(p.id, 'disabled')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Banla</button>}</div></div>))}</div> ) : adminTab === 'pins' ? ( <div className="admin-pin-management"> <div className="admin-pin-toolbar"><label className="admin-pin-select-all"><input type="checkbox" checked={pins.length > 0 && bulkSelectedPins.length === pins.length} disabled={pins.length === 0 || busy} onChange={event => setBulkSelectedPins(event.target.checked ? pins.map(pin => pin.id) : [])} /><strong>Tümünü Seç ({pins.length})</strong></label><button type="button" className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} onClick={() => void deleteBulkPins()} style={{ marginTop: 0, padding: '8px 12px' }}>{busy ? 'Siliniyor…' : `Seçilenleri Sil (${bulkSelectedPins.length})`}</button></div>{pins.length === 0 ? <p style={{ textAlign: 'center', color: '#94a3b8', padding: '16px' }}>Listelenecek pin bulunamadı.</p> : pins.map(pin => ( <label key={pin.id} className={`admin-pin-row${bulkSelectedPins.includes(pin.id) ? ' is-selected' : ''}`}> <input className="admin-pin-checkbox" type="checkbox" checked={bulkSelectedPins.includes(pin.id)} disabled={busy} onChange={event => setBulkSelectedPins(current => event.target.checked ? (current.includes(pin.id) ? current : [...current, pin.id]) : current.filter(id => id !== pin.id))} /> <span className="admin-pin-info"> <strong className="admin-pin-title">{(pinDescription(pin).trim() || 'Açıklamasız konum').slice(0, 30)}</strong> <span className="admin-pin-meta">Kategori: {pin.category || 'Belirtilmemiş'} · {new Date(pin.created_at).toLocaleString('tr-TR')}</span> </span> </label> ))}</div> ) : ( <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '20px' }}>{adminReports.length === 0 && <p style={{textAlign:'center'}}>Harika, rapor edilen pin yok!</p>}{adminReports.map((r) => (<div key={r.id} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(239, 68, 68, 0.1)', padding: '10px 15px', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}><strong style={{ display: 'block', fontSize: '14px' }}>Şikayet Edilen Pin: {r.pin_description ? `${r.pin_description.slice(0,30)}...` : (r.pins?.description ? `${r.pins.description.slice(0,30)}...` : 'Açıklama Yok')}</strong><span style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Tarih: {new Date(r.created_at).toLocaleDateString('tr-TR')}</span><div style={{ display: 'flex', gap: '8px' }}>{r.pin_id && (<button onClick={() => void resolveReport(r.id, 'delete')} className="delete-pin-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Pini Sil ve Kapat</button>)}<button onClick={() => void resolveReport(r.id, 'ignore')} className="secondary-button" style={{ padding: '6px 12px', fontSize: '12px', marginTop: 0 }}>Yoksay</button></div></div>))}</div> )}</div></div> )}
 
     {inviteOpen&&<div className="modal-backdrop invite-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setInviteOpen(false);}}><section className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title"><div className="modal-head"><div><p className="eyebrow">TOPLULUĞA DAVET</p><h2 id="invite-modal-title">Davet Kodlarım</h2></div><button type="button" className="icon-button" onClick={()=>setInviteOpen(false)} aria-label="Davet kodlarını kapat"><X size={18}/></button></div><p className="invite-intro">Kodlarını arkadaşlarınla paylaş. Her kod yalnızca bir hesap tarafından kullanılabilir.</p><button type="button" className="primary-button full-width invite-create" disabled={busy||!active||(profile?.role!=='admin'&&inviteCodes.length>=3)} onClick={()=>void createInviteCode()}><Plus size={17}/>{busy?'İşleniyor…':'Yeni Davet Kodu Üret'}</button>{profile?.role!=='admin'&&inviteCodes.length>=3&&<p className="invite-limit">Davet kodu limitinize ulaştınız.</p>}<div className="invite-list">{inviteCodes.length===0&&!busy?<div className="invite-empty">Henüz davet kodun yok. Yeni bir kod oluşturabilirsin.</div>:inviteCodes.map(item=><div className="invite-row" key={item.id}><div className="invite-code-info"><strong>{item.code||'Önceden oluşturulmuş davet kodu'}</strong><small>{new Date(item.created_at).toLocaleDateString('tr-TR')} · {item.redeemed_at?'Kullanıldı':item.is_enabled?'Kullanılabilir':'Devre dışı'}</small></div>{item.code&&!item.redeemed_at&&item.is_enabled&&<button type="button" className="copy-code-button" onClick={()=>void copyInviteCode(item)} aria-label="Davet kodunu kopyala" title="Kopyala">{copiedCodeId===item.id?<Check size={17}/>:<Copy size={17}/>}<span>{copiedCodeId===item.id?'Kopyalandı':'Kopyala'}</span></button>}</div>)}</div><p className="invite-footnote">Eski kodlar veritabanında yalnızca hash olarak saklanıyorsa tekrar görüntülenemez; yeni oluşturulan kodlar listeden kopyalanabilir.</p></section></div>}
     
