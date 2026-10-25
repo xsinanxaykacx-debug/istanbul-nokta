@@ -1074,7 +1074,7 @@ export default function App() {
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
-            <MapClick enabled={canAdd&&!editPinMode} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
+            <MapClick enabled={canAdd&&!editPinMode} routeMode={routeMode} onRoutePick={(lat,lng)=>{if(!routeStart){setRouteStart([lat,lng]);setRouteEnd(null);setRouteLine(null);setRouteInfo(null);setRouteError(null);}else{setRouteEnd([lat,lng]);}}} onMapClick={()=>{setPlaceDropdownOpen(false);setSearchPlace(null);setSelected(null);setShowFilterOptions(false);}} onPick={(lat,lng)=>{setDraftPosition([lat,lng]);setSelected(null);}}/>
             <ViewportWatcher onBoundsChange={setViewportBounds}/>
             <FlyTo position={selected?[selected.lat,selected.lng]:draftPosition}/>
             <FlyTo position={userPosition} zoom={16}/>
@@ -1160,10 +1160,14 @@ export default function App() {
         </div>
         </div>
 
+        <button type="button" className="mobile-sheet-toggle" onClick={() => setShowFilterOptions(true)} aria-label="Harita filtrelerini aç" title="Filtreler">
+          <SlidersHorizontal size={19}/>
+        </button>
+
         {!canSeePins&&!is3D&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
       </div>
       
-      <aside className="side-panel">
+      <aside className={`side-panel ${selected || draftPosition || showFilterOptions || routeMode ? 'is-open' : 'is-hidden'}`}>
         {bulkSelectMode && (
           <div style={{ padding: '15px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{bulkSelectedPins.length} Pin Seçildi</span>
