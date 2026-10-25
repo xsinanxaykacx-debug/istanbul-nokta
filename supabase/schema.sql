@@ -26,7 +26,7 @@ create table if not exists public.pins (
   lat double precision not null check (lat between 40.7 and 41.8),
   lng double precision not null check (lng between 27.8 and 29.9),
   description text not null default '' check (length(description) <= 5000),
-  category text not null default 'KIRMIZI' check (category in ('YEŞİL','MAVİ','KIRMIZI','GRİ')),
+  category text not null default 'KIRMIZI' check (category in ('YEŞİL','MAVİ','KIRMIZI','SARI')),
   created_at timestamptz not null default now()
 );
 create table if not exists public.pin_photos (
@@ -142,7 +142,7 @@ begin
   if public.check_profanity(p_description) then
     raise exception 'Açıklamanızda uygun olmayan ifadeler tespit edildi. Lütfen saygılı bir dil kullanın.';
   end if;
-  if p_category is null or p_category not in ('YEŞİL','MAVİ','KIRMIZI','GRİ') then
+  if p_category is null or p_category not in ('YEŞİL','MAVİ','KIRMIZI','SARI') then
     raise exception 'Kategori geçersiz.';
   end if;
   if jsonb_typeof(coalesce(p_photos, '[]'::jsonb)) <> 'array' then
