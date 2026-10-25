@@ -2651,3 +2651,105 @@ select option { background: var(--surface); color: var(--text-dark); }
   font-size: 12px;
   line-height: 1.5;
 }
+/* ============================================
+   MOBILE FULL-SCREEN MAP + BOTTOM SHEET
+   ============================================ */
+@media (max-width: 768px) {
+  html, body, #root {
+    height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .topbar {
+    flex: 0 0 auto !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    padding: 0 12px !important;
+  }
+
+  /* Workspace = kalan alan, relative konum */
+  .workspace {
+    flex: 1 1 auto !important;
+    display: block !important;
+    position: relative !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Harita = tam ekran */
+  .map-frame {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+  }
+
+  /* Panel = bottom sheet */
+  .side-panel {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 55vh !important;
+    flex: none !important;
+    z-index: 100 !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: var(--surface, #151f32) !important;
+    border: none !important;
+    border-top: 1px solid var(--border-color, #334155) !important;
+  }
+
+  /* Bottom sheet tutamaç çizgisi (opsiyonel görsel) */
+  .side-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 4px;
+    border-radius: 2px;
+    background: rgba(148, 163, 184, 0.4);
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  footer {
+    display: none !important;
+  }
+}
