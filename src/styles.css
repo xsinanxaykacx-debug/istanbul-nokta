@@ -3018,12 +3018,6 @@ select option { background: var(--surface); color: var(--text-dark); }
 }
 
 
-/* Preserve the existing desktop control positions while the wrapper is visually transparent. */
-@media (min-width: 769px) {
-  .map-mobile-control-stack { display: contents; }
-}
-
-
 /* Desktop safeguard: leave the established bottom-left and bottom-right flex groups unchanged. */
 @media (min-width: 769px) {
   .map-mobile-control-stack {
