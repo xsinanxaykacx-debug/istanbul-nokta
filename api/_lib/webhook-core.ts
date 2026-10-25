@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 export type RadarSource = string;
-export type RadarCategory = 'GRİ' | 'MAVİ' | 'YEŞİL' | 'KIRMIZI';
+export type RadarCategory = 'SARI' | 'MAVİ' | 'YEŞİL' | 'KIRMIZI';
 export type RadarProcessResult =
   | { saved: true; category: RadarCategory }
   | { saved: false };
@@ -79,7 +79,7 @@ function containsFilterKeyword(value: string): boolean {
 function getRadarCategory(messageText: string): RadarCategory {
   const normalized = normalizeTurkishText(messageText);
   if (/(^|[^\p{L}])sivil(?:ler)?(?=$|[^\p{L}])/u.test(normalized)) {
-    return 'GRİ';
+    return 'SARI';
   }
   if (/(^|[^\p{L}])yeleksiz(?=$|[^\p{L}])/u.test(normalized)) {
     return 'MAVİ';

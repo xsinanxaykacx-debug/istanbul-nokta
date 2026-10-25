@@ -45,8 +45,8 @@ const PIN_ICON_IMAGES = [
     dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiM3YzNhZWQiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMjQiIGN5PSIyMiIgcj0iMTEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI0IDExdjIyTTEzIDIyaDIyTTE3IDE1bDE0IDE0TTMxIDE1TDE3IDI5IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSIyNCIgY3k9IjIyIiByPSIzIiBmaWxsPSIjMjJkM2VlIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==',
   },
   {
-    name: 'pin-gri',
-    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiM5Y2EzYWYiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjZmZmZmZmIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5HPC90ZXh0Pjwvc3ZnPg==',
+    name: 'pin-sari',
+    dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDQ4IDU4Ij48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiNmYWNjMTUiIHN0cm9rZT0iIzExMTgyNyIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjQiIHk9IjIzIiBmaWxsPSIjMTExODI3IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJjZW50cmFsIj5TPC90ZXh0Pjwvc3ZnPg==',
   },
 ] as const;
 
@@ -126,7 +126,9 @@ export default function Map3D({
         id: String(pin.id),
         properties: {
           pin_id: String(pin.id),
-          category: typeof pin.category === 'string' ? pin.category : 'KIRMIZI',
+          category: typeof pin.category === 'string'
+            ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
+            : 'KIRMIZI',
           is_telegram: (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX)) || (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
         },
         geometry: {
@@ -282,8 +284,8 @@ export default function Map3D({
             'pin-yesil',
             'MAVİ',
             'pin-mavi',
-            'GRİ',
-            'pin-gri',
+            'SARI',
+            'pin-sari',
             'pin-kirmizi',
           ],
         ],
