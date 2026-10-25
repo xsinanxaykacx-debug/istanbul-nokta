@@ -232,11 +232,13 @@
 
 
 /* Pin categories: marker colors, list labels, detail badge and form selector. */
-.pin-icon.pin-icon-yesil { background: #1e8e55; }
-.pin-icon.pin-icon-mavi { background: #3b82f6; }
-.pin-icon.pin-icon-kirmizi { background: #d64545; }
-.pin-icon.pin-icon-sari { background: #facc15; }
+.pin-icon.pin-icon-yesil { background: #39FF14; }
+.pin-icon.pin-icon-mavi { background: #00E5FF; }
+.pin-icon.pin-icon-kirmizi { background: #FF1744; }
+.pin-icon.pin-icon-sari { background: #FFEA00; }
 .pin-icon.pin-icon-sari svg { stroke: #111827; }
+.pin-icon.pin-icon-sari svg { transform: none; }
+.pin-icon.pin-icon-sari svg text { fill: #111827; stroke: none; }
 
 .category-select {
   display: block;
@@ -271,11 +273,11 @@
   border-radius: 50%;
   background: currentColor;
 }
-.category-yesil { color: #1e8e55 !important; }
-.category-mavi { color: #3b82f6 !important; }
-.category-sari { color: #facc15 !important; }
-.category-sari .pin-category-dot { background: #facc15; }
-.category-kirmizi { color: #d64545 !important; }
+.category-yesil { color: #39FF14 !important; }
+.category-mavi { color: #00E5FF !important; }
+.category-sari { color: #FFEA00 !important; }
+.category-sari .pin-category-dot { background: #FFEA00; }
+.category-kirmizi { color: #FF1744 !important; }
 
 .category-badge {
   display: inline-flex;
@@ -286,7 +288,7 @@
   padding: 5px 9px;
   border: 1px solid currentColor;
   border-radius: 999px;
-  background: #fff;
+  background: #111827;
   font-size: 10px;
   line-height: 1.2;
   font-weight: 800;

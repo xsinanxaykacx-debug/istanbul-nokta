@@ -27,7 +27,7 @@ const pinIcons: Record<string, L.DivIcon> = {
   'YEŞİL': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-yesil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8 0-14 4-14 11a5 5 0 0 0 5 5c7 0 11-6 9-16Z"/><path d="M4 20c4-5 7-7 12-10"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'MAVİ': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-mavi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 10 6 14a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
   'KIRMIZI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-kirmizi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
-  'SARI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-sari"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>', iconSize:[32,40], iconAnchor:[16,38] })
+  'SARI': new L.DivIcon({ className:'pin-icon-wrap', html:'<div class="pin-icon pin-icon-sari"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="17" text-anchor="middle" font-size="17" font-weight="800" fill="#111827" stroke="none">S</text></svg></div>', iconSize:[32,40], iconAnchor:[16,38] }),
 };
 
 const telegramPinIcon = new L.DivIcon({
@@ -51,14 +51,14 @@ function pinDescription(pin: Pick<Pin, 'description'>): string {
 }
 
 const categoryFilterColors: Record<string, string> = {
-  'Tümü': '#f97316', 'YEŞİL': '#1e8e55', 'MAVİ': '#3b82f6', 'KIRMIZI': '#d64545', 'SARI': '#facc15', 'BENIM': '#8b5cf6',
+  'Tümü': '#f97316', 'YEŞİL': '#39FF14', 'MAVİ': '#00E5FF', 'KIRMIZI': '#FF1744', 'SARI': '#FFEA00', 'BENIM': '#8b5cf6',
 };
 
 function normalizeCategory(category?: string | null): string {
   switch (category) {
     case 'YEŞİL': case 'Yeşiller': case 'Yeşil': return 'YEŞİL';
     case 'MAVİ': case 'Maviler': case 'Mavi': return 'MAVİ';
-    case 'SARI': case 'Sarı': case 'Sarılar': case 'GRİ': case 'Siviller': case 'Sivil': return 'SARI';
+    case 'GRİ': case 'SARI': case 'Siviller': case 'Sivil': case 'Sarı': case 'Sarılar': return 'SARI';
     case 'KIRMIZI': case 'Hepsi': case null: case undefined: return 'KIRMIZI';
     default: return 'KIRMIZI';
   }
