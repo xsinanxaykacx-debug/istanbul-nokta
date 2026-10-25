@@ -523,7 +523,7 @@ export default function App() {
         const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);
         photoRows.push({storage_path:path,public_url:data.publicUrl,sort_order:i});
       }
-      const {error}=await supabase.rpc('create_pin_with_photos',{ p_lat:position[0],p_lng:position[1],p_description:descriptionValue.trim(), p_category:categoryValue,p_photos:photoRows });
+      const {error}=await supabase.rpc('create_pin_with_photos',{ p_lat:position[0],p_lng:position[1],p_description:descriptionValue.trim(), p_category:normalizeCategory(categoryValue),p_photos:photoRows });
       if(error)throw error;
       setDescription('');setCategory('KIRMIZI');setFiles([]);setDraftPosition(null);
       const input=document.getElementById('photo-input') as HTMLInputElement|null;if(input)input.value='';
