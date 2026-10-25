@@ -148,7 +148,11 @@ function formatRouteDuration(seconds:number):string {
   return remaining?`${hours} sa ${remaining} dk`:`${hours} sa`;
 }
 function pinTitle(pin: Pin) { return pinDescription(pin).trim().split(/\r?\n/)[0].slice(0, 90) || 'Açıklamasız konum'; }
-function pinMarkerTitle(pin: Pin) { return isTelegramPin(pin.description) ? `AYTAR RADAR · ${pinTitle(pin)}` : pinTitle(pin); }
+function pinMarkerTitle(pin: Pin) { 
+  return isTelegramPin(pin.description, pin.owner_id) 
+    ? `AYTAR RADAR · ${pinTitle(pin)}` 
+    : pinTitle(pin); 
+}
 function relativeTime(iso: string): string {
   const elapsed = Date.now() - new Date(iso).getTime();
   if (elapsed < 60000) return 'az önce';
@@ -1408,7 +1412,7 @@ export default function App() {
               <div>
                 <p className="eyebrow">KONUM DETAYI</p>
                 <span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>
-                {isTelegramPin(selected.description)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
+                {isTelegramPin(selected.description, selected.owner_id) && <span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
                 <h2>{pinTitle(selected)}</h2>
               </div>
               <button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button>

@@ -24,7 +24,9 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
+
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
+const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
 const PIN_ICON_IMAGES = [
   { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzM5RkYxNCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMzlGRjE0IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzM5RkYxNCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
@@ -110,7 +112,13 @@ export default function Map3D({
           category: typeof pin.category === 'string'
             ? (['GRİ', 'Siviller', 'Sivil'].includes(pin.category) ? 'SARI' : pin.category)
             : 'KIRMIZI',
-          is_telegram: (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)),
+          
+          // DÜZELTME: Telegram pinleri için description ve owner_id kontrolü eklendi
+          is_telegram: (
+            (typeof pin.description === 'string' && pin.description.startsWith(`${TELEGRAM_PIN_MARKER} `)) ||
+            (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX))
+          ),
+          
           is_fresh: (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000,
           opacity: (() => {
             const ageHours = (Date.now() - new Date(pin.created_at).getTime()) / (1000 * 60 * 60);
@@ -251,7 +259,6 @@ export default function Map3D({
       },
     });
 
-    // Yeni eklenen pinler için parlama katmanı (MapLibre'de animasyon canvas'ta zor olduğu için statik parlama kullanıyoruz)
     mapInstance.addLayer({
       id: FRESH_PULSE_LAYER_ID,
       type: 'circle',
