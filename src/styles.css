@@ -3382,29 +3382,74 @@ select option { background: var(--surface); color: var(--text-dark); }
     height: 38px;
   }
 }
-/* Rota bilgisi kartındaki sıkışmayı (yazıların alt alta düşmesini) engelle */
+/* Rota Bilgisi Kartı ve Araç Seçici Düzeni */
+.panel-top-controls .route-info-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.panel-top-controls .route-info-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+}
+
 .panel-top-controls .route-info-copy {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panel-top-controls .route-info-heading {
+  display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 6px;
+  margin: 0;
+}
+
+.panel-top-controls .route-info-heading h2 {
+  font-size: 14px;
+  margin: 0;
 }
 
 .panel-top-controls .route-info-copy p {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text-dark);
   white-space: normal;
   word-break: normal;
 }
 
+/* Butonlar ve Select kutusu yan yana düzgün dursun */
 .panel-top-controls .route-card-actions {
   display: flex;
-  gap: 6px;
-  flex-shrink: 0;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.panel-top-controls .route-card-actions select {
+  flex: 1;
+  min-width: 90px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-dark);
+  font-size: 12px;
+  outline: none;
 }
 
 .panel-top-controls .route-card-actions button {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  font-size: 12px;
   white-space: nowrap;
-  padding: 6px 10px;
-  font-size: 11px;
 }

@@ -215,7 +215,6 @@ function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number,
   return null;
 }
 
-// Navigasyon sırasında haritanın daha yumuşak takip etmesi için FlyTo'yu güncelledik
 function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null; zoom?:number; isNavigating?: boolean }) { 
   const map=useMap(); 
   useEffect(()=>{ 
@@ -269,6 +268,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
   const [selectedAddress,setSelectedAddress]=useState<string|null>(null); const [placeQuery,setPlaceQuery]=useState(''); const [placeResults,setPlaceResults]=useState<PlaceResult[]>([]); const [placeLoading,setPlaceLoading]=useState(false); const [placeSearched,setPlaceSearched]=useState(false); const [placeDropdownOpen,setPlaceDropdownOpen]=useState(false); const [searchPlace,setSearchPlace]=useState<PlaceResult|null>(null);
@@ -277,7 +277,6 @@ export default function App() {
   const mapRef = useRef<L.Map | null>(null);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
   
-  // YENİ: Canlı Navigasyon State'leri
   const [isNavigating, setIsNavigating] = useState(false);
   const watchIdRef = useRef<number | null>(null);
 
@@ -456,29 +455,49 @@ export default function App() {
     if(!routeMode||!routeStart||!routeEnd)return;
     const controller=new AbortController(); setRouteLoading(true); setRouteError(null); setRouteLine(null); setRouteInfo(null);
     const [startLat,startLng]=routeStart; const [endLat,endLng]=routeEnd;
+    
     const calculate=async()=>{
       try{
-        let response;
-        try {
-          response = await fetch('/api/route',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:[[startLng,startLat],[endLng,endLat]]})});
-          if (!response.ok) throw new Error('API Fail');
-        } catch (apiErr) {
-          if (controller.signal.aborted) return;
-          response = await fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`, { signal: controller.signal });
-        }
+        // Yedek OSRM silindi, doğrudan ORS'ye (Vercel Proxy) istek atıyoruz
+        const response = await fetch('https://aytar.vercel.app/api/route',{
+          method:'POST',
+          signal:controller.signal,
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            coordinates:[[startLng,startLat],[endLng,endLat]], 
+            profile: routeProfile
+          })
+        });
+        
         const result=await response.json().catch(()=>null) as {routes?:Array<{geometry?:{coordinates?:number[][]};distance?:number;duration?:number}>;error?:{message?:string}|string;message?:string}|null;
-        if(!response.ok){const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`OSRM HTTP ${response.status}`;throw new Error(message);}
-        if(controller.signal.aborted)return; const route=result?.routes?.[0]; const coordinates=route?.geometry?.coordinates;
-        if(!route||!coordinates||coordinates.length<2)throw new Error('OSRM geçerli bir rota döndürmedi.');
+        
+        if(!response.ok){
+          const message=typeof result?.error==='string'?result.error:result?.error?.message||result?.message||`HTTP ${response.status}`;
+          throw new Error(message);
+        }
+        
+        if(controller.signal.aborted)return; 
+        const route=result?.routes?.[0]; 
+        const coordinates=route?.geometry?.coordinates;
+        if(!route||!coordinates||coordinates.length<2)throw new Error('Geçerli bir rota döndürülmedi.');
+        
         const line=coordinates.map(point=>[point[1],point[0]] as [number,number]);
         const pinsOnRoute=pins.filter(pin=>routePositionForPin(pin,line).distanceMeters<=100).map(pin=>pin.id);
-        setRouteLine(line); setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
+        
+        setRouteLine(line); 
+        setRouteInfo({distance:formatRouteDistance(route.distance??0),duration:formatRouteDuration(route.duration??0),pinsOnRoute});
         setIsPanelOpen(true);
-      }catch(error){ if(controller.signal.aborted)return; setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, OSRM API anahtarını kontrol edin.'); }
-      finally{if(!controller.signal.aborted)setRouteLoading(false);}
+      }catch(error){ 
+        if(controller.signal.aborted)return; 
+        setRouteError(error instanceof Error&&error.message? `Rota hesaplanamadı: ${error.message}`:'Rota hesaplanamadı, lütfen tekrar deneyin.'); 
+      } finally {
+        if(!controller.signal.aborted)setRouteLoading(false);
+      }
     };
-    void calculate(); return()=>controller.abort();
-  },[routeMode,routeStart,routeEnd,pins]);
+    
+    void calculate(); 
+    return()=>controller.abort();
+  },[routeMode,routeStart,routeEnd,pins,routeProfile]);
 
   const addressableVisiblePins=useMemo(()=>{
     if(!viewportBounds)return [];
@@ -1281,8 +1300,7 @@ export default function App() {
     );
   }
 
-  // YENİ: Canlı Navigasyon Fonksiyonları
-    function startNavigation() {
+  function startNavigation() {
     if (!navigator.geolocation) {
       setNotice({ kind: 'error', text: 'Tarayıcınız konum takibini desteklemiyor.' });
       return;
@@ -1295,7 +1313,6 @@ export default function App() {
     setIsNavigating(true);
     setNotice({ kind: 'success', text: 'Canlı navigasyon başladı. İyi yolculuklar!' });
 
-    // Konumu hemen alıp haritayı oraya odakla
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
@@ -1309,7 +1326,6 @@ export default function App() {
       { enableHighAccuracy: true }
     );
 
-    // Sürekli takip başlat
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
@@ -1325,7 +1341,7 @@ export default function App() {
     );
   }
 
-      function stopNavigation() {
+  function stopNavigation() {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -1463,7 +1479,6 @@ export default function App() {
           />
         )}
 
-        {/* YENİ: Navigasyon Sırasında Görünecek Kırmızı Buton */}
         {isNavigating && (
           <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
             <button 
@@ -1525,7 +1540,7 @@ export default function App() {
             <div className="pin-interactions-row">
               <div className="pin-reactions-bar">
                 <div className="reaction-group">
-                  {['🚓', '🚔', '🚒', '🚑'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
+                  {['🚓', '🧑‍✈️', '🚒', '👮‍♂️', '🚧'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
                 </div>
                 <div className="reaction-group weather-group">
                   {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
@@ -1573,8 +1588,17 @@ export default function App() {
           <div className="panel-top-controls">
             {routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div>
             
-            {/* YENİ: Rota çizildiğinde çıkan "Başlat" butonu */}
-            <div className="route-card-actions" style={{ display: 'flex', gap: '8px' }}>
+            <div className="route-card-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select 
+                value={routeProfile} 
+                onChange={(e) => { setRouteProfile(e.target.value); setRouteInfo(null); setRouteLine(null); }} 
+                style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface)', color: 'var(--text-dark)', fontSize: '12px' }}
+              >
+                <option value="driving-car">🚗 Araba</option>
+                <option value="cycling-regular">🚲 Bisiklet</option>
+                <option value="foot-walking">🚶 Yaya</option>
+              </select>
+
               {routeInfo && !isNavigating && (
                 <button type="button" className="primary-button" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={startNavigation}>
                   <Navigation size={14} style={{ marginRight: '4px' }}/> Başlat
