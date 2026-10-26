@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = `https://api.openrouteservice.org/v2/directions/${profile}/geojson`;
 
   try {
-    const orsResponse = await fetch(url, {
+        const orsResponse = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': apiKey,
@@ -63,7 +63,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Accept': 'application/json, application/geo+json'
       },
       body: JSON.stringify({
-        coordinates: [[start[0], start[1]], [end[0], end[1]]]
+        coordinates: [[start[0], start[1]], [end[0], end[1]]],
+        // YENİ: Yaya profilinde feribot kullanımını engelle
+        options: {
+          avoid_features: profile === 'foot-walking' ? ["ferries"] : []
+        }
       })
     });
 
