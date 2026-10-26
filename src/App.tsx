@@ -1396,7 +1396,7 @@ export default function App() {
             {showTraffic && tomtomApiKey && (
   <TileLayer 
     attribution='&copy; TomTom' 
-    url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live`} 
+    url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live`} 
     zIndex={400} 
   />
 )}
