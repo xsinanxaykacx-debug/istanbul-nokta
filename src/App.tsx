@@ -1395,9 +1395,8 @@ export default function App() {
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic && tomtomApiKey && (
   <TileLayer 
-    key={`traffic-layer-${Date.now()}`} // Önbelleği kırmak için
     attribution='&copy; TomTom' 
-    url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${Date.now()}`} 
+    url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live`} 
     zIndex={400} 
   />
 )}
