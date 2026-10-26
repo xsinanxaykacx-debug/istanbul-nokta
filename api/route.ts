@@ -48,8 +48,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const [start, end] = body.coordinates;
   const profile = body.profile || 'driving-car';
 
-  // ORS'nin yeni API adresi: api.heigit.org
-  const url = `https://api.heigit.org/v2/directions/${profile}/geojson`;
+    // Eski hatalı satır (api.heigit.org olan):
+  // const url = `https://api.heigit.org/v2/directions/${profile}/geojson`;
+
+  // YENİ DOĞRU SATIR:
+  const url = `https://api.openrouteservice.org/v2/directions/${profile}/geojson`;
 
   try {
     const orsResponse = await fetch(url, {
