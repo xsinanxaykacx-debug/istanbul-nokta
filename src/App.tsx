@@ -1393,7 +1393,14 @@ export default function App() {
           <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
-            {showTraffic&&tomtomApiKey&&<TileLayer attribution='&copy; TomTom' url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${new Date().getTime()}`} zIndex={400} />}
+            {showTraffic && tomtomApiKey && (
+  <TileLayer 
+    key={`traffic-layer-${Date.now()}`} // Önbelleği kırmak için
+    attribution='&copy; TomTom' 
+    url={`https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${import.meta.env.VITE_TOMTOM_API_KEY}&t=live&v=${Date.now()}`} 
+    zIndex={400} 
+  />
+)}
             <MapClick 
               enabled={canAdd&&!editPinMode} 
               routeMode={routeMode} 

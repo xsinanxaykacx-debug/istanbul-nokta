@@ -546,11 +546,12 @@ export default function Map3D({
     if (mapInstance.getLayer('traffic-layer')) mapInstance.removeLayer('traffic-layer');
     if (mapInstance.getSource('traffic-source')) mapInstance.removeSource('traffic-source');
 
-    if (showTraffic && tomtomApiKey) {
+        if (showTraffic && tomtomApiKey) {
       mapInstance.addSource('traffic-source', {
         type: 'raster',
         tiles: [
-          `https://api.tomtom.com/traffic/map/4/tile/flow/relative-delay/{z}/{x}/{y}.png?key=${tomtomApiKey}&t=live`,
+          // relative-delay yerine relative kullanıyoruz ve önbelleği kırmak için v ekliyoruz
+          `https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${tomtomApiKey}&t=live&v=${Date.now()}`,
         ],
         tileSize: 256,
       });
