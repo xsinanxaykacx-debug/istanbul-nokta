@@ -29,6 +29,82 @@ const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
+/**
+ * Applies AYTAR's Midnight Neon palette to the existing Liberty vector style.
+ * This changes only basemap paint properties; all existing map interactions,
+ * 3D camera settings, pin layers, routes, traffic and heatmap remain intact.
+ */
+function applyNeonMapPalette(mapInstance: maplibregl.Map): void {
+  const layers = mapInstance.getStyle()?.layers ?? [];
+
+  for (const layer of layers) {
+    const id = layer.id.toLowerCase();
+    const sourceLayer = String((layer as maplibregl.AnyLayer & { 'source-layer'?: string })['source-layer'] ?? '').toLowerCase();
+    const name = `${id} ${sourceLayer}`;
+
+    try {
+      if (layer.type === 'background') {
+        mapInstance.setPaintProperty(layer.id, 'background-color', '#070b1b');
+        continue;
+      }
+
+      if (layer.type === 'fill-extrusion' && /building|buildings|building_part/.test(name)) {
+        mapInstance.setPaintProperty(layer.id, 'fill-extrusion-color', [
+          'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], ['get', 'height'], 12],
+          0, '#101a3a',
+          18, '#172554',
+          45, '#263b78',
+          90, '#3b2878'
+        ]);
+        mapInstance.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.96);
+        continue;
+      }
+
+      if (layer.type === 'fill') {
+        if (/water|river|lake|ocean|sea/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'fill-color', '#071b3d');
+          if (mapInstance.getPaintProperty(layer.id, 'fill-outline-color') !== undefined) {
+            mapInstance.setPaintProperty(layer.id, 'fill-outline-color', '#123b72');
+          }
+        } else if (/park|green|wood|forest|grass|landcover|land_cover/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'fill-color', '#0b2030');
+        } else if (/building|buildings|building_part/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'fill-color', '#142044');
+          mapInstance.setPaintProperty(layer.id, 'fill-outline-color', '#263b78');
+        } else if (/landuse|land_use|residential|industrial|commercial|background|earth/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'fill-color', '#0b1024');
+        }
+        continue;
+      }
+
+      if (layer.type === 'line') {
+        if (/motorway|trunk|highway|major_road|primary/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'line-color', '#3978ff');
+        } else if (/road|street|transportation|bridge|tunnel/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'line-color', '#263e7d');
+        } else if (/waterway|river/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'line-color', '#1454a4');
+        } else if (/boundary|admin/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'line-color', '#34336d');
+        }
+        continue;
+      }
+
+      if (layer.type === 'symbol') {
+        const paint = layer.paint ?? {};
+        if ('text-color' in paint || /label|name|place|poi/.test(name)) {
+          mapInstance.setPaintProperty(layer.id, 'text-color', '#c7d2fe');
+          mapInstance.setPaintProperty(layer.id, 'text-halo-color', '#070b1b');
+          mapInstance.setPaintProperty(layer.id, 'text-halo-width', 1.25);
+        }
+      }
+    } catch (error) {
+      // A style layer may not expose every paint property; keep the rest of the map usable.
+      console.debug('Neon harita stili uygulanamadı:', layer.id, error);
+    }
+  }
+}
+
 const PIN_ICON_IMAGES = [
   { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzM5RkYxNCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMzlGRjE0IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzM5RkYxNCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
   { name: 'pin-mavi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzAwRTVGRiIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMDBFNUZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzAwRTVGRiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+TTwvdGV4dD48L3N2Zz4=' },
@@ -166,6 +242,7 @@ export default function Map3D({
     if (!mapInstance) return;
 
     mapInstance.once('load', () => {
+      applyNeonMapPalette(mapInstance);
       void (async () => {
         const iconResults = await Promise.allSettled(
           PIN_ICON_IMAGES.map(({ name, dataUrl }) =>
