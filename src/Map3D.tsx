@@ -29,6 +29,32 @@ const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
+class MaptoolkitLogoControl implements maplibregl.IControl {
+  private container: HTMLAnchorElement | null = null;
+
+  onAdd(_map: maplibregl.Map): HTMLElement {
+    const link = document.createElement('a');
+    link.href = 'https://www.maptoolkit.org/';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label', 'Maptoolkit map tiles');
+    link.style.cssText = 'display:block;line-height:0;background:rgba(255,255,255,0.92);padding:3px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.25);';
+
+    const image = document.createElement('img');
+    image.src = 'https://www.maptoolkit.org/assets/maptoolkit-attribution.png?v=30905130';
+    image.alt = 'Maptoolkit';
+    image.style.cssText = 'display:block;height:24px;width:auto;max-width:150px;';
+    link.appendChild(image);
+    this.container = link;
+    return link;
+  }
+
+  onRemove(): void {
+    this.container?.remove();
+    this.container = null;
+  }
+}
+
 const PIN_ICON_IMAGES = [
   { name: 'pin-yesil', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzM5RkYxNCIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMzlGRjE0IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzM5RkYxNCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+WTwvdGV4dD48L3N2Zz4=' },
   { name: 'pin-mavi', dataUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQ4IDU4IiBvdmVyZmxvdz0idmlzaWJsZSI+PGRlZnM+PGZpbHRlciBpZD0ibmVvbkdsb3ciIHg9Ii02MCUiIHk9Ii01MCUiIHdpZHRoPSIyMjAlIiBoZWlnaHQ9IjIyMCUiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMi41IiByZXN1bHQ9ImJsdXIiLz48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzAwRTVGRiIgZmxvb2Qtb3BhY2l0eT0iMSIgcmVzdWx0PSJuZW9uQ29sb3IiLz48ZmVDb21wb3NpdGUgaW49Im5lb25Db2xvciIgaW4yPSJibHVyIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0ibmVvbkJsdXIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49Im5lb25CbHVyIi8+PGZlTWVyZ2VOb2RlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9mZU1lcmdlPjwvZmlsdGVyPjwvZGVmcz48cGF0aCBkPSJNMjQgMkMxMi40IDIgMyAxMS40IDMgMjNjMCAxNC42IDIxIDM0IDIxIDM0czIxLTE5LjQgMjEtMzRDNDUgMTEuNCAzNS42IDIgMjQgMloiIGZpbGw9IiMwZjE3MmEiIGZpbGwtb3BhY2l0eT0iMC45NCIgc3Ryb2tlPSIjMDBFNUZGIiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI25lb25HbG93KSIvPjx0ZXh0IHg9IjI0IiB5PSIyNiIgZmlsbD0iIzAwRTVGRiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI2IiBmb250LXdlaWdodD0iMzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCI+TTwvdGV4dD48L3N2Zz4=' },
@@ -152,15 +178,16 @@ export default function Map3D({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: 'https://styles.maptoolkit.org/street-3d.json',
       center: [28.9784, 41.0082],
       zoom: 15,
       pitch: 60,
       bearing: -20,
-      attributionControl: false,
+      attributionControl: { compact: false },
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
+    map.current.addControl(new MaptoolkitLogoControl(), 'bottom-left');
 
     const mapInstance = map.current;
     if (!mapInstance) return;
