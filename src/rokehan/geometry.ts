@@ -201,7 +201,8 @@ export function buildTreeMesh(tree: OSMTree, project: (lng: number, lat: number)
     crown.add(blob);
   }
   group.add(crown);
-  group.position.set(p.x, 0, p.y);
+  // The custom MapLibre matrix uses Y southward and Z upward after the root basis rotation.
+  group.position.set(p.x, 0, -p.y);
   group.userData = { osmTree: true };
   return group;
 }
