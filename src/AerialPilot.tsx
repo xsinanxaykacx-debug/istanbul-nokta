@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MaptoolkitScene3DControl } from '@maptoolkit/maplibre-scene3d-control';
+import { Scene3dControl } from '@maptoolkit/maplibre-scene3d-control';
+import '@maptoolkit/maplibre-scene3d-control/style.css';
 
 interface AerialPilotProps {
   pins: any[];
@@ -66,7 +67,7 @@ export default function AerialPilot({
       // Adds detailed roof geometry and 3D tree models when the provider's scene tiles are available.
       // The base Street style still renders its own extruded buildings if detailed scene access is unavailable.
       try {
-        map.addControl(new MaptoolkitScene3DControl({ enabled: true, minzoom: 12 }));
+        map.addControl(new Scene3dControl({ enabled: true, minzoom: 12 }));
       } catch (error) {
         console.warn('Maptoolkit 3D scene control could not be initialized:', error);
       }
