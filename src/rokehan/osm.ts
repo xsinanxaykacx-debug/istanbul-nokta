@@ -24,7 +24,7 @@ export interface OSMViewportData {
 }
 
 type OverpassElement = {
-  type: 'node' | 'way' | 'relation;
+  type: 'node' | 'way' | 'relation';
   id: number;
   lat?: number;
   lon?: number;
