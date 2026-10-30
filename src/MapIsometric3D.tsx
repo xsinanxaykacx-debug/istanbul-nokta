@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import { Map as MapLibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 export const MapIsometric3D: React.FC = () => {
@@ -8,7 +8,7 @@ export const MapIsometric3D: React.FC = () => {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const map = new maplibregl.Map({
+    const map = new MapLibreMap({
       container: mapContainer.current,
       center: [28.89919, 41.05012], // Bayrampaşa/Kocatepe
       zoom: 16.5,
