@@ -11,6 +11,8 @@ import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
 import AerialPilot from './AerialPilot';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
+
 // Özel AYTAR Logosu (Hilal + Ses Dalgası)
 const AytarLogo = ({ size = 24, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -268,7 +270,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const Map3DView = new URLSearchParams(window.location.search).get('aerial-demo') === '1' ? AerialPilot : Map3D;
+  const Map3DView = AerialPilot;
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
@@ -461,7 +463,7 @@ export default function App() {
     const calculate=async()=>{
       try{
         // Yedek OSRM silindi, doğrudan ORS'ye (Vercel Proxy) istek atıyoruz
-        const response = await fetch('https://aytar.vercel.app/api/route',{
+        const response = await fetch(`${API_BASE}/api/route`,{
           method:'POST',
           signal:controller.signal,
           headers:{'Content-Type':'application/json'},
