@@ -336,7 +336,19 @@ export function buildBuildingMesh(
   const height = inferHeight(building.tags, area, building.id);
   const levels = Math.max(1, Math.round(height / 3.1));
   const roofShape = (building.tags['roof:shape'] || (building.tags['building:levels'] ? 'flat' : 'gabled')).toLowerCase();
-  const style = palette[Math.floor(seeded(building.id, 2) * palette.length)];
+  const baseStyle = palette[Math.floor(seeded(building.id, 2) * palette.length)];
+  const parseOSMColor = (value: string | undefined, fallback: THREE.ColorRepresentation): THREE.ColorRepresentation => {
+    if (!value) return fallback;
+    const candidate = value.trim();
+    if (/^#[0-9a-f]{3,8}$/i.test(candidate) || /^[a-z]+$/i.test(candidate)) return candidate;
+    return fallback;
+  };
+  const style: BuildingStyle = {
+    wall: parseOSMColor(building.tags['building:colour'] || building.tags['building:color'], baseStyle.wall),
+    roof: parseOSMColor(building.tags['roof:colour'] || building.tags['roof:color'], baseStyle.roof),
+    trim: baseStyle.trim,
+    glass: baseStyle.glass,
+  };
   const group = new THREE.Group();
 
   const wallGeometry = new THREE.ExtrudeGeometry(shape, {
