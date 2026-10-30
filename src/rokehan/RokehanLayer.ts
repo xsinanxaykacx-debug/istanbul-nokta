@@ -18,7 +18,8 @@ export class RokehanLayer implements CustomLayerInterface {
   private requestController: AbortController | null = null;
   private requestKey = '';
   private disposed = false;
-  private light = new THREE.HemisphereLight(0xfff3df, 0x77705e, 2.0);\n  private onMoveEnd = () => { void this.loadVisibleArea(); };
+  private light = new THREE.HemisphereLight(0xfff3df, 0x77705e, 2.0);
+  private onMoveEnd = () => { void this.loadVisibleArea(); };
 
   onAdd(map: MapLibreMap, gl: WebGLRenderingContext | WebGL2RenderingContext) {
     this.map = map;
@@ -32,7 +33,10 @@ export class RokehanLayer implements CustomLayerInterface {
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(-0.4, 1, 0.6);
     this.scene.add(sun);
+    this.root.rotation.x = Math.PI / 2;
     this.scene.add(this.root);
+    map.on('moveend', this.onMoveEnd);
+    map.on('zoomend', this.onMoveEnd);
     void this.loadVisibleArea();
   }
 
@@ -47,6 +51,8 @@ export class RokehanLayer implements CustomLayerInterface {
 
   onRemove() {
     this.disposed = true;
+    this.map?.off('moveend', this.onMoveEnd);
+    this.map?.off('zoomend', this.onMoveEnd);
     this.requestController?.abort();
     this.root.traverse(object => {
       const mesh = object as THREE.Mesh;
