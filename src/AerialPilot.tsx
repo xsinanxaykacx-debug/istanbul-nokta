@@ -62,7 +62,7 @@ export default function AerialPilot({
       pitch: 58,
       bearing: -22,
       maxPitch: 75,
-      attributionControl: true
+      attributionControl: { compact: true }
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
@@ -114,7 +114,7 @@ export default function AerialPilot({
     const map = mapRef.current;
     if (!map || !draftPosition) return;
     const marker = new maplibregl.Marker({ color: '#facc15' }).setLngLat([draftPosition[1], draftPosition[0]]).addTo(map);
-    return () => marker.remove();
+    return () => { marker.remove(); };
   }, [draftPosition]);
 
   return <div ref={container} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#18212b' }} />;
