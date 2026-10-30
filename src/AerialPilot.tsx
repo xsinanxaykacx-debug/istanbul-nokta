@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
+import { setWorkerUrl } from 'maplibre-gl';
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Scene3dControl } from '@maptoolkit/maplibre-scene3d-control';
 import '@maptoolkit/maplibre-scene3d-control/style.css';
+
+// MapLibre GL JS 6 needs its worker URL registered explicitly in Vite builds.
+// Without this, the 3D canvas is created but stays transparent (Worker failed to load).
+setWorkerUrl(mapLibreWorkerUrl);
 
 interface AerialPilotProps {
   pins: any[];
