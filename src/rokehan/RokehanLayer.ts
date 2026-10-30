@@ -18,7 +18,7 @@ export class RokehanLayer implements CustomLayerInterface {
   private requestController: AbortController | null = null;
   private requestKey = '';
   private disposed = false;
-  private light = new THREE.HemisphereLight(0xfff3df, 0x77705e, 2.0);
+  private light = new THREE.HemisphereLight(0xfff3df, 0x77705e, 2.0);\n  private onMoveEnd = () => { void this.loadVisibleArea(); };
 
   onAdd(map: MapLibreMap, gl: WebGLRenderingContext | WebGL2RenderingContext) {
     this.map = map;
