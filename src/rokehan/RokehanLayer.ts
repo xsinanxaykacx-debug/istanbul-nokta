@@ -120,7 +120,7 @@ export class RokehanLayer implements CustomLayerInterface {
     const metersPerMercator = EARTH_CIRCUMFERENCE * Math.cos(centerLat * Math.PI / 180);
     const project = (lng: number, lat: number) => new THREE.Vector2(
       (lng - centerLng) * Math.PI / 180 * 6378137 * Math.cos(centerLat * Math.PI / 180),
-      (lat - centerLat) * Math.PI / 180 * 6378137,
+      -(lat - centerLat) * Math.PI / 180 * 6378137,
     );
 
     const buildings = data.buildings as OSMBuilding[];
