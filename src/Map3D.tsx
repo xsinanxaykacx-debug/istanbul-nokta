@@ -152,8 +152,7 @@ export default function Map3D({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      // YENİ: Koyu tema
-      style: 'https://tiles.openfreemap.org/styles/dark',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [28.9784, 41.0082],
       zoom: 15,
       pitch: 60,
@@ -168,7 +167,6 @@ export default function Map3D({
 
     mapInstance.once('load', () => {
       void (async () => {
-        // İkonları yükle
         const iconResults = await Promise.allSettled(
           PIN_ICON_IMAGES.map(({ name, dataUrl }) =>
             registerSvgPinIcon(mapInstance, name, dataUrl)
@@ -183,62 +181,6 @@ export default function Map3D({
             );
           }
         });
-
-        // YENİ: Özel 3D Bina Katmanı
-        const mapStyle = mapInstance.getStyle();
-        if (mapStyle && mapStyle.layers) {
-          // Varsayılan 3D binaları gizle
-          mapStyle.layers.forEach((layer) => {
-            if (layer.type === 'fill-extrusion') {
-              mapInstance.setLayoutProperty(layer.id, 'visibility', 'none');
-            }
-          });
-
-          // Etiket katmanını bul (binaları etiketlerin altına eklemek için)
-          let labelLayerId;
-          for (let i = 0; i < mapStyle.layers.length; i++) {
-            const layer = mapStyle.layers[i];
-            if (layer.type === 'symbol' && layer.layout && layer.layout['text-field']) {
-              labelLayerId = layer.id;
-              break;
-            }
-          }
-
-          // Özel 3D Binaları Ekle
-          mapInstance.addLayer({
-            id: 'custom-3d-buildings',
-            source: 'openmaptiles',
-            'source-layer': 'building',
-            type: 'fill-extrusion',
-            minzoom: 14, // Çok uzaktan bakınca performansı korumak için gizle
-            paint: {
-              'fill-extrusion-color': [
-                'interpolate',
-                ['linear'],
-                ['get', 'render_height'],
-                0, '#1e293b',   // Alçak binalar: Koyu lacivert
-                20, '#334155',  // Orta binalar: Grimsi mavi
-                50, '#475569',  // Yüksek binalar: Açık gri
-                100, '#64748b'  // Gökdelenler: Parlak füme
-              ],
-              'fill-extrusion-height': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                14, 0,
-                14.5, ['get', 'render_height']
-              ],
-              'fill-extrusion-base': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                14, 0,
-                14.5, ['get', 'render_min_height']
-              ],
-              'fill-extrusion-opacity': 0.85
-            }
-          }, labelLayerId);
-        }
 
         if (map.current === mapInstance) {
           setMapLoaded(true);
@@ -730,7 +672,7 @@ export default function Map3D({
         width: '100%',
         height: '100%',
         borderRadius: '18px',
-        background: '#0b1121', // Koyu tema ile uyumlu arka plan
+        background: '#f1f5f9',
       }}
     />
   );
