@@ -86,7 +86,7 @@ function makeRoof(points: THREE.Vector2[], height: number, roofHeight: number, r
       ? new THREE.Vector2(mid.x, ridge)
       : new THREE.Vector2(ridge, mid.y);
     const base = vertices.length / 3;
-    vertices.push(a.x, height, a.y, b.x, height, b.y, ridgePoint.x, height + roofHeight, ridgePoint.y);
+    vertices.push(a.x, height, -a.y, b.x, height, -b.y, ridgePoint.x, height + roofHeight, -ridgePoint.y);
     indices.push(base, base + 1, base + 2);
   }
   const geometry = new THREE.BufferGeometry();
@@ -153,7 +153,7 @@ export function buildBuildingMesh(
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
           const x = minX + (col + 0.5) * (maxX - minX) / cols;
-          const z = side === 0 ? minY + 0.045 : maxY - 0.045;
+          const z = side === 0 ? -minY - 0.045 : -maxY + 0.045;
           const y = 1.35 + row * 3.05;
           dummy.position.set(x, y, z);
           dummy.rotation.y = side === 0 ? 0 : Math.PI;
