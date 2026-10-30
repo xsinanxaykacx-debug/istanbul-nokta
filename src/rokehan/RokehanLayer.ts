@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CustomLayerInterface, Map as MapLibreMap } from 'maplibre-gl';
+import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { buildBuildingMesh, buildTreeMesh, type OSMBuilding, type OSMTree } from './geometry';
 import { fetchOSMViewport, type OSMViewportData } from './osm';
 
@@ -40,13 +40,13 @@ export class RokehanLayer implements CustomLayerInterface {
     void this.loadVisibleArea();
   }
 
-  render(_gl: WebGLRenderingContext | WebGL2RenderingContext, matrix: number[]) {
+  render(_gl: WebGL2RenderingContext, args: CustomRenderMethodInput) {
     if (!this.renderer) return;
-    this.camera.projectionMatrix.fromArray(matrix);
+    // MapLibre GL JS 6 supplies the complete world-to-clip matrix in defaultProjectionData.
+    this.camera.projectionMatrix.fromArray(args.defaultProjectionData.mainMatrix);
     this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
     this.renderer.resetState();
     this.renderer.render(this.scene, this.camera);
-    this.map?.triggerRepaint();
   }
 
   onRemove() {
@@ -69,8 +69,14 @@ export class RokehanLayer implements CustomLayerInterface {
     const map = this.map;
     if (!map || this.disposed || map.getZoom() < 14.2) return;
     const bounds = map.getBounds();
+    const center = map.getCenter();
+    // Keep each Overpass request small enough for dense Istanbul blocks, even at the default zoom.
+    const halfSpan = 0.014;
     const bbox: [number, number, number, number] = [
-      bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast(),
+      Math.max(bounds.getSouth(), center.lat - halfSpan),
+      Math.max(bounds.getWest(), center.lng - halfSpan),
+      Math.min(bounds.getNorth(), center.lat + halfSpan),
+      Math.min(bounds.getEast(), center.lng + halfSpan),
     ];
     const key = bbox.map(value => value.toFixed(4)).join(',');
     if (key === this.requestKey) return;
