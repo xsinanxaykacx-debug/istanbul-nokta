@@ -8,7 +8,6 @@ import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import type { MLCEngine } from "@mlc-ai/web-llm";
-import Map3D from './Map3D';
 import AerialPilot from './AerialPilot';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
