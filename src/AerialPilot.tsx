@@ -4,7 +4,7 @@ import { setWorkerUrl } from 'maplibre-gl';
 import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Scene3dControl } from '@maptoolkit/maplibre-scene3d-control';
-import '@maptoolkit/maplibre-scene3d-control/style.css';
+import '@maptoolkit/maplibre-scene3d-control/style.css';\nimport { RokehanLayer } from './rokehan/RokehanLayer';
 
 // MapLibre GL JS 6 needs its worker URL registered explicitly in Vite builds.
 // Without this, the 3D canvas is created but stays transparent (Worker failed to load).
@@ -64,7 +64,7 @@ export default function AerialPilot({
       pitch: 66,
       bearing: -24,
       maxPitch: 80,
-      attributionControl: { compact: true }
+      attributionControl: { compact: true, customAttribution: '© OpenStreetMap contributors' }
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
@@ -78,7 +78,7 @@ export default function AerialPilot({
         console.warn('Maptoolkit 3D scene control could not be initialized:', error);
       }
 
-      map.addSource(SOURCE, { type: 'geojson', data: {
+      // Real OSM footprints are rendered as custom Three.js geometry, independently\n      // from the provider's generic extruded-building layer.\n      try {\n        map.addLayer(new RokehanLayer());\n      } catch (error) {\n        console.warn('Rokehan geometry layer could not be initialized:', error);\n      }\n\n      map.addSource(SOURCE, { type: 'geojson', data: {
         type: 'FeatureCollection',
         features: callbacks.current.pins
           .filter(p => p && p.id != null && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
