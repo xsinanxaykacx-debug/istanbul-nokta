@@ -8,7 +8,7 @@ import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import type { MLCEngine } from "@mlc-ai/web-llm";
-import AerialPilot from './AerialPilot';
+import Map3D from './Map3D';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
 
@@ -269,7 +269,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 }
 
 export default function App() {
-  const Map3DView = AerialPilot;
+  const Map3DView = Map3D;
   const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
