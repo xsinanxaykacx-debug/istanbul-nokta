@@ -30,6 +30,7 @@
     "@vercel/node": "^5.9.0",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "@types/three": "^0.180.0"
   }
 }
