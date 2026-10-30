@@ -353,3 +353,59 @@ export function buildGroundPlane(size: number): THREE.Mesh {
   ground.receiveShadow = true;
   return ground;
 }
+
+export interface OSMRoad {
+  id: number;
+  coordinates: [number, number][];
+  tags: Record<string, string>;
+}
+
+/** Create a lightweight road ribbon from the real OSM centerline. */
+export function buildRoadMesh(
+  road: OSMRoad,
+  project: (lng: number, lat: number) => THREE.Vector2,
+): THREE.Mesh | null {
+  if (road.coordinates.length < 2) return null;
+  const highway = road.tags.highway || 'road';
+  const widths: Record<string, number> = {
+    motorway: 13, trunk: 11, primary: 9, secondary: 7.5,
+    tertiary: 6, residential: 5, unclassified: 4.5,
+    living_street: 4, service: 3.2, pedestrian: 3.5,
+    footway: 1.6, path: 1.2, cycleway: 1.8,
+  };
+  const width = widths[highway] ?? 4;
+  const points = road.coordinates.map(([lng, lat]) => project(lng, lat));
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i], b = points[i + 1];
+    const dx = b.x - a.x, dz = -(b.y - a.y);
+    const length = Math.hypot(dx, dz);
+    if (length < 0.25) continue;
+    const nx = -dz / length * width * 0.5;
+    const nz = dx / length * width * 0.5;
+    const base = positions.length / 3;
+    positions.push(
+      a.x + nx, 0.055, -a.y + nz,
+      a.x - nx, 0.055, -a.y - nz,
+      b.x + nx, 0.055, -b.y + nz,
+      b.x - nx, 0.055, -b.y - nz,
+    );
+    indices.push(base, base + 1, base + 2, base + 2, base + 1, base + 3);
+  }
+  if (!positions.length) return null;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const color = highway === 'motorway' || highway === 'trunk' ? '#777b80'
+    : highway === 'primary' || highway === 'secondary' ? '#8b8983'
+    : highway === 'pedestrian' || highway === 'footway' || highway === 'path' ? '#b5ad9c'
+    : '#a19d94';
+  const material = new THREE.MeshStandardMaterial({
+    color, roughness: 1, metalness: 0, side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.userData = { osmRoad: road.id, highway };
+  return mesh;
+}
