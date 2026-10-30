@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
-import { buildBuildingMesh, buildTreeMesh, type OSMBuilding, type OSMTree } from './geometry';
+import { buildBuildingMesh, buildRoadMesh, buildTreeMesh, type OSMBuilding, type OSMRoad, type OSMTree } from './geometry';
 import { fetchOSMViewport, type OSMViewportData } from './osm';
 
 const EARTH_CIRCUMFERENCE = 40075016.68557849;
@@ -126,6 +126,12 @@ export class RokehanLayer implements CustomLayerInterface {
     const buildings = data.buildings as OSMBuilding[];
     for (const building of buildings) {
       const mesh = buildBuildingMesh(building, project);
+      if (mesh) this.root.add(mesh);
+    }
+
+    const roads = data.roads as OSMRoad[];
+    for (const road of roads) {
+      const mesh = buildRoadMesh(road, project);
       if (mesh) this.root.add(mesh);
     }
 
