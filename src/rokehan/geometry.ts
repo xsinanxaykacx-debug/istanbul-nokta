@@ -67,32 +67,80 @@ function makeRoof(
   points.forEach((p, i) => i ? shape.lineTo(p.x, p.y) : shape.moveTo(p.x, p.y));
   shape.closePath();
 
-  if (roofShape === 'flat' || roofHeight < 0.4 || points.length < 4) {
+  const flatRoof = () => {
     const geometry = new THREE.ShapeGeometry(shape);
     geometry.rotateX(-Math.PI / 2);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.y = height;
     group.add(mesh);
+  };
+  if (roofShape === 'flat' || roofHeight < 0.4 || points.length < 4) {
+    flatRoof();
     return group;
   }
 
-  // Roof facets follow the actual OSM outline rather than a rectangular proxy.
   const box = new THREE.Box2().setFromPoints(points);
   const size = box.getSize(new THREE.Vector2());
-  const alongX = size.x >= size.y;
-  const ridge = alongX ? (box.min.y + box.max.y) / 2 : (box.min.x + box.max.x) / 2;
+  const center = new THREE.Vector2();
+  points.forEach(point => center.add(point));
+  center.multiplyScalar(1 / points.length);
   const vertices: number[] = [];
   const indices: number[] = [];
-  for (let i = 0; i < points.length; i++) {
-    const a = points[i], b = points[(i + 1) % points.length];
-    const mid = new THREE.Vector2((a.x + b.x) / 2, (a.y + b.y) / 2);
-    const ridgePoint = alongX
-      ? new THREE.Vector2(mid.x, ridge)
-      : new THREE.Vector2(ridge, mid.y);
+  const addTriangle = (a: THREE.Vector2, b: THREE.Vector2, d: THREE.Vector2, ya: number, yb: number, yd: number) => {
     const base = vertices.length / 3;
-    vertices.push(a.x, height, -a.y, b.x, height, -b.y, ridgePoint.x, height + roofHeight, -ridgePoint.y);
+    vertices.push(a.x, ya, -a.y, b.x, yb, -b.y, d.x, yd, -d.y);
     indices.push(base, base + 1, base + 2);
+  };
+
+  if (roofShape === 'pyramidal' || roofShape === 'cone') {
+    const apex = center;
+    for (let i = 0; i < points.length; i++) {
+      addTriangle(points[i], points[(i + 1) % points.length], apex, height, height, height + roofHeight);
+    }
+  } else if (roofShape === 'hipped') {
+    // Inset ridge cap with sloped hips around the complete OSM footprint.
+    const inset = points.map(point => new THREE.Vector2(
+      center.x + (point.x - center.x) * 0.58,
+      center.y + (point.y - center.y) * 0.58,
+    ));
+    for (let i = 0; i < points.length; i++) {
+      const j = (i + 1) % points.length;
+      addTriangle(points[i], points[j], inset[j], height, height, height + roofHeight);
+      addTriangle(points[i], inset[j], inset[i], height, height + roofHeight, height + roofHeight);
+    }
+    const cap = new THREE.Shape();
+    inset.forEach((point, i) => i ? cap.lineTo(point.x, point.y) : cap.moveTo(point.x, point.y));
+    cap.closePath();
+    const capGeometry = new THREE.ShapeGeometry(cap);
+    capGeometry.rotateX(-Math.PI / 2);
+    const capMesh = new THREE.Mesh(capGeometry, material);
+    capMesh.position.y = height + roofHeight;
+    group.add(capMesh);
+  } else if (roofShape === 'skillion' || roofShape === 'shed') {
+    const alongX = size.x >= size.y;
+    const min = alongX ? box.min.y : box.min.x;
+    const max = alongX ? box.max.y : box.max.x;
+    const span = Math.max(0.01, max - min);
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      const ya = height + roofHeight * ((alongX ? a.y : a.x) - min) / span;
+      const yb = height + roofHeight * ((alongX ? b.y : b.x) - min) / span;
+      addTriangle(a, b, center, ya, yb, height + roofHeight * 0.5);
+    }
+  } else {
+    // Gabled roof: two sloping planes meet along the longer footprint axis.
+    const alongX = size.x >= size.y;
+    const ridge = alongX ? (box.min.y + box.max.y) / 2 : (box.min.x + box.max.x) / 2;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      const mid = new THREE.Vector2((a.x + b.x) / 2, (a.y + b.y) / 2);
+      const ridgePoint = alongX
+        ? new THREE.Vector2(mid.x, ridge)
+        : new THREE.Vector2(ridge, mid.y);
+      addTriangle(a, b, ridgePoint, height, height, height + roofHeight);
+    }
   }
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);
