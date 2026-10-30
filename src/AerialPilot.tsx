@@ -136,7 +136,7 @@ export default function AerialPilot({
   }, [userPosition]);
 
   useEffect(() => {
-    if (flyToCoords) mapRef.current?.flyTo({ center: [flyToCoords[1], flyToCoords[0]], zoom: 17, essential: true });
+    if (flyToCoords) mapRef.current?.flyTo({ center: flyToCoords, zoom: 17, essential: true });
   }, [flyToCoords]);
 
   useEffect(() => {
