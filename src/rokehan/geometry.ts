@@ -15,14 +15,16 @@ export interface BuildingStyle {
   wall: THREE.ColorRepresentation;
   roof: THREE.ColorRepresentation;
   trim: THREE.ColorRepresentation;
+  glass: THREE.ColorRepresentation;
 }
 
 const palette: BuildingStyle[] = [
-  { wall: '#e7d8bd', roof: '#9b5542', trim: '#f5ead7' },
-  { wall: '#d6c7ad', roof: '#6d7073', trim: '#f2e7d4' },
-  { wall: '#eadfc9', roof: '#a66c4e', trim: '#fff3df' },
-  { wall: '#c9c3b4', roof: '#77736c', trim: '#eee8dc' },
-  { wall: '#e4c9a8', roof: '#8e493d', trim: '#f8e9d3' },
+  { wall: '#e7d8bd', roof: '#9b5542', trim: '#f5ead7', glass: '#78939a' },
+  { wall: '#d6c7ad', roof: '#6d7073', trim: '#f2e7d4', glass: '#718e9b' },
+  { wall: '#eadfc9', roof: '#a66c4e', trim: '#fff3df', glass: '#668995' },
+  { wall: '#c9c3b4', roof: '#77736c', trim: '#eee8dc', glass: '#7e999d' },
+  { wall: '#e4c9a8', roof: '#8e493d', trim: '#f8e9d3', glass: '#6d8791' },
+  { wall: '#d9d0c2', roof: '#5d6265', trim: '#f4eee4', glass: '#829ca3' },
 ];
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -53,7 +55,13 @@ function signedArea(points: THREE.Vector2[]): number {
   return sum * 0.5;
 }
 
-function makeRoof(points: THREE.Vector2[], height: number, roofHeight: number, roofShape: string, material: THREE.Material): THREE.Group {
+function makeRoof(
+  points: THREE.Vector2[],
+  height: number,
+  roofHeight: number,
+  roofShape: string,
+  material: THREE.Material,
+): THREE.Group {
   const group = new THREE.Group();
   const shape = new THREE.Shape();
   points.forEach((p, i) => i ? shape.lineTo(p.x, p.y) : shape.moveTo(p.x, p.y));
@@ -68,17 +76,13 @@ function makeRoof(points: THREE.Vector2[], height: number, roofHeight: number, r
     return group;
   }
 
-  // A restrained gable roof: the footprint remains the real OSM outline;
-  // the ridge follows the longer footprint axis rather than using a generic cube.
+  // Roof facets follow the actual OSM outline rather than a rectangular proxy.
   const box = new THREE.Box2().setFromPoints(points);
   const size = box.getSize(new THREE.Vector2());
   const alongX = size.x >= size.y;
   const ridge = alongX ? (box.min.y + box.max.y) / 2 : (box.min.x + box.max.x) / 2;
   const vertices: number[] = [];
   const indices: number[] = [];
-  const center = new THREE.Vector2();
-  points.forEach(p => center.add(p));
-  center.multiplyScalar(1 / points.length);
   for (let i = 0; i < points.length; i++) {
     const a = points[i], b = points[(i + 1) % points.length];
     const mid = new THREE.Vector2((a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -95,6 +99,174 @@ function makeRoof(points: THREE.Vector2[], height: number, roofHeight: number, r
   geometry.computeVertexNormals();
   group.add(new THREE.Mesh(geometry, material));
   return group;
+}
+
+function addFacadeDetails(
+  group: THREE.Group,
+  points: THREE.Vector2[],
+  box: THREE.Box2,
+  height: number,
+  style: BuildingStyle,
+  id: number,
+  buildingTags: Record<string, string>,
+) {
+  const area = Math.abs(signedArea(points));
+  if (area < 35 || height < 5.5) return;
+
+  const floorHeight = clamp(Number.parseFloat(buildingTags['building:levels'] || '') > 0
+    ? height / Number.parseFloat(buildingTags['building:levels'])
+    : 3.05, 2.55, 4.2);
+  const floors = Math.max(1, Math.min(32, Math.floor((height - 0.4) / floorHeight)));
+  const glassMaterial = new THREE.MeshStandardMaterial({
+    color: style.glass, roughness: 0.32, metalness: 0.12,
+    emissive: '#18272b', emissiveIntensity: 0.08,
+  });
+  const trimMaterial = new THREE.MeshStandardMaterial({ color: style.trim, roughness: 0.78 });
+  const balconyMaterial = new THREE.MeshStandardMaterial({ color: '#d5c7b1', roughness: 0.82 });
+
+  const windowGeometry = new THREE.BoxGeometry(0.92, 1.18, 0.075);
+  const frameGeometry = new THREE.BoxGeometry(1.08, 1.34, 0.055);
+  const sillGeometry = new THREE.BoxGeometry(1.12, 0.10, 0.13);
+  const balconyGeometry = new THREE.BoxGeometry(1.55, 0.10, 0.72);
+  const railGeometry = new THREE.BoxGeometry(1.55, 0.48, 0.055);
+  const dummy = new THREE.Object3D();
+  const placements: { x: number; y: number; z: number; angle: number; balcony: boolean }[] = [];
+
+  // Build facade rows along every real footprint edge, not just the bounding-box north/south sides.
+  for (let edge = 0; edge < points.length; edge++) {
+    const a = points[edge], b = points[(edge + 1) % points.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 2.8) continue;
+
+    // For the normalized counter-clockwise ring, this is the outward normal in the X/Z plane.
+    const nx = dy / length;
+    const nz = dx / length;
+    const angle = Math.atan2(nx, nz);
+    const columns = Math.max(1, Math.floor(length / 2.7));
+    const spacing = length / columns;
+
+    for (let floor = 0; floor < floors; floor++) {
+      const y = 1.25 + floor * floorHeight;
+      if (y + 1.3 > height - 0.15) continue;
+      for (let col = 0; col < columns; col++) {
+        const t = (col + 0.5) / columns;
+        const x = a.x + dx * t + nx * 0.055;
+        const z = -(a.y + dy * t) + nz * 0.055;
+        const balcony = floor > 0 && spacing > 3.6 && seeded(id + edge * 31 + col, floor + 19) > 0.76;
+        placements.push({ x, y, z, angle, balcony });
+      }
+    }
+  }
+
+  if (!placements.length) return;
+  const windows = new THREE.InstancedMesh(windowGeometry, glassMaterial, placements.length);
+  const frames = new THREE.InstancedMesh(frameGeometry, trimMaterial, placements.length);
+  const sills = new THREE.InstancedMesh(sillGeometry, trimMaterial, placements.length);
+  const balconyCount = placements.filter(p => p.balcony).length;
+  const balconies = new THREE.InstancedMesh(balconyGeometry, balconyMaterial, Math.max(1, balconyCount));
+  const rails = new THREE.InstancedMesh(railGeometry, trimMaterial, Math.max(1, balconyCount));
+
+  let balconyIndex = 0;
+  placements.forEach((p, index) => {
+    dummy.position.set(p.x, p.y, p.z);
+    dummy.rotation.set(0, p.angle, 0);
+    dummy.updateMatrix();
+    windows.setMatrixAt(index, dummy.matrix);
+
+    dummy.position.y = p.y;
+    dummy.scale.set(1.12, 1.12, 1);
+    dummy.updateMatrix();
+    frames.setMatrixAt(index, dummy.matrix);
+    dummy.scale.set(1, 1, 1);
+
+    dummy.position.y = p.y - 0.68;
+    dummy.updateMatrix();
+    sills.setMatrixAt(index, dummy.matrix);
+
+    if (p.balcony) {
+      // Balconies project outward from the facade, with a light parapet rail.
+      dummy.position.set(p.x + Math.sin(p.angle) * 0.34, p.y - 0.52, p.z + Math.cos(p.angle) * 0.34);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      balconies.setMatrixAt(balconyIndex, dummy.matrix);
+      dummy.position.y = p.y - 0.24;
+      dummy.position.x += Math.sin(p.angle) * 0.30;
+      dummy.position.z += Math.cos(p.angle) * 0.30;
+      dummy.updateMatrix();
+      rails.setMatrixAt(balconyIndex, dummy.matrix);
+      balconyIndex++;
+    }
+  });
+
+  windows.count = placements.length;
+  frames.count = placements.length;
+  sills.count = placements.length;
+  balconies.count = balconyIndex;
+  rails.count = balconyIndex;
+  group.add(windows, frames, sills);
+  if (balconyIndex) group.add(balconies, rails);
+
+  // Thin continuous floor slabs emphasize storeys on medium and large buildings.
+  const floorBands: THREE.Vector3[] = [];
+  for (let floor = 1; floor < floors; floor++) {
+    const y = floor * floorHeight;
+    if (y >= height - 0.3) break;
+    for (let edge = 0; edge < points.length; edge++) {
+      const a = points[edge], b = points[(edge + 1) % points.length];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 2) continue;
+      const nx = dy / length, nz = dx / length;
+      const midX = (a.x + b.x) / 2 + nx * 0.045;
+      const midZ = -(a.y + b.y) / 2 + nz * 0.045;
+      floorBands.push(new THREE.Vector3(midX, y, midZ));
+    }
+  }
+  if (floorBands.length) {
+    const band = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 0.10, 0.12), trimMaterial, floorBands.length,
+    );
+    let index = 0;
+    for (let edge = 0; edge < points.length; edge++) {
+      const a = points[edge], b = points[(edge + 1) % points.length];
+      const length = Math.hypot(b.x - a.x, b.y - a.y);
+      if (length < 2) continue;
+      const angle = Math.atan2((b.y - a.y) / length, (b.x - a.x) / length);
+      for (let floor = 1; floor < floors; floor++) {
+        const y = floor * floorHeight;
+        if (y >= height - 0.3) break;
+        const p = floorBands[index];
+        dummy.position.copy(p);
+        dummy.rotation.set(0, -angle, 0);
+        dummy.scale.set(length, 1, 1);
+        dummy.updateMatrix();
+        band.setMatrixAt(index, dummy.matrix);
+        index++;
+      }
+    }
+    band.count = index;
+    group.add(band);
+  }
+
+  // Add a modest cornice at the roof line for larger buildings.
+  if (height > 9 && box.getSize(new THREE.Vector2()).length() > 12) {
+    const cornice = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 0.22, 0.20), trimMaterial, points.length,
+    );
+    points.forEach((a, i) => {
+      const b = points[(i + 1) % points.length];
+      const length = Math.hypot(b.x - a.x, b.y - a.y);
+      const angle = Math.atan2(b.y - a.y, b.x - a.x);
+      dummy.position.set((a.x + b.x) / 2, height - 0.12, -(a.y + b.y) / 2);
+      dummy.rotation.set(0, -angle, 0);
+      dummy.scale.set(length, 1, 1);
+      dummy.updateMatrix();
+      cornice.setMatrixAt(i, dummy.matrix);
+    });
+    group.add(cornice);
+  }
 }
 
 export function buildBuildingMesh(
@@ -115,7 +287,7 @@ export function buildBuildingMesh(
   const area = Math.abs(signedArea(points));
   const height = inferHeight(building.tags, area, building.id);
   const levels = Math.max(1, Math.round(height / 3.1));
-  const roofShape = building.tags['roof:shape'] || (building.tags['building:levels'] ? 'flat' : 'gabled');
+  const roofShape = (building.tags['roof:shape'] || (building.tags['building:levels'] ? 'flat' : 'gabled')).toLowerCase();
   const style = palette[Math.floor(seeded(building.id, 2) * palette.length)];
   const group = new THREE.Group();
 
@@ -124,52 +296,19 @@ export function buildBuildingMesh(
     bevelEnabled: false,
     curveSegments: 1,
   });
-  // ExtrudeGeometry is XY with depth along +Z. Rotate to an X/Z ground plane, Y up.
   wallGeometry.rotateX(-Math.PI / 2);
-  wallGeometry.translate(0, 0, 0);
   const walls = new THREE.Mesh(wallGeometry, new THREE.MeshStandardMaterial({
     color: style.wall, roughness: 0.92, metalness: 0,
   }));
   group.add(walls);
 
   const roofMaterial = new THREE.MeshStandardMaterial({ color: style.roof, roughness: 0.88 });
-  const roofHeight = roofShape === 'flat' ? 0 : clamp(Math.min(box.max.x - box.min.x, box.max.y - box.min.y) * 0.22, 0.8, 4.5);
+  const roofWidth = Math.min(box.max.x - box.min.x, box.max.y - box.min.y);
+  const roofHeight = roofShape === 'flat' ? 0
+    : clamp(roofWidth * (roofShape === 'hipped' ? 0.16 : 0.22), 0.7, 4.5);
   group.add(makeRoof(points, height, roofHeight, roofShape, roofMaterial));
 
-  // Storey bands and inset-looking window panels are only added to medium/near LOD.
-  if (area > 90 && height > 6) {
-    const trim = new THREE.MeshStandardMaterial({ color: style.trim, roughness: 0.75 });
-    const glass = new THREE.MeshStandardMaterial({ color: '#78939a', roughness: 0.34, metalness: 0.12 });
-    const windowWidth = 0.85;
-    const windowHeight = 1.15;
-    const minX = box.min.x, maxX = box.max.x, minY = box.min.y, maxY = box.max.y;
-    const cols = clamp(Math.floor((maxX - minX) / 3.2), 1, 16);
-    const rows = clamp(Math.floor(height / 3.2), 1, 22);
-    const windows = new THREE.InstancedMesh(new THREE.BoxGeometry(windowWidth, windowHeight, 0.07), glass, cols * rows * 2);
-    const bands = new THREE.InstancedMesh(new THREE.BoxGeometry(windowWidth + 0.12, 0.08, 0.09), trim, cols * rows * 2);
-    const dummy = new THREE.Object3D();
-    let index = 0;
-    for (let side = 0; side < 2; side++) {
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const x = minX + (col + 0.5) * (maxX - minX) / cols;
-          const z = side === 0 ? -minY - 0.045 : -maxY + 0.045;
-          const y = 1.35 + row * 3.05;
-          dummy.position.set(x, y, z);
-          dummy.rotation.y = side === 0 ? 0 : Math.PI;
-          dummy.updateMatrix();
-          windows.setMatrixAt(index, dummy.matrix);
-          dummy.position.y = y - 0.72;
-          dummy.updateMatrix();
-          bands.setMatrixAt(index, dummy.matrix);
-          index++;
-        }
-      }
-    }
-    windows.count = index;
-    bands.count = index;
-    group.add(windows, bands);
-  }
+  addFacadeDetails(group, points, box, height, style, building.id, building.tags);
 
   group.userData = { osmId: building.id, height, levels, roofShape };
   return group;
@@ -201,7 +340,6 @@ export function buildTreeMesh(tree: OSMTree, project: (lng: number, lat: number)
     crown.add(blob);
   }
   group.add(crown);
-  // The custom MapLibre matrix uses Y southward and Z upward after the root basis rotation.
   group.position.set(p.x, 0, -p.y);
   group.userData = { osmTree: true };
   return group;
