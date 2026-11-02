@@ -30,13 +30,12 @@ const livePinIcon = L.divIcon({
   iconAnchor: [17, 17],
 });
 
-export default function LiveBroadcast({ session, active, open, onOpen, onClose }: Props) {
+export default function LiveBroadcast({ session, active, open, onClose }: Props) {
   const clientId = useMemo(() => crypto.randomUUID(), []);
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [publisherSession, setPublisherSession] = useState<{ id: string; room_id: string } | null>(null);
   const [publisherStream, setPublisherStream] = useState<MediaStream | null>(null);
   const [viewerSession, setViewerSession] = useState<LiveSession | null>(null);
-  const [selectedSession, setSelectedSession] = useState<LiveSession | null>(null);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
@@ -167,7 +166,6 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
       return;
     }
     setViewerSession({ ...row, room_id: data.session.room_id });
-    setSelectedSession(null);
     setNotice('Yayın bağlantısı kuruluyor.');
     setBusy(false);
   };
@@ -195,7 +193,7 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
             {!publisherSession ? <div style={{display:"grid",gap:10,marginTop:16}}>
               <button type="button" className="secondary-button" onClick={() => void requestCamera()} disabled={busy || !!previewStream}><Camera size={16}/> Kamera İzni Ver</button>
               <button type="button" className="primary-button" onClick={() => void startBroadcast()} disabled={busy}>{busy ? 'Hazırlanıyor…' : 'Yayına Başla'}</button>
-            </div> : <div className="live-control-actions">
+            </div> : <div style={{display:"grid",gap:10,marginTop:16}}>
               <button type="button" className="delete-pin-button" onClick={() => void endBroadcast()} disabled={busy}><CircleStop size={16}/> Yayını Bitir</button>
             </div>}
           </>}
