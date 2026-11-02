@@ -42,6 +42,15 @@ function hasValidPinCoordinates(pin: { lat: unknown; lng: unknown }): boolean {
     && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
 
+function isValidLatLngTuple(position: unknown): position is [number, number] {
+  if (!Array.isArray(position) || position.length < 2) return false;
+  const lat = position[0];
+  const lng = position[1];
+  return typeof lat === 'number' && Number.isFinite(lat)
+    && typeof lng === 'number' && Number.isFinite(lng)
+    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
 
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
@@ -230,13 +239,13 @@ function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number,
 function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null; zoom?:number; isNavigating?: boolean }) { 
   const map=useMap(); 
   useEffect(()=>{ 
-    if(position) {
-      if (isNavigating) {
-        map.panTo(position, { animate: true, duration: 0.5 });
-      } else {
-        map.flyTo(position, zoom ?? Math.max(map.getZoom(), 14), { duration: .5 });
-      }
-    } 
+    // Never pass null, undefined, NaN, Infinity or out-of-range coordinates to Leaflet.
+    if (!isValidLatLngTuple(position)) return;
+    if (isNavigating) {
+      map.panTo(position, { animate: true, duration: 0.5 });
+    } else {
+      map.flyTo(position, zoom ?? Math.max(map.getZoom(), 14), { duration: .5 });
+    }
   },[map,position,zoom,isNavigating]); 
   return null; 
 }
@@ -403,8 +412,14 @@ export default function App() {
   const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
 
   const flyToCoords=useMemo<[number,number]|null>(() => {
-    if (searchPlace) return [Number(searchPlace.lon), Number(searchPlace.lat)];
-    if (selected) return [Number(selected.lng), Number(selected.lat)];
+    if (searchPlace) {
+      const coords: [number, number] = [Number(searchPlace.lat), Number(searchPlace.lon)];
+      return isValidLatLngTuple(coords) ? [coords[1], coords[0]] : null;
+    }
+    if (selected) {
+      const coords: [number, number] = [Number(selected.lat), Number(selected.lng)];
+      return isValidLatLngTuple(coords) ? [coords[1], coords[0]] : null;
+    }
     return null;
   }, [searchPlace?.lon, searchPlace?.lat, selected?.lng, selected?.lat]);
   
