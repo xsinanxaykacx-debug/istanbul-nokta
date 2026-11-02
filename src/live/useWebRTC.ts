@@ -114,7 +114,7 @@ export function useViewer(
     let disposed = false;
     const pendingIce: RTCIceCandidateInit[] = [];
     const channel = supabase.channel(`room:${roomId}`, {
-      config: { private: true, broadcast: { self: false, ack: true } },
+      config: { private: false, broadcast: { self: false, ack: true } },
     });
     const send = (payload: LiveSignal) => sendSignal(channel, payload);
 
