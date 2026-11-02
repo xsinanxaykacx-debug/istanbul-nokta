@@ -279,6 +279,9 @@ export default function App() {
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [profileOpen,setProfileOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
+  useEffect(() => {
+    if (!is3D) requestAnimationFrame(() => mapRef.current?.invalidateSize());
+  }, [is3D]);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
   
   const [isNavigating, setIsNavigating] = useState(false);
@@ -1393,7 +1396,7 @@ export default function App() {
           </div>}
         </div>
 
-        {!is3D && (
+        <div style={{ display: is3D ? 'none' : 'block' }}>
           <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
@@ -1442,7 +1445,7 @@ export default function App() {
             {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
             {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
           </MapContainer>
-        )}
+        </div>
 
         {is3D && (
           <Map3DView 
