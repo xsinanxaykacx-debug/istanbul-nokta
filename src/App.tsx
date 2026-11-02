@@ -9,7 +9,6 @@ import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
-import LiveBroadcast from './live/LiveBroadcast';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
 
@@ -33,24 +32,6 @@ type SpeechSetter = (value: string | ((current: string) => string)) => void;
 type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlternatives: number; onstart: (() => void) | null; onresult: ((event: any) => void) | null; onerror: ((event: any) => void) | null; onend: (() => void) | null; start: () => void; stop: () => void };
 type PinComment = { id: string; pin_id: string; user_id: string; content: string; created_at: string; profiles: { username: string | null } };
 type PinReaction = { id: string; pin_id: string; user_id: string; emoji: string };
-
-function hasValidPinCoordinates(pin: { lat: unknown; lng: unknown }): boolean {
-  if (pin.lat === null || pin.lat === undefined || pin.lng === null || pin.lng === undefined) return false;
-  const lat = Number(pin.lat);
-  const lng = Number(pin.lng);
-  return Number.isFinite(lat) && Number.isFinite(lng)
-    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
-
-function isValidLatLngTuple(position: unknown): position is [number, number] {
-  if (!Array.isArray(position) || position.length < 2) return false;
-  const lat = position[0];
-  const lng = position[1];
-  return typeof lat === 'number' && Number.isFinite(lat)
-    && typeof lng === 'number' && Number.isFinite(lng)
-    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
-
 
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
@@ -218,7 +199,7 @@ function HeatmapLayer({ pins }: { pins: Pin[] }) {
   return null;
 }
 
-function MapClick({ enabled, routeMode, onRoutePick, onPick, onMapClick }: { enabled:boolean; routeMode:boolean; onRoutePick:(lat:number,lng:number)=>void; onPick:(lat:number,lng:number)=>void; onMapClick:()=>void }) { useMapEvents({ click(e) { const lat=e.latlng?.lat; const lng=e.latlng?.lng; if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return; onMapClick(); if(routeMode){onRoutePick(lat,lng);return;} if (enabled) onPick(lat,lng); } }); return null; }
+function MapClick({ enabled, routeMode, onRoutePick, onPick, onMapClick }: { enabled:boolean; routeMode:boolean; onRoutePick:(lat:number,lng:number)=>void; onPick:(lat:number,lng:number)=>void; onMapClick:()=>void }) { useMapEvents({ click(e) { onMapClick(); if(routeMode){onRoutePick(e.latlng.lat,e.latlng.lng);return;} if (enabled) onPick(e.latlng.lat,e.latlng.lng); } }); return null; }
 function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number, number, number, number]) => void }) {
   const map = useMapEvents({ moveend: () => schedule(), zoomend: () => schedule() });
   const timerRef = useRef<number | undefined>(undefined); const lastRef = useRef<string>('');
@@ -239,13 +220,13 @@ function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number,
 function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null; zoom?:number; isNavigating?: boolean }) { 
   const map=useMap(); 
   useEffect(()=>{ 
-    // Never pass null, undefined, NaN, Infinity or out-of-range coordinates to Leaflet.
-    if (!isValidLatLngTuple(position)) return;
-    if (isNavigating) {
-      map.panTo(position, { animate: true, duration: 0.5 });
-    } else {
-      map.flyTo(position, zoom ?? Math.max(map.getZoom(), 14), { duration: .5 });
-    }
+    if(position) {
+      if (isNavigating) {
+        map.panTo(position, { animate: true, duration: 0.5 });
+      } else {
+        map.flyTo(position, zoom ?? Math.max(map.getZoom(), 14), { duration: .5 });
+      }
+    } 
   },[map,position,zoom,isNavigating]); 
   return null; 
 }
@@ -254,8 +235,7 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   const [, setRevision] = useState(0);
   const map = useMapEvents({ zoomend: () => setRevision(v => v + 1), moveend: () => setRevision(v => v + 1) });
   const zoom = map.getZoom(); const cells = new Map<string, Pin[]>();
-  const validPins = pins.filter(hasValidPinCoordinates);
-  for (const pin of validPins) {
+  for (const pin of pins) {
     if (zoom >= 17 || pin.id === selectedId) { cells.set(`single:${pin.id}`, [pin]); continue; }
     const point = map.project([pin.lat, pin.lng], zoom);
     const key = `cell:${Math.floor(point.x / 56)}:${Math.floor(point.y / 56)}`;
@@ -290,7 +270,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const Map3DView = Map3D;
-  const [session,setSession]=useState<any>(null); const [livePanelOpen,setLivePanelOpen]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [profile,setProfile]=useState<Profile|null>(null); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -298,21 +278,6 @@ export default function App() {
   const [description,setDescription]=useState(''); const hasProfanity=containsProfanity(description); const [category,setCategory]=useState('KIRMIZI'); const [selectedCategoryFilter,setSelectedCategoryFilter]=useState('Tümü'); const [showFilterOptions,setShowFilterOptions]=useState(false); const [timeFilter,setTimeFilter]=useState<string>('all'); const [files,setFiles]=useState<File[]>([]); const [draftPosition,setDraftPosition]=useState<[number,number]|null>(null); const [userPosition,setUserPosition]=useState<[number,number]|null>(null); const [locating,setLocating]=useState(false); const [notice,setNotice]=useState<Notice|null>(null); const [busy,setBusy]=useState(false); const [query,setQuery]=useState(''); const [authOpen,setAuthOpen]=useState(false); const [profileMenuOpen,setProfileMenuOpen]=useState(false); const [profileOpen,setProfileOpen]=useState(false); const [inviteOpen,setInviteOpen]=useState(false); const [inviteCodes,setInviteCodes]=useState<InviteCode[]>([]); const [copiedCodeId,setCopiedCodeId]=useState<string|null>(null); const [speechSupported,setSpeechSupported]=useState(false); const [listeningField,setListeningField]=useState<string|null>(null); const recognitionRef=useRef<SpeechRecognitionInstance|null>(null); const [voicePinListening,setVoicePinListening]=useState(false); const [voicePinHintVisible,setVoicePinHintVisible]=useState(true); const voicePinRecognitionRef=useRef<SpeechRecognitionInstance|null>(null); const voicePinTimeoutRef=useRef<number|undefined>(undefined);
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
-  useEffect(() => {
-    const resizeMap = () => {
-      requestAnimationFrame(() => mapRef.current?.invalidateSize({ pan: false }));
-    };
-    resizeMap();
-    window.addEventListener('resize', resizeMap);
-    const mapElement = mapRef.current?.getContainer();
-    const mapHost = mapElement?.parentElement;
-    const resizeObserver = mapHost ? new ResizeObserver(resizeMap) : null;
-    if (mapHost) resizeObserver?.observe(mapHost);
-    return () => {
-      window.removeEventListener('resize', resizeMap);
-      resizeObserver?.disconnect();
-    };
-  }, [is3D]);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
   
   const [isNavigating, setIsNavigating] = useState(false);
@@ -412,14 +377,8 @@ export default function App() {
   const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
 
   const flyToCoords=useMemo<[number,number]|null>(() => {
-    if (searchPlace) {
-      const coords: [number, number] = [Number(searchPlace.lat), Number(searchPlace.lon)];
-      return isValidLatLngTuple(coords) ? [coords[1], coords[0]] : null;
-    }
-    if (selected) {
-      const coords: [number, number] = [Number(selected.lat), Number(selected.lng)];
-      return isValidLatLngTuple(coords) ? [coords[1], coords[0]] : null;
-    }
+    if (searchPlace) return [Number(searchPlace.lon), Number(searchPlace.lat)];
+    if (selected) return [Number(selected.lng), Number(selected.lat)];
     return null;
   }, [searchPlace?.lon, searchPlace?.lat, selected?.lng, selected?.lat]);
   
@@ -428,7 +387,7 @@ export default function App() {
     return filteredListPins.map(pin=>({pin,position:routePositionForPin(pin,routeLine)})).filter(item=>item.position.distanceMeters<=100).sort((a,b)=>a.position.alongRouteMeters-b.position.alongRouteMeters).map((item,index)=>({pin:item.pin,routeOrder:index+1,routeDistance:item.position.alongRouteMeters}));
   },[filteredListPins,routeMode,routeInfo,routeLine]);
   
-  const visiblePins=useMemo(()=>{const validPins=filteredPins.filter(hasValidPinCoordinates);const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return validPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():validPins;if(selected&&hasValidPinCoordinates(selected)&&validPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
+  const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&filteredPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username,total_pins_created,total_votes_received').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
@@ -445,7 +404,7 @@ export default function App() {
         if(since)query=query.gt('created_at',since);
         const {data,error}=await query;
         if(error){if(silent)console.warn('Pinler yüklenemedi:',error);else setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});return;}
-        const batch=((data??[]) as unknown as Pin[]).map(pin=>({...pin,lat:Number(pin.lat),lng:Number(pin.lng)})).filter(hasValidPinCoordinates);rows.push(...batch);
+        const batch=(data??[]) as unknown as Pin[];rows.push(...batch);
         if(batch.length<pageSize)break;offset+=batch.length;
       }
       if(requestId!==loadRequestRef.current)return;
@@ -1433,8 +1392,8 @@ export default function App() {
           </div>}
         </div>
 
-        <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: is3D ? 'none' : 'block' }}>
-          <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" style={{ height: '100%', width: '100%' }} ref={mapRef}>
+        {!is3D && (
+          <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic && tomtomApiKey && (
@@ -1444,7 +1403,6 @@ export default function App() {
     zIndex={400} 
   />
 )}
-            <LiveBroadcast session={session} active={active} open={livePanelOpen} onClose={() => setLivePanelOpen(false)} />
             <MapClick 
               enabled={canAdd&&!editPinMode} 
               routeMode={routeMode} 
@@ -1482,7 +1440,7 @@ export default function App() {
             {routeStart&&<Marker position={routeStart} icon={routeStartIcon} keyboard title="Rota başlangıcı"/>}
             {routeEnd&&<Marker position={routeEnd} icon={routeEndIcon} keyboard title="Rota bitişi"/>}
           </MapContainer>
-        </div>
+        )}
 
         {is3D && (
           <Map3DView 
@@ -1547,7 +1505,6 @@ export default function App() {
           <button onClick={() => setIs3D(true)} style={{ padding: '6px 14px', borderRadius: '999px', border: 'none', background: is3D ? '#ef4444' : 'transparent', color: is3D ? '#fff' : 'var(--text-muted)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '12px' }}>3D</button>
         </div>
         <div className="map-top-right-actions">
-          <button type="button" className="map-list-button" onClick={() => setLivePanelOpen(true)} aria-label="Canlı Yayın" title="Canlı Yayın"><Camera size={16}/></button>
           <button type="button" className="map-list-button" onClick={() => { setSelected(null); setDraftPosition(null); setEditPinMode(false); setShowFilterOptions(false); setIsPanelOpen(true); }} aria-label="Pin listesini aç" title="Pin listesi"><SlidersHorizontal size={16}/></button>
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
