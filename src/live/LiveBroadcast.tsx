@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Marker, Popup, useMap } from 'react-leaflet';
+import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Camera, CircleStop, Radio, X } from 'lucide-react';
+import { Camera, CircleStop, X } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useBroadcast, useViewer } from './useWebRTC';
@@ -20,19 +20,17 @@ type Props = {
   session: Session | null;
   active: boolean;
   open: boolean;
-  onOpen: () => void;
   onClose: () => void;
 };
 
 const livePinIcon = L.divIcon({
   className: 'pin-icon-wrap',
-  html: '<div class="neon-pin-icon" style="width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#0f172a;border:2px solid #00E5FF;box-shadow:0 0 12px #00E5FF;color:#00E5FF;font:700 9px Arial,sans-serif;letter-spacing:.2px">CANLI</div>',
-  iconSize: [42, 42],
-  iconAnchor: [21, 21],
+  html: '<div style="width:34px;height:34px;position:relative;transform:rotate(-45deg);background:#1e6348;border:3px solid #fff;border-radius:50% 50% 50% 4px;box-shadow:0 3px 8px #152b1c55;display:grid;place-items:center"><span style="transform:rotate(45deg);font:800 7px Arial,sans-serif;letter-spacing:-.3px;color:#fff;white-space:nowrap">CANLI</span></div>',
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
 });
 
 export default function LiveBroadcast({ session, active, open, onOpen, onClose }: Props) {
-  const map = useMap();
   const clientId = useMemo(() => crypto.randomUUID(), []);
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [publisherSession, setPublisherSession] = useState<{ id: string; room_id: string } | null>(null);
@@ -42,7 +40,6 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
-  const [remoteVideoStream, setRemoteVideoStream] = useState<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
   const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream);
@@ -84,13 +81,17 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
     return () => window.clearInterval(timer);
   }, [publisherSession]);
 
+  const streamsRef = useRef<{ preview: MediaStream | null; publisher: MediaStream | null }>({ preview: null, publisher: null });
+  useEffect(() => { streamsRef.current = { preview: previewStream, publisher: publisherStream }; }, [previewStream, publisherStream]);
   useEffect(() => () => {
-    previewStream?.getTracks().forEach(track => track.stop());
-    publisherStream?.getTracks().forEach(track => track.stop());
-  }, [previewStream, publisherStream]);
+    const current = streamsRef.current;
+    current.preview?.getTracks().forEach(track => track.stop());
+    current.publisher?.getTracks().forEach(track => track.stop());
+  }, []);
 
   const requestCamera = async () => {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Bu tarayıcı kamera erişimini desteklemiyor.');
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       previewStream?.getTracks().forEach(track => track.stop());
       setPreviewStream(stream);
@@ -186,22 +187,22 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
         {!session ? <p className="info-text">Canlı yayın başlatmak için giriş yapmalısın.</p>
           : !active ? <p className="info-text">Canlı yayın için aktif üyelik gerekir.</p>
           : <>
-            <div className="live-control-preview">
-              <video ref={previewRef} autoPlay muted playsInline />
-              {!previewStream && !publisherStream && <span><Camera size={22}/> Kamera önizlemesi</span>}
+            <div style={{position:'relative',width:'100%',height:220,background:'#101a16',borderRadius:14,overflow:'hidden',display:'grid',placeItems:'center'}}>
+              <video ref={previewRef} autoPlay muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}} />
+              {!previewStream && !publisherStream && <span style={{display:'flex',alignItems:'center',gap:8,color:'var(--text-muted)',fontSize:13}}><Camera size={22}/> Kamera önizlemesi</span>}
             </div>
             <p className="info-text">{publisherSession ? publisher.status : 'Konum, yayın başlatılırken GPS üzerinden alınır.'}</p>
-            {!publisherSession ? <div className="live-control-actions">
+            {!publisherSession ? <div style={{display:"grid",gap:10,marginTop:16}}>
               <button type="button" className="secondary-button" onClick={() => void requestCamera()} disabled={busy || !!previewStream}><Camera size={16}/> Kamera İzni Ver</button>
               <button type="button" className="primary-button" onClick={() => void startBroadcast()} disabled={busy}>{busy ? 'Hazırlanıyor…' : 'Yayına Başla'}</button>
             </div> : <div className="live-control-actions">
               <button type="button" className="delete-pin-button" onClick={() => void endBroadcast()} disabled={busy}><CircleStop size={16}/> Yayını Bitir</button>
             </div>}
           </>}
-        {viewerSession && <div className="live-viewer-card">
-          <div className="modal-head"><div><p className="eyebrow">CANLI İZLEME</p><h3>Yayın</h3></div><button type="button" className="icon-button" onClick={closeViewer} aria-label="İzlemeyi kapat"><X size={16}/></button></div>
-          <video ref={remoteRef} autoPlay playsInline controls />
-          <small>{viewer.status}</small>
+        {viewerSession && <div style={{marginTop:18,paddingTop:16,borderTop:"1px solid var(--border-color)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><p className="eyebrow">CANLI İZLEME</p><h3>Yayın</h3></div><button type="button" className="icon-button" onClick={closeViewer} aria-label="İzlemeyi kapat"><X size={16}/></button></div>
+          <video ref={remoteRef} autoPlay playsInline controls style={{width:"100%",maxHeight:320,background:"#111",borderRadius:12,marginTop:10}} />
+          <small className="info-text">{viewer.status}</small>
         </div>}
         {notice && <p className="info-text" role="status">{notice}</p>}
       </section>
@@ -209,9 +210,6 @@ export default function LiveBroadcast({ session, active, open, onOpen, onClose }
   ) : null;
 
   return <>
-    <button type="button" className="map-control" onClick={onOpen} title="Canlı Yayın" aria-label="Canlı Yayın">
-      <Radio size={18}/>
-    </button>
     {sessions.map(row => <Marker key={row.id} position={[row.lat, row.lng]} icon={livePinIcon} keyboard title="CANLI yayın">
       <Popup>
         <div className="user-location-popup">
