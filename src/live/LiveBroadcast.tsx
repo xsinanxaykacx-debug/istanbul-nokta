@@ -54,11 +54,8 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   useEffect(() => {
     if (!liveSupabase || !session || !active) { setSessions([]); return; }
     void refreshSessions();
-    const client = liveSupabase;
-    const channel = client.channel('aytar-live-session-map')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, () => void refreshSessions())
-      .subscribe();
-    return () => { void client.removeChannel(channel); };
+    const timer = window.setInterval(() => void refreshSessions(), 10_000);
+    return () => window.clearInterval(timer);
   }, [session, active, refreshSessions]);
 
   // Keep the local camera visible after the preview stream becomes the publisher stream.
