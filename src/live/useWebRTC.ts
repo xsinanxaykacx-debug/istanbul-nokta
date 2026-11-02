@@ -31,7 +31,7 @@ export function useBroadcast(
     const peers = new Map<string, RTCPeerConnection>();
     const pendingIce = new Map<string, RTCIceCandidateInit[]>();
     const channel = supabase.channel(`room:${roomId}`, {
-      config: { private: true, broadcast: { self: false, ack: true } },
+      config: { private: false, broadcast: { self: false, ack: true } },
     });
 
     const closePeer = (id: string) => {
