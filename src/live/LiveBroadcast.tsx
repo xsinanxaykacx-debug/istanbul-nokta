@@ -4,7 +4,7 @@ import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Camera, CircleStop, X } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { liveSupabase } from '../lib/liveSupabase';
 import { useBroadcast, useViewer } from './useWebRTC';
 
 type LiveSession = {
@@ -41,20 +41,20 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
-  const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream);
-  const viewer = useViewer(supabase, viewerSession?.room_id ?? null, clientId);
+  const publisher = useBroadcast(liveSupabase, publisherSession?.room_id ?? null, clientId, publisherStream);
+  const viewer = useViewer(liveSupabase, viewerSession?.room_id ?? null, clientId);
 
   const refreshSessions = useCallback(async () => {
-    if (!supabase || !session || !active) return;
-    const { data, error } = await supabase.from('live_sessions_public')
+    if (!liveSupabase || !session || !active) return;
+    const { data, error } = await liveSupabase.from('live_sessions_public')
       .select('id,user_id,lat,lng,room_id,started_at');
     if (!error) setSessions((data ?? []) as LiveSession[]);
   }, [session, active]);
 
   useEffect(() => {
-    if (!supabase || !session || !active) { setSessions([]); return; }
+    if (!liveSupabase || !session || !active) { setSessions([]); return; }
     void refreshSessions();
-    const client = supabase;
+    const client = liveSupabase;
     const channel = client.channel('aytar-live-session-map')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, () => void refreshSessions())
       .subscribe();
@@ -74,7 +74,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   }, [viewer.remoteStream, viewerSession]);
 
   useEffect(() => {
-    if (!publisherSession || !supabase) return;
+    if (!publisherSession || !liveSupabase || !session?.access_token) return;
     const client = supabase;
     const timer = window.setInterval(() => {
       void client.functions.invoke('live-session', {
@@ -84,7 +84,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
       });
     }, 30_000);
     return () => window.clearInterval(timer);
-  }, [publisherSession]);
+  }, [publisherSession, session?.access_token]);
 
   const streamsRef = useRef<{ preview: MediaStream | null; publisher: MediaStream | null }>({ preview: null, publisher: null });
   useEffect(() => { streamsRef.current = { preview: previewStream, publisher: publisherStream }; }, [previewStream, publisherStream]);
@@ -107,7 +107,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   };
 
   const startBroadcast = async () => {
-    if (!supabase || !session || !active) return;
+    if (!liveSupabase || !session || !active) return;
     setBusy(true);
     let stream: MediaStream | null = null;
     try {
@@ -115,7 +115,8 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
       const position = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 }),
       );
-      const { data, error } = await supabase.functions.invoke('live-session', {
+      const { data, error } = await liveSupabase.functions.invoke('live-session', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: {
           action: 'start',
           lat: position.coords.latitude,
@@ -139,9 +140,10 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   };
 
   const endBroadcast = async () => {
-    if (!supabase || !publisherSession) return;
+    if (!liveSupabase || !publisherSession || !session?.access_token) return;
     setBusy(true);
-    const { error } = await supabase.functions.invoke('live-session', {
+    const { error } = await liveSupabase.functions.invoke('live-session', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
       body: { action: 'end', session_id: publisherSession.id },
     });
     if (error) {
@@ -158,12 +160,13 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   };
 
   const joinSession = async (row: LiveSession) => {
-    if (!supabase || !session || !active) {
+    if (!liveSupabase || !session || !active) {
       setNotice('Canlı yayınları izlemek için aktif üyelik gerekir.');
       return;
     }
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke('live-session', {
+    const { data, error } = await liveSupabase.functions.invoke('live-session', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
       body: { action: 'join', session_id: row.id },
     });
     if (error || !data?.session?.room_id) {
