@@ -61,9 +61,13 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
     return () => { void client.removeChannel(channel); };
   }, [session, active, refreshSessions]);
 
+  // Keep the local camera visible after the preview stream becomes the publisher stream.
   useEffect(() => {
-    if (previewRef.current) previewRef.current.srcObject = previewStream;
-  }, [previewStream, open]);
+    const video = previewRef.current;
+    const localStream = publisher.localStream ?? previewStream;
+    if (video && video.srcObject !== localStream) video.srcObject = localStream;
+    if (video && localStream) void video.play().catch(() => undefined);
+  }, [publisher.localStream, previewStream, open]);
 
   useEffect(() => {
     if (remoteRef.current) remoteRef.current.srcObject = viewer.remoteStream;
@@ -124,7 +128,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
       setPreviewStream(null);
       setPublisherSession({ id: data.session.id, room_id: data.session.room_id });
       setNotice('Canlı yayın başlatıldı.');
-      onClose();
+      // Keep the panel open so the publisher can see their own live camera preview.
       await refreshSessions();
     } catch (error) {
       stream?.getTracks().forEach(track => track.stop());
