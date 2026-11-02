@@ -280,7 +280,19 @@ export default function App() {
   const manualStopRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
   useEffect(() => {
-    if (!is3D) requestAnimationFrame(() => mapRef.current?.invalidateSize());
+    const resizeMap = () => {
+      requestAnimationFrame(() => mapRef.current?.invalidateSize({ pan: false }));
+    };
+    resizeMap();
+    window.addEventListener('resize', resizeMap);
+    const mapElement = mapRef.current?.getContainer();
+    const mapHost = mapElement?.parentElement;
+    const resizeObserver = mapHost ? new ResizeObserver(resizeMap) : null;
+    if (mapHost) resizeObserver?.observe(mapHost);
+    return () => {
+      window.removeEventListener('resize', resizeMap);
+      resizeObserver?.disconnect();
+    };
   }, [is3D]);
   const [flyToUserCoords, setFlyToUserCoords] = useState<[number, number] | null>(null);
   
@@ -1396,8 +1408,8 @@ export default function App() {
           </div>}
         </div>
 
-        <div style={{ display: is3D ? 'none' : 'block' }}>
-          <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" ref={mapRef}>
+        <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: is3D ? 'none' : 'block' }}>
+          <MapContainer center={center} zoom={11} minZoom={9} maxZoom={19} scrollWheelZoom className="map" style={{ height: '100%', width: '100%' }} ref={mapRef}>
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {showHeatmap && <HeatmapLayer pins={visiblePins} />}
             {showTraffic && tomtomApiKey && (
