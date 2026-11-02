@@ -34,6 +34,15 @@ type SpeechRecognitionInstance = { lang: string; interimResults: boolean; maxAlt
 type PinComment = { id: string; pin_id: string; user_id: string; content: string; created_at: string; profiles: { username: string | null } };
 type PinReaction = { id: string; pin_id: string; user_id: string; emoji: string };
 
+function hasValidPinCoordinates(pin: { lat: unknown; lng: unknown }): boolean {
+  if (pin.lat === null || pin.lat === undefined || pin.lng === null || pin.lng === undefined) return false;
+  const lat = Number(pin.lat);
+  const lng = Number(pin.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+
 const TELEGRAM_PIN_MARKER = '[AYTAR-RADAR]';
 const TELEGRAM_OWNER_ID_PREFIX = 'a09a270f-';
 
@@ -200,7 +209,7 @@ function HeatmapLayer({ pins }: { pins: Pin[] }) {
   return null;
 }
 
-function MapClick({ enabled, routeMode, onRoutePick, onPick, onMapClick }: { enabled:boolean; routeMode:boolean; onRoutePick:(lat:number,lng:number)=>void; onPick:(lat:number,lng:number)=>void; onMapClick:()=>void }) { useMapEvents({ click(e) { onMapClick(); if(routeMode){onRoutePick(e.latlng.lat,e.latlng.lng);return;} if (enabled) onPick(e.latlng.lat,e.latlng.lng); } }); return null; }
+function MapClick({ enabled, routeMode, onRoutePick, onPick, onMapClick }: { enabled:boolean; routeMode:boolean; onRoutePick:(lat:number,lng:number)=>void; onPick:(lat:number,lng:number)=>void; onMapClick:()=>void }) { useMapEvents({ click(e) { const lat=e.latlng?.lat; const lng=e.latlng?.lng; if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return; onMapClick(); if(routeMode){onRoutePick(lat,lng);return;} if (enabled) onPick(lat,lng); } }); return null; }
 function ViewportWatcher({ onBoundsChange }: { onBoundsChange: (bounds: [number, number, number, number]) => void }) {
   const map = useMapEvents({ moveend: () => schedule(), zoomend: () => schedule() });
   const timerRef = useRef<number | undefined>(undefined); const lastRef = useRef<string>('');
@@ -236,7 +245,8 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
   const [, setRevision] = useState(0);
   const map = useMapEvents({ zoomend: () => setRevision(v => v + 1), moveend: () => setRevision(v => v + 1) });
   const zoom = map.getZoom(); const cells = new Map<string, Pin[]>();
-  for (const pin of pins) {
+  const validPins = pins.filter(hasValidPinCoordinates);
+  for (const pin of validPins) {
     if (zoom >= 17 || pin.id === selectedId) { cells.set(`single:${pin.id}`, [pin]); continue; }
     const point = map.project([pin.lat, pin.lng], zoom);
     const key = `cell:${Math.floor(point.x / 56)}:${Math.floor(point.y / 56)}`;
@@ -403,7 +413,7 @@ export default function App() {
     return filteredListPins.map(pin=>({pin,position:routePositionForPin(pin,routeLine)})).filter(item=>item.position.distanceMeters<=100).sort((a,b)=>a.position.alongRouteMeters-b.position.alongRouteMeters).map((item,index)=>({pin:item.pin,routeOrder:index+1,routeDistance:item.position.alongRouteMeters}));
   },[filteredListPins,routeMode,routeInfo,routeLine]);
   
-  const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&filteredPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
+  const visiblePins=useMemo(()=>{const validPins=filteredPins.filter(hasValidPinCoordinates);const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return validPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():validPins;if(selected&&hasValidPinCoordinates(selected)&&validPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username,total_pins_created,total_votes_received').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
@@ -420,7 +430,7 @@ export default function App() {
         if(since)query=query.gt('created_at',since);
         const {data,error}=await query;
         if(error){if(silent)console.warn('Pinler yüklenemedi:',error);else setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});return;}
-        const batch=(data??[]) as unknown as Pin[];rows.push(...batch);
+        const batch=((data??[]) as unknown as Pin[]).map(pin=>({...pin,lat:Number(pin.lat),lng:Number(pin.lng)})).filter(hasValidPinCoordinates);rows.push(...batch);
         if(batch.length<pageSize)break;offset+=batch.length;
       }
       if(requestId!==loadRequestRef.current)return;
