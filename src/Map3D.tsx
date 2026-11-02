@@ -365,7 +365,11 @@ export default function Map3D({
         return;
       }
 
-      onMapClickRef.current(event.lngLat.lat, event.lngLat.lng);
+      const clickLat = event.lngLat?.lat;
+      const clickLng = event.lngLat?.lng;
+      if (!Number.isFinite(clickLat) || !Number.isFinite(clickLng)
+        || clickLat < -90 || clickLat > 90 || clickLng < -180 || clickLng > 180) return;
+      onMapClickRef.current(clickLat, clickLng);
     });
   }, [mapLoaded, pinFeatureCollection]);
 
