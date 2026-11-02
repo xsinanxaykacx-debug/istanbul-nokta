@@ -73,7 +73,6 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const jitterSecret = Deno.env.get("JITTER_HMAC_SECRET");
     if (!supabaseUrl || !serviceKey) {
@@ -83,11 +82,15 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
     if (!token) return json({ error: "Bearer token required" }, 401);
-    if (!anonKey || !jitterSecret) {
+    if (!jitterSecret) {
       return json({ error: "Server configuration is incomplete" }, 500);
     }
 
-    const authClient = createClient(supabaseUrl, anonKey, {
+    // AYTAR users authenticate against the main project; only live-session rows are stored in LAB.
+    const authClient = createClient(
+      "https://dslpeowjafdwqcljsxkj.supabase.co",
+      "sb_publishable_cQ9v2qZE8it_I34uu2mB0A_Xrp7kePM",
+      {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: authData, error: authError } = await authClient.auth.getUser(token);
