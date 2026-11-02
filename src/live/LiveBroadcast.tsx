@@ -78,6 +78,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
     const client = liveSupabase;
     const timer = window.setInterval(() => {
       void client.functions.invoke('live-session', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { action: 'heartbeat', session_id: publisherSession.id },
       }).then(({ error }) => {
         if (error) setNotice('Yayın bağlantısı yenilenemedi.');
