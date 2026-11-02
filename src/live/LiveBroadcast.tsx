@@ -75,7 +75,7 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
 
   useEffect(() => {
     if (!publisherSession || !liveSupabase || !session?.access_token) return;
-    const client = supabase;
+    const client = liveSupabase;
     const timer = window.setInterval(() => {
       void client.functions.invoke('live-session', {
         body: { action: 'heartbeat', session_id: publisherSession.id },
