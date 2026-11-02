@@ -157,7 +157,13 @@ Deno.serve(async (req: Request) => {
 
       if (sessionError) {
         await admin.from("live_session_locations_private").delete().eq("session_id", sessionId);
-        const status = sessionError.code === "P0001" ? 409 : 500;
+        console.error("live-session start insert failed", {
+          code: sessionError.code,
+          message: sessionError.message,
+          details: sessionError.details,
+          hint: sessionError.hint,
+        });
+        const status = sessionError.code === "P0001" ? 409 : sessionError.code === "42501" ? 403 : 500;
         return json({ error: sessionError.message }, status);
       }
       return json({ session });
@@ -200,6 +206,7 @@ Deno.serve(async (req: Request) => {
 
     return json({ error: "Unknown action" }, 400);
   } catch (error) {
+    console.error("live-session unhandled error", error);
     return json({ error: error instanceof Error ? error.message : "Unexpected error" }, 500);
   }
 });
