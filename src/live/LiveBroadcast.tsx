@@ -58,12 +58,20 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
     return () => window.clearInterval(timer);
   }, [session, active, refreshSessions]);
 
-  // Keep the local camera visible after the preview stream becomes the publisher stream.
+  // Keep the camera attached across portal open/close and publisher state changes.
   useEffect(() => {
     const video = previewRef.current;
     const localStream = publisher.localStream ?? previewStream;
-    if (video && video.srcObject !== localStream) video.srcObject = localStream;
-    if (video && localStream) void video.play().catch(() => undefined);
+    if (!video) return;
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    if (video.srcObject !== localStream) video.srcObject = localStream;
+    if (!localStream) return;
+    const playPreview = () => { void video.play().catch(() => undefined); };
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) playPreview();
+    else video.addEventListener('loadedmetadata', playPreview, { once: true });
+    return () => video.removeEventListener('loadedmetadata', playPreview);
   }, [publisher.localStream, previewStream, open]);
 
   useEffect(() => {
@@ -130,7 +138,10 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
       // Keep the panel open so the publisher can see their own live camera preview.
       await refreshSessions();
     } catch (error) {
-      stream?.getTracks().forEach(track => track.stop());
+      // A failed server request must not kill a camera stream already shown in the preview.
+      if (stream && stream !== previewStream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       setNotice(error instanceof Error ? error.message : 'Kamera veya konum izni alınamadı.');
     } finally {
       setBusy(false);
