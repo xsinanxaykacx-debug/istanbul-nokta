@@ -54,10 +54,11 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
   useEffect(() => {
     if (!supabase || !session || !active) { setSessions([]); return; }
     void refreshSessions();
-    const channel = supabase.channel('aytar-live-session-map')
+    const client = supabase;
+    const channel = client.channel('aytar-live-session-map')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_sessions' }, () => void refreshSessions())
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => { void client.removeChannel(channel); };
   }, [session, active, refreshSessions]);
 
   useEffect(() => {
@@ -70,8 +71,9 @@ export default function LiveBroadcast({ session, active, open, onClose }: Props)
 
   useEffect(() => {
     if (!publisherSession || !supabase) return;
+    const client = supabase;
     const timer = window.setInterval(() => {
-      void supabase.functions.invoke('live-session', {
+      void client.functions.invoke('live-session', {
         body: { action: 'heartbeat', session_id: publisherSession.id },
       }).then(({ error }) => {
         if (error) setNotice('Yayın bağlantısı yenilenemedi.');
