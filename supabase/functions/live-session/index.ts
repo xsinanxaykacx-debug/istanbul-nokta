@@ -91,8 +91,10 @@ Deno.serve(async (req: Request) => {
       "https://dslpeowjafdwqcljsxkj.supabase.co",
       "sb_publishable_cQ9v2qZE8it_I34uu2mB0A_Xrp7kePM",
       {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      },
+    );
     const { data: authData, error: authError } = await authClient.auth.getUser(token);
     if (authError || !authData.user) return json({ error: "Invalid session" }, 401);
     const user = authData.user;
@@ -105,7 +107,7 @@ Deno.serve(async (req: Request) => {
     const action = body?.action;
 
     if (action === "start" || action === "join" || action === "heartbeat") {
-      const { data: profile, error: profileError } = await admin
+      const { data: profile, error: profileError } = await authClient
         .from("profiles")
         .select("status")
         .eq("id", user.id)
