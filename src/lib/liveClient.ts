@@ -13,9 +13,10 @@ export const isLiveConfigured = Boolean(
 const noCacheFetch: typeof fetch = (input, init) =>
   fetch(input, { ...init, cache: 'no-store' });
 
+// LAB veritabanına anonim (public) olarak bağlanıyoruz.
 export const liveSupabase = isLiveConfigured
   ? createClient(LIVE_URL!, LIVE_KEY!, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       realtime: { params: { eventsPerSecond: 5 } },
       global: { fetch: noCacheFetch },
     })

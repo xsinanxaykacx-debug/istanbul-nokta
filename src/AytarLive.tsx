@@ -10,17 +10,9 @@ type Profile = {
   username: string | null; 
 };
 
-type Pin = { 
-  id: string; 
-  lat: number; 
-  lng: number; 
-  description: string; 
-};
-
 type Session = { user?: { id: string } } | null;
 
 interface AytarLiveProps {
-  selectedPin: Pin | null;
   profile: Profile | null;
   session: Session;
   onNotice: (notice: { kind: 'success' | 'error' | 'info'; text: string }) => void;
@@ -46,10 +38,15 @@ type BroadcasterPeer = {
   pendingIce: RTCIceCandidateInit[]; 
 };
 
-export default function AytarLive({ selectedPin, profile, session, onNotice, onAuthRequired }: AytarLiveProps) {
+export default function AytarLive({ profile, session, onNotice, onAuthRequired }: AytarLiveProps) {
   const [state, setState] = useState<ComponentState>({ kind: 'idle' });
   const [activeSessions, setActiveSessions] = useState<LiveSession[]>([]);
   const [showViewerList, setShowViewerList] = useState(false);
+  const [showSessionChoices, setShowSessionChoices] = useState(false);
+  
+  // WebRTC Stream'lerini State'te tutuyoruz ki React render ettiğinde bağlayabilelim
+  const [localStreamState, setLocalStreamState] = useState<MediaStream | null>(null);
+  const [remoteStreamState, setRemoteStreamState] = useState<MediaStream | null>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -62,9 +59,12 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
   const isSignedIn = Boolean(session?.user?.id);
   const configured = isLiveConfigured && Boolean(liveSupabase);
 
+  // Yayınları Dinle
   useEffect(() => {
-    if (!liveSupabase) return;
-    const channel = liveSupabase
+    const supa = liveSupabase;
+    if (!supa) return;
+
+    const channel = supa
       .channel('live-sessions-watch')
       .on(
         'postgres_changes',
@@ -84,7 +84,6 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       )
       .subscribe();
 
-    const supa = liveSupabase!;
     void supa.from('live_sessions')
       .select('*')
       .eq('status', 'live')
@@ -93,8 +92,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       });
 
     return () => {
-      const supa = liveSupabase;
-      if (supa) void supa.removeChannel(channel);
+      void supa.removeChannel(channel);
     };
   }, []);
 
@@ -114,11 +112,16 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       void liveSupabase.removeChannel(signalChannelRef.current);
       signalChannelRef.current = null;
     }
+    
+    setLocalStreamState(null);
+    setRemoteStreamState(null);
   }, []);
 
   const createOfferForViewer = useCallback(
     async (sessionId: string, broadcasterId: string, viewerId: string) => {
-      if (!liveSupabase || !localStreamRef.current) return;
+      const supa = liveSupabase;
+      if (!supa || !localStreamRef.current) return;
+      
       const existing = broadcasterPeersRef.current.get(viewerId);
       if (existing) {
         existing.pc.close();
@@ -135,7 +138,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          void liveSupabase!.from('live_signals').insert({
+          void supa.from('live_signals').insert({
             session_id: sessionId,
             from_peer: broadcasterId,
             to_peer: viewerId,
@@ -148,7 +151,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        await liveSupabase.from('live_signals').insert({
+        await supa.from('live_signals').insert({
           session_id: sessionId,
           from_peer: broadcasterId,
           to_peer: viewerId,
@@ -165,7 +168,8 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
   );
 
   const startBroadcast = useCallback(async () => {
-    if (!configured || !liveSupabase) {
+    const supa = liveSupabase;
+    if (!configured || !supa) {
       onNotice({ kind: 'error', text: 'LAB ayarları eksik.' });
       return;
     }
@@ -177,32 +181,40 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       onNotice({ kind: 'info', text: 'Hesabını etkinleştirmelisin.' });
       return;
     }
-    if (!selectedPin) {
-      onNotice({ kind: 'info', text: 'Önce bir pin seçmelisin.' });
-      return;
-    }
 
     setState({ kind: 'starting' });
 
     try {
+      let currentLat = 41.0082;
+      let currentLng = 28.9784;
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
+        });
+        currentLat = pos.coords.latitude;
+        currentLng = pos.coords.longitude;
+      } catch (e) {
+        console.warn('GPS alınamadı, varsayılan kullanılıyor.');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' },
         audio: true,
       });
       localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      setLocalStreamState(stream); // Video elementine bağlanması için state'e at
 
-      const jittered = jitterCoords(selectedPin.lat, selectedPin.lng);
+      const jittered = jitterCoords(currentLat, currentLng);
 
-      const { data, error } = await liveSupabase
+      const { data, error } = await supa
         .from('live_sessions')
         .insert({
           broadcaster_id: session!.user!.id,
-          pin_id: selectedPin.id,
+          pin_id: null,
           lat: jittered.lat,
           lng: jittered.lng,
           status: 'live',
-          title: selectedPin.description.slice(0, 120),
+          title: 'Canlı Yayın',
         })
         .select('id')
         .single();
@@ -212,7 +224,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       const sessionId = data.id;
       const broadcasterId = session!.user!.id;
 
-      const channel = liveSupabase
+      const channel = supa
         .channel(`broadcaster-signals-${sessionId}`)
         .on(
           'postgres_changes',
@@ -247,19 +259,24 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
               const peer = broadcasterPeersRef.current.get(sig.from_peer);
               if (peer) {
                 if (peer.pc.remoteDescription) {
-                  await peer.pc
-                    .addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit))
-                    .catch(() => {});
+                  await peer.pc.addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit)).catch(() => {});
                 } else {
                   peer.pendingIce.push(sig.payload as RTCIceCandidateInit);
                 }
               }
             }
           }
-        )
-        .subscribe();
+        );
 
       signalChannelRef.current = channel;
+      await new Promise<void>((resolve, reject) => {
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') resolve();
+          else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            reject(new Error(`Yayın sinyal kanalı bağlanamadı: ${status}`));
+          }
+        });
+      });
 
       setState({ kind: 'broadcasting', sessionId });
       onNotice({ kind: 'success', text: 'Canlı yayın başladı.' });
@@ -269,7 +286,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
       setState({ kind: 'error', message });
       onNotice({ kind: 'error', text: message });
     }
-  }, [configured, isSignedIn, isActive, selectedPin, session, onNotice, onAuthRequired, cleanupAll, createOfferForViewer]);
+  }, [configured, isSignedIn, isActive, session, onNotice, onAuthRequired, cleanupAll, createOfferForViewer]);
 
   const endBroadcast = useCallback(
     async (sessionId: string) => {
@@ -287,7 +304,8 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
 
   const watchSession = useCallback(
     async (target: LiveSession) => {
-      if (!liveSupabase || !session?.user?.id) {
+      const supa = liveSupabase;
+      if (!supa || !session?.user?.id) {
         onAuthRequired();
         return;
       }
@@ -302,14 +320,23 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
         viewerPeerRef.current = pc;
 
         const remoteStream = new MediaStream();
+        const pendingViewerIce: RTCIceCandidateInit[] = [];
+
         pc.ontrack = (event) => {
-          event.streams[0]?.getTracks().forEach((t) => remoteStream.addTrack(t));
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+          // Bazı tarayıcılar event.streams dizisini boş gönderebilir; track'i doğrudan al.
+          const incomingTracks = event.streams?.[0]?.getTracks() ?? [event.track];
+          for (const track of incomingTracks) {
+            if (!remoteStream.getTracks().some((existing) => existing.id === track.id)) {
+              remoteStream.addTrack(track);
+            }
+          }
+          console.info('[AYTAR LIVE] İzleyici track aldı:', event.track.kind, event.track.readyState);
+          setRemoteStreamState(remoteStream);
         };
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
-            void liveSupabase!.from('live_signals').insert({
+            void supa.from('live_signals').insert({
               session_id: target.id,
               from_peer: viewerId,
               to_peer: broadcasterId,
@@ -319,7 +346,7 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
           }
         };
 
-        const channel = liveSupabase
+        const channel = supa
           .channel(`viewer-signals-${target.id}-${viewerId}`)
           .on(
             'postgres_changes',
@@ -337,9 +364,13 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
                   await pc.setRemoteDescription(
                     new RTCSessionDescription(sig.payload as unknown as RTCSessionDescriptionInit)
                   );
+                  for (const ice of pendingViewerIce) {
+                    await pc.addIceCandidate(new RTCIceCandidate(ice));
+                  }
+                  pendingViewerIce.length = 0;
                   const answer = await pc.createAnswer();
                   await pc.setLocalDescription(answer);
-                  await liveSupabase!.from('live_signals').insert({
+                  await supa.from('live_signals').insert({
                     session_id: target.id,
                     from_peer: viewerId,
                     to_peer: broadcasterId,
@@ -347,28 +378,47 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
                     payload: answer,
                   });
                 } else if (sig.type === 'ice') {
-                  await pc
-                    .addIceCandidate(new RTCIceCandidate(sig.payload as RTCIceCandidateInit))
-                    .catch(() => {});
+                  const candidate = sig.payload as RTCIceCandidateInit;
+                  if (pc.remoteDescription) {
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                  } else {
+                    pendingViewerIce.push(candidate);
+                  }
                 }
               } catch (err) {
                 console.warn('Viewer signal err:', err);
               }
             }
-          )
-          .subscribe();
+          );
 
         signalChannelRef.current = channel;
+        await new Promise<void>((resolve, reject) => {
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') resolve();
+            else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              reject(new Error(`İzleyici sinyal kanalı bağlanamadı: ${status}`));
+            }
+          });
+        });
 
-        await liveSupabase.from('live_signals').insert({
+        // Video öğesini, yayıncıya join sinyali göndermeden önce DOM'a yerleştir.
+        // Böylece ontrack geldiğinde React video öğesini sonradan oluşturup oynatmayı kesmez.
+        setState({ kind: 'watching', sessionId: target.id });
+
+        // React'in izleyici penceresini DOM'a yerleştirmesini bekle.
+        // Join sinyali bundan sonra gider; yayıncı offer gönderdiğinde video öğesi hazır olur.
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+
+        const { error: joinError } = await supa.from('live_signals').insert({
           session_id: target.id,
           from_peer: viewerId,
           to_peer: broadcasterId,
           type: 'join',
           payload: {},
         });
-
-        setState({ kind: 'watching', sessionId: target.id });
+        if (joinError) throw joinError;
       } catch (err) {
         cleanupAll();
         const message = err instanceof Error ? err.message : 'Bağlantı hatası.';
@@ -384,7 +434,103 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
     setState({ kind: 'idle' });
   }, [cleanupAll]);
 
+  // Bileşen kapandığında temizlik
   useEffect(() => () => cleanupAll(), [cleanupAll]);
+
+  // Video penceresi state değişimiyle DOM'a eklendiğinde akışı yeniden bağla.
+  // getUserMedia sonucu, pencere oluşturulmadan önce gelebileceği için state.kind de bağımlılıkta.
+  useEffect(() => {
+    const attachAndPlay = (video: HTMLVideoElement, stream: MediaStream, label: string) => {
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
+      video.autoplay = true;
+      video.playsInline = true;
+      video.muted = true;
+
+      const play = () => {
+        void video.play().catch((err) => {
+          if (err instanceof DOMException && err.name === 'AbortError') return;
+          console.warn(`[AYTAR LIVE] ${label} video oynatılamadı:`, err);
+        });
+      };
+
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) play();
+      else video.onloadedmetadata = play;
+    };
+
+    if (state.kind === 'broadcasting' && localVideoRef.current && localStreamState) {
+      attachAndPlay(localVideoRef.current, localStreamState, 'Yayıncı');
+    }
+
+    if (state.kind === 'watching' && remoteVideoRef.current && remoteStreamState) {
+      attachAndPlay(remoteVideoRef.current, remoteStreamState, 'İzleyici');
+    }
+  }, [localStreamState, remoteStreamState, state.kind]);
+
+  // İzleyici siyah ekran teşhisi: bağlantı, ICE, video elementi ve gerçek medya sayaçları.
+  useEffect(() => {
+    if (state.kind !== 'watching') return;
+
+    const inspectViewer = async () => {
+      const pc = viewerPeerRef.current;
+      const video = remoteVideoRef.current;
+      const stream = video?.srcObject instanceof MediaStream
+        ? video.srcObject
+        : remoteStreamState;
+
+      const tracks = stream?.getTracks().map((track) => ({
+        kind: track.kind,
+        readyState: track.readyState,
+        enabled: track.enabled,
+        muted: track.muted,
+      })) ?? [];
+
+      console.info('[AYTAR LIVE DEBUG] İzleyici durumu', {
+        connectionState: pc?.connectionState ?? 'PEER YOK',
+        iceConnectionState: pc?.iceConnectionState ?? 'PEER YOK',
+        signalingState: pc?.signalingState ?? 'PEER YOK',
+        videoElement: Boolean(video),
+        videoReadyState: video?.readyState ?? null,
+        videoPaused: video?.paused ?? null,
+        videoWidth: video?.videoWidth ?? null,
+        videoHeight: video?.videoHeight ?? null,
+        videoSrcObject: Boolean(video?.srcObject),
+        remoteTracks: tracks,
+      });
+
+      if (!pc) return;
+      try {
+        const stats = await pc.getStats();
+        const inbound = Array.from(stats.values())
+          .filter((item) => item.type === 'inbound-rtp')
+          .map((item) => ({
+            kind: item.kind ?? item.mediaType,
+            bytesReceived: item.bytesReceived,
+            packetsReceived: item.packetsReceived,
+            packetsLost: item.packetsLost,
+            framesReceived: item.framesReceived,
+            framesDecoded: item.framesDecoded,
+            framesDropped: item.framesDropped,
+          }));
+        const candidatePairs = Array.from(stats.values())
+          .filter((item) => item.type === 'candidate-pair' && item.state === 'succeeded')
+          .map((item) => ({
+            nominated: item.nominated,
+            currentRoundTripTime: item.currentRoundTripTime,
+            bytesReceived: item.bytesReceived,
+            bytesSent: item.bytesSent,
+          }));
+        console.info('[AYTAR LIVE DEBUG] Medya istatistikleri', { inbound, candidatePairs });
+      } catch (err) {
+        console.warn('[AYTAR LIVE DEBUG] getStats başarısız:', err);
+      }
+    };
+
+    void inspectViewer();
+    const intervalId = window.setInterval(() => void inspectViewer(), 3000);
+    return () => window.clearInterval(intervalId);
+  }, [remoteStreamState, state.kind]);
 
   const isBusy = state.kind === 'starting';
   const broadcasting = state.kind === 'broadcasting';
@@ -394,13 +540,13 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
     ? 'Yayını bitir'
     : watching
     ? 'İzlemeyi kapat'
-    : isSignedIn && isActive && selectedPin
-    ? 'Canlı yayın aç'
     : activeSessions.length > 0
     ? `${activeSessions.length} canlı yayın izle`
+    : isSignedIn && isActive
+    ? 'Canlı yayın aç'
     : isSignedIn
-    ? 'Yayın açmak için pin seç'
-    : 'Canlı yayın (giriş gerekli)';
+    ? 'Hesabı etkinleştir'
+    : 'Giriş yap';
 
   return (
     <>
@@ -408,10 +554,8 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
         type="button"
         className={`aytar-live-button ${broadcasting || watching ? 'is-active ' : ''}${isBusy ? 'is-busy' : ''}`}
         onClick={() => {
-          if (broadcasting) void endBroadcast(state.sessionId);
-          else if (watching) closePlayer();
-          else if (selectedPin) void startBroadcast();
-          else setShowViewerList(true);
+          setShowSessionChoices(false);
+          setShowViewerList((open) => !open);
         }}
         disabled={isBusy}
         title={buttonTitle}
@@ -449,7 +593,13 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
               <X size={18} />
             </button>
           </div>
-          <video ref={localVideoRef} autoPlay muted playsInline className="aytar-live-video" />
+          <video 
+            ref={localVideoRef}
+            autoPlay 
+            muted 
+            playsInline 
+            className="aytar-live-video" 
+          />
         </div>
       )}
 
@@ -462,37 +612,94 @@ export default function AytarLive({ selectedPin, profile, session, onNotice, onA
               <X size={18} />
             </button>
           </div>
-          <video ref={remoteVideoRef} autoPlay playsInline className="aytar-live-video" />
+          <video 
+            ref={remoteVideoRef}
+            autoPlay 
+            muted
+            playsInline 
+            className="aytar-live-video" 
+          />
         </div>
       )}
 
-      {showViewerList && !broadcasting && !watching && (
-        <div className="aytar-live-viewer-list" role="dialog" aria-label="Aktif yayınlar">
+      {showViewerList && (
+        <div className="aytar-live-viewer-list" role="dialog" aria-label="Canlı yayın kontrol paneli">
           <div className="aytar-live-header">
             <Radio size={18} />
-            <strong>Aktif Yayınlar ({activeSessions.length})</strong>
-            <button type="button" onClick={() => setShowViewerList(false)} aria-label="Kapat">
+            <strong>CANLI YAYIN</strong>
+            <button type="button" onClick={() => { setShowViewerList(false); setShowSessionChoices(false); }} aria-label="Paneli kapat">
               <X size={18} />
             </button>
           </div>
-          {activeSessions.length === 0 ? (
-            <p className="aytar-live-empty">Şu an aktif yayın yok.</p>
-          ) : (
-            <ul className="aytar-live-session-list">
-              {activeSessions.map((s) => (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => void watchSession(s)}
-                    className="aytar-live-session-item"
-                  >
-                    <Eye size={16} />
-                    <span>{s.title || 'Canlı yayın'}</span>
-                    <small>{s.viewer_count} izleyici</small>
-                  </button>
-                </li>
-              ))}
-            </ul>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+            {broadcasting ? (
+              <button
+                type="button"
+                className="aytar-live-session-item"
+                onClick={() => void endBroadcast(state.sessionId)}
+                style={{ justifyContent: 'center', background: '#7f1d1d', color: '#fff' }}
+              >
+                <VideoOff size={16} />
+                <span>Canlı yayını sonlandır</span>
+              </button>
+            ) : watching ? (
+              <button
+                type="button"
+                className="aytar-live-session-item"
+                onClick={closePlayer}
+                style={{ justifyContent: 'center' }}
+              >
+                <EyeOff size={16} />
+                <span>Canlı yayını kapat</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="aytar-live-session-item"
+                  onClick={() => { setShowViewerList(false); void startBroadcast(); }}
+                  disabled={!isSignedIn || !isActive || isBusy}
+                  style={{ justifyContent: 'center' }}
+                  title={!isSignedIn ? 'Önce giriş yapmalısın' : !isActive ? 'Aktif üyelik gerekli' : 'Kameranı aç ve yayın başlat'}
+                >
+                  <Video size={16} />
+                  <span>Canlı yayın aç</span>
+                </button>
+                <button
+                  type="button"
+                  className="aytar-live-session-item"
+                  onClick={() => setShowSessionChoices((open) => !open)}
+                  disabled={activeSessions.length === 0}
+                  style={{ justifyContent: 'center', opacity: activeSessions.length === 0 ? 0.55 : 1 }}
+                >
+                  <Eye size={16} />
+                  <span>Canlı yayın izle ({activeSessions.length})</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {showSessionChoices && !broadcasting && !watching && (
+            activeSessions.length === 0 ? (
+              <p className="aytar-live-empty">Şu an aktif yayın yok.</p>
+            ) : (
+              <ul className="aytar-live-session-list">
+                {activeSessions.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => void watchSession(s)}
+                      className="aytar-live-session-item"
+                    >
+                      <Eye size={16} />
+                      <span>{s.title || 'Canlı yayın'}</span>
+                      <small>{s.viewer_count} izleyici</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
           )}
         </div>
       )}
