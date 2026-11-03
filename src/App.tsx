@@ -9,6 +9,7 @@ import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
+import AytarLive from './AytarLive';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
 
@@ -1505,6 +1506,13 @@ export default function App() {
           <button onClick={() => setIs3D(true)} style={{ padding: '6px 14px', borderRadius: '999px', border: 'none', background: is3D ? '#ef4444' : 'transparent', color: is3D ? '#fff' : 'var(--text-muted)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '12px' }}>3D</button>
         </div>
         <div className="map-top-right-actions">
+          <AytarLive
+            selectedPin={selected ? { id: selected.id, lat: selected.lat, lng: selected.lng, description: pinDescription(selected) } : null}
+            profile={profile}
+            session={session}
+            onNotice={setNotice}
+            onAuthRequired={() => setAuthOpen(true)}
+          />
           <button type="button" className="map-list-button" onClick={() => { setSelected(null); setDraftPosition(null); setEditPinMode(false); setShowFilterOptions(false); setIsPanelOpen(true); }} aria-label="Pin listesini aç" title="Pin listesi"><SlidersHorizontal size={16}/></button>
           <div className="voice-pin-control">{voicePinHintVisible&&!voicePinListening&&<span className="voice-tooltip" role="tooltip">Örn: "Konuma mavi işaret koy", "Trafiği aç" (Kapatmak için 'Sus' deyin)</span>}<button type="button" className={`voice-pin-button ${voicePinListening?'is-listening':''}`} onClick={startVoicePinCommand} aria-label="Sesli komut" aria-pressed={voicePinListening} title={voicePinListening?'Dinliyorum...':'Sesli komut'}> {voicePinListening?<><Mic size={19}/><span>Dinliyorum...</span></>:<Mic size={21}/>}</button></div>
           <button type="button" className="locate-button" onClick={() => locateUser()} disabled={locating} aria-label="Konumumu bul" title="Konumumu bul">{locating?<LoaderCircle className="gps-spinner" size={21}/>:<LocateFixed size={21}/>}</button>
