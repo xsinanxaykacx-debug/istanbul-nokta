@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@mlc-ai/web-llm": "^0.2.86",
     "@supabase/supabase-js": "^2.57.0",
     "leaflet": "^1.9.4",
