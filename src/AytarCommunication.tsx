@@ -648,7 +648,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                 <button type="button" className={!micEnabled ? 'off' : ''} onClick={toggleMic} title={micEnabled ? 'Mikrofonu kapat' : 'Mikrofonu aç'}><>{micEnabled ? <Mic size={18} /> : <MicOff size={18} />}</></button>
                 {callMode === 'video' && <button type="button" className={!cameraEnabled ? 'off' : ''} onClick={toggleCamera} title={cameraEnabled ? 'Kamerayı kapat' : 'Kamerayı aç'}>{cameraEnabled ? <Camera size={18} /> : <CameraOff size={18} />}</button>}
               </>}
-              <button type="button" className="hangup" onClick={() => void endCall()} title="Görüşmeyi bitir"><PhoneOff size={19} /></button>
+              <button type="button" className="hangup" onClick={() => void endCall()} title="Görüşmeyi bitir" aria-label="Görüşmeyi bitir"><PhoneOff size={19} /><span>Bitir</span></button>
             </footer>
           </section>
         </div>

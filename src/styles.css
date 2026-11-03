@@ -3759,3 +3759,85 @@ div.aytar-live-overlay video.aytar-live-video {
 .app-shell.light-theme .aytar-call-history-title, .app-shell.light-theme .aytar-call-history-item > div strong { color: #0f172a; }
 .app-shell.light-theme .aytar-call-history-item { border-top-color: #e2e8f0; }
 @media(max-width:380px){.aytar-communication-tabs button{gap:3px;padding:8px 1px;font-size:9px}.aytar-communication-tabs button svg{width:13px;height:13px}}
+
+/* Mobile call controls: keep the action bar inside the visible viewport. */
+@media (max-width: 600px) {
+  .aytar-call-backdrop {
+    align-items: stretch;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+  .aytar-call-window {
+    width: 100%;
+    height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+    min-height: 0;
+    max-height: none;
+    border-radius: 17px;
+  }
+  .aytar-call-header { flex: 0 0 auto; }
+  .aytar-call-stage {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .aytar-remote-video { min-height: 0; }
+  .aytar-call-controls {
+    flex: 0 0 auto;
+    min-height: 82px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    gap: 16px;
+  }
+  .aytar-call-controls button { flex: 0 0 48px; min-width: 48px; min-height: 48px; }
+  .aytar-call-controls button.hangup {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 94px;
+    padding: 0 16px;
+    border-radius: 28px;
+  }
+  .aytar-call-controls button.hangup span {
+    display: inline;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .aytar-local-video { right: 10px; bottom: 10px; width: clamp(76px, 25%, 118px); }
+}
+/* FIX: the global mobile layout hides every <footer>; explicitly restore the call action bar. */
+@media (max-width: 760px) {
+  .aytar-call-backdrop .aytar-call-controls {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 100021;
+    flex: 0 0 auto !important;
+    width: 100%;
+    min-height: 82px;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(148, 163, 184, .16);
+  }
+  .aytar-call-backdrop .aytar-call-controls button {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .aytar-call-backdrop .aytar-call-controls button.hangup {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 94px;
+    padding: 0 16px;
+    border-radius: 28px;
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+  }
+  .aytar-call-backdrop .aytar-call-controls button.hangup span {
+    display: inline !important;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
