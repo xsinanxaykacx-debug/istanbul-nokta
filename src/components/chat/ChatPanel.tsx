@@ -1,6 +1,6 @@
-import type { Dispatch, FormEvent, RefObject, SetStateAction } from 'react';
+import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import {
-  ArrowLeft, Circle, LoaderCircle, MessageCircle, MessageSquare, MoreVertical,
+  ArrowLeft, LoaderCircle, MessageSquare, MoreVertical,
   Phone, Send, ShieldBan, Trash2, Video, VolumeX
 } from 'lucide-react';
 
@@ -36,7 +36,7 @@ interface ChatPanelProps {
   draft: string;
   onDraftChange: (value: string) => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
-  bottomRef: RefObject<HTMLDivElement | null>;
+  bottomRef: { current: HTMLDivElement | null };
   initials: (name: string) => string;
   callStatus: string;
   onStartCall: (kind: 'audio' | 'video') => void;
@@ -104,7 +104,7 @@ export default function ChatPanel({
             : messages.map(message => <div key={message.id} className={`aytar-message-row ${message.sender_id === userId ? 'mine' : 'theirs'}`}>
               <p>{message.body}</p><time>{new Date(message.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time>
             </div>)}
-          <div ref={bottomRef} />
+          <div ref={element => { bottomRef.current = element; }} />
         </div>
         <form className="aytar-communication-compose" onSubmit={onSendMessage}>
           <textarea value={draft} onChange={event => onDraftChange(event.target.value)} placeholder="Mesaj yaz..." maxLength={4000} rows={1} />
