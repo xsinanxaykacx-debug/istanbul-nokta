@@ -44,10 +44,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tag: `pin-${String(row.id ?? Date.now())}`, kind: 'new_pin' };
   } else if (event.table === 'aytar_call_signals' && row.kind === 'offer') {
     const recipient = String(row.recipient_id ?? '');
-    if (!recipient) return res.status(202).json({ ignored: true });
+    const sender = String(row.sender_id ?? '');
+    if (!recipient || !sender) return res.status(202).json({ ignored: true });
     recipients = [recipient];
-    notice = { title: 'AYTAR · Gelen arama', body: 'Sana gelen bir arama var. Uygulamayı aç.',
-      url: '/?incomingCall=1', tag: `call-${String(row.call_id ?? row.id ?? Date.now())}`, kind: 'incoming_call' };
+
+    const { data: callerProfile } = await db.from('profiles')
+      .select('username').eq('id', sender).maybeSingle();
+    const payload = (row.payload && typeof row.payload === 'object')
+      ? row.payload as Record<string, unknown> : {};
+    const callerName = String(callerProfile?.username || payload.callerName || 'AYTAR kullanıcısı');
+    const callMode = payload.mode === 'video' ? 'Görüntülü arama' : 'Sesli arama';
+    notice = {
+      title: 'AYTAR · Gelen Arama',
+      body: `${callerName} seni arıyor · ${callMode}`,
+      url: '/?incomingCall=1',
+      tag: `call-${String(row.call_id ?? row.id ?? Date.now())}`,
+      kind: 'incoming_call',
+    };
   } else if (event.table === 'aytar_direct_messages') {
     const sender = String(row.sender_id ?? '');
     const recipient = String(row.recipient_id ?? '');
@@ -76,11 +89,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (error) return res.status(500).json({ error: 'Could not load subscriptions' });
 
   const subscriptions = (data ?? []) as SubscriptionRow[];
+  const ttl = notice.kind === 'incoming_call' ? 300 : 60;
   const results = await Promise.allSettled(subscriptions.map(async (subscription) => {
     try {
       await webpush.sendNotification({ endpoint: subscription.endpoint,
         keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
-      JSON.stringify(notice), { TTL: 60, urgency: notice.kind === 'incoming_call' ? 'high' : 'normal' });
+      JSON.stringify(notice), { TTL: ttl, urgency: notice.kind === 'incoming_call' ? 'high' : 'normal' });
       return true;
     } catch (error) {
       const status = (error as { statusCode?: number }).statusCode;
