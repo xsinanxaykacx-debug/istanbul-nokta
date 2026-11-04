@@ -5,6 +5,15 @@
     },
     "api/telegram-webhook.ts": {
       "maxDuration": 30
+    },
+    "api/cron-fix-telegram-webhook.ts": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron-fix-telegram-webhook",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }
