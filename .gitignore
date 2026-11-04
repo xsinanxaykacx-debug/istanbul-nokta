@@ -8,3 +8,4 @@ dist
 *.log
 .vercel
 .env*
+backup_before_push.sql

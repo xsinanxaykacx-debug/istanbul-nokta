@@ -392,6 +392,39 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
         const ready = status === 'SUBSCRIBED';
         signalingReadyRef.current = ready;
         if (!disposed) setSignalingReady(ready);
+        // Recover a still-ringing offer after the app wakes from a push notification.
+        if (ready) {
+          void supabase!.from('aytar_call_signals').select('*')
+            .eq('recipient_id', userId).eq('kind', 'offer')
+            .gte('created_at', new Date(Date.now() - 45000).toISOString())
+            .order('created_at', { ascending: false }).limit(1)
+            .then(({ data, error }) => {
+              if (disposed || error || !data?.length || callStatusRef.current !== 'idle') return;
+              const signal = data[0] as CallSignal;
+              if (seenSignalIdsRef.current.has(signal.id)) return;
+              seenSignalIdsRef.current.add(signal.id);
+              const description = signal.payload.description as RTCSessionDescriptionInit | undefined;
+              if (!description) return;
+              const mode = signal.payload.mode === 'video' ? 'video' : 'audio';
+              const incoming: IncomingCall = {
+                callId: signal.call_id, peerId: signal.sender_id,
+                peerName: typeof signal.payload.callerName === 'string' ? signal.payload.callerName : 'AYTAR üyesi',
+                mode, offer: description
+              };
+              incomingCallRef.current = incoming;
+              callCreatedAtRef.current = Date.now();
+              callConnectedAtRef.current = null;
+              callDirectionRef.current = 'incoming';
+              callHistorySavedRef.current = false;
+              callIdRef.current = incoming.callId;
+              callPeerRef.current = incoming.peerId;
+              setCallPeerName(incoming.peerName);
+              callPeerNameRef.current = incoming.peerName;
+              setCallMode(mode);
+              callModeRef.current = mode;
+              updateCallStatus('ringing');
+            });
+        }
       });
     return () => {
       disposed = true;
