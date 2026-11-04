@@ -1,11 +1,19 @@
 import { supabase } from './supabase';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined)?.trim().replace(/^["']|["']$/g, '');
 
 function decodeBase64Url(value: string): Uint8Array {
-  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (value.length % 4)) % 4);
+  const normalized = value.trim().replace(/-/g, '+').replace(/_/g, '/');
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)) {
+    throw new Error('VITE_VAPID_PUBLIC_KEY geçerli base64url biçiminde değil.');
+  }
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
   const raw = window.atob(padded);
-  return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+  const bytes = Uint8Array.from(raw, (character) => character.charCodeAt(0));
+  if (bytes.length !== 65 || bytes[0] !== 4) {
+    throw new Error('VAPID public key 65 baytlık geçerli P-256 anahtarı değil. Vercel VITE_VAPID_PUBLIC_KEY değerini kontrol edin.');
+  }
+  return bytes;
 }
 
 export function isPushSupported(): boolean {
