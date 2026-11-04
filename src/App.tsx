@@ -9,6 +9,8 @@ import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
 import { disablePush, enablePush, getPushEnabled, isPushSupported } from './lib/push';
 import type { MLCEngine } from "@mlc-ai/web-llm";
+import { usePins } from './hooks/usePins';
+import type { Pin, PinPhoto } from './hooks/usePins';
 import Map3D from './Map3D';
 import AytarCommunication from './AytarCommunication';
 import WelcomeModal from './components/modals/WelcomeModal';
@@ -33,9 +35,7 @@ const AytarLogo = ({ size = 24, className = "" }) => (
 
 type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null; total_pins_created?: number; total_votes_received?: number };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
-type PinPhoto = { id: string; storage_path: string; public_url: string; sort_order: number };
 type PinVote = { vote_type: number; user_id: string };
-type Pin = { id: string; owner_id: string; lat: number; lng: number; description: string; created_at: string; category: string | null; voice_note_url?: string | null; pin_photos: PinPhoto[]; pin_votes: PinVote[] };
 type Notice = { kind: 'success'|'error'|'info'; text: string };
 type PlaceResult = { place_id: number; lat: string; lon: string; display_name: string; address?: Record<string,string> };
 type SpeechSetter = (value: string | ((current: string) => string)) => void;
@@ -282,7 +282,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const Map3DView = Map3D;
-  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [pins,setPins]=useState<Pin[]>([]); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const lastSyncAtRef=useRef<string>(''); const loadRequestRef=useRef(0); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -366,27 +366,31 @@ export default function App() {
   }, [pins, userPosition, session?.user?.id]);
   
   const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
+
+  const {
+    pins,
+    setPins,
+    loadPins,
+    matchingIds,
+    filteredPins,
+    filteredListPins,
+    visiblePins,
+  } = usePins({
+    canSeePins,
+    selected,
+    setSelected,
+    setSearchResultIds,
+    selectedCategoryFilter,
+    timeFilter,
+    userId: session?.user?.id,
+    debouncedQuery,
+    searchResultIds,
+    routeInfo,
+    viewportBounds,
+    onError: (message) => setNotice({ kind: 'error', text: message }),
+  });
   
-  const matchingIds=useMemo(()=>new Set(searchResultIds??pins.map(p=>p.id)),[searchResultIds,pins]);
-  const filteredPins=useMemo(()=>{
-    const userId=session?.user?.id;
-    const categoryPins=selectedCategoryFilter==='Tümü'
-      ? pins
-      : selectedCategoryFilter==='BENIM'
-        ? (userId ? pins.filter(pin=>pin.owner_id===userId) : [])
-        : pins.filter(pin=>normalizeCategory(pin.category)===selectedCategoryFilter);
-    if(timeFilter==='all')return categoryPins;
-    const durationByFilter:Record<string,number>={'1m':60_000,'15m':15*60_000,'30m':30*60_000,'1h':60*60_000,'6h':6*60*60_000,'12h':12*60*60_000};
-    const duration=durationByFilter[timeFilter];
-    if(!duration)return categoryPins;
-    const now=Date.now();
-    return categoryPins.filter(pin=>{
-      const createdAt=new Date(pin.created_at).getTime();
-      const age=now-createdAt;
-      return Number.isFinite(createdAt)&&age>=0&&age<duration;
-    });
-  },[pins,selectedCategoryFilter,timeFilter,session?.user?.id]);
-  const filteredListPins=useMemo(()=>{const searched=!debouncedQuery.trim()||searchResultIds===null?filteredPins:filteredPins.filter(pin=>searchResultIds.includes(pin.id));if(routeInfo)return searched.filter(pin=>routeInfo.pinsOnRoute.includes(pin.id));return searched;},[filteredPins,debouncedQuery,searchResultIds,routeInfo]);
+
 
   const flyToCoords=useMemo<[number,number]|null>(() => {
     if (searchPlace) return [Number(searchPlace.lon), Number(searchPlace.lat)];
@@ -399,7 +403,7 @@ export default function App() {
     return filteredListPins.map(pin=>({pin,position:routePositionForPin(pin,routeLine)})).filter(item=>item.position.distanceMeters<=100).sort((a,b)=>a.position.alongRouteMeters-b.position.alongRouteMeters).map((item,index)=>({pin:item.pin,routeOrder:index+1,routeDistance:item.position.alongRouteMeters}));
   },[filteredListPins,routeMode,routeInfo,routeLine]);
   
-  const visiblePins=useMemo(()=>{const inViewport=viewportBounds?(()=>{const [minLat,maxLat,minLng,maxLng]=viewportBounds;return filteredPins.filter(pin=>pin.lat>=minLat&&pin.lat<=maxLat&&pin.lng>=minLng&&pin.lng<=maxLng);})():filteredPins;if(selected&&filteredPins.some(pin=>pin.id===selected.id)&&!inViewport.some(pin=>pin.id===selected.id))return [...inViewport,selected];return inViewport;},[filteredPins,viewportBounds,selected]);
+
   const ensurePhotoUrls=useCallback((paths:string[])=>{if(!supabase||!paths.length)return;const urls:Record<string,string>={};for(const path of new Set(paths)){const {data}=supabase.storage.from('pin-photos').getPublicUrl(path);if(data.publicUrl)urls[path]=data.publicUrl;}if(Object.keys(urls).length)setPhotoUrls(prev=>({...prev,...urls}));},[]);
   const loadProfile=useCallback(async(userId:string)=>{if(!supabase)return;const {data,error}=await supabase.from('profiles').select('id,status,role,username,total_pins_created,total_votes_received').eq('id',userId).maybeSingle();if(error){setNotice({kind:'error',text:`Profil okunamadı: ${error.message}`});setProfile(null);return;}setProfile(data as Profile|null);},[]);
 
@@ -407,28 +411,7 @@ export default function App() {
 
   async function togglePushNotifications(){if(pushBusy)return;setPushBusy(true);try{if(pushEnabled){await disablePush();setPushEnabled(false);setNotice({kind:'success',text:'Bildirimler bu cihazda kapatıldı.'});}else{await enablePush();setPushEnabled(true);setNotice({kind:'success',text:'Bildirimler bu cihazda açıldı.'});}}catch(error){setNotice({kind:'error',text:error instanceof Error?error.message:'Bildirim ayarı değiştirilemedi.'});}finally{setPushBusy(false);}}
 
-  const loadPins=useCallback(async(silentOrOptions:boolean|{silent?:boolean;incremental?:boolean}=false)=>{
-    const options=typeof silentOrOptions==='boolean'?{silent:silentOrOptions,incremental:false}:silentOrOptions;
-    const silent=options.silent===true;
-    if(!supabase||!canSeePins){setPins([]);setSelected(null);setSearchResultIds(null);return;}
-    const requestId=++loadRequestRef.current;
-    try{
-      const cutoff=new Date(Date.now()-24*60*60*1000).toISOString(); const rows:Pin[]=[]; const pageSize=500; let offset=0;
-      const incremental=!!options.incremental&&!!lastSyncAtRef.current; const since=incremental?new Date(new Date(lastSyncAtRef.current).getTime()-2000).toISOString():null;
-      while(true){
-        let query=supabase.from('pins').select('id,owner_id,lat,lng,description,category,created_at,voice_note_url,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)').gte('created_at',cutoff).order('created_at',{ascending:false}).range(offset,offset+pageSize-1);
-        if(since)query=query.gt('created_at',since);
-        const {data,error}=await query;
-        if(error){if(silent)console.warn('Pinler yüklenemedi:',error);else setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});return;}
-        const batch=(data??[]) as unknown as Pin[];rows.push(...batch);
-        if(batch.length<pageSize)break;offset+=batch.length;
-      }
-      if(requestId!==loadRequestRef.current)return;
-      if(incremental){ setPins(current=>{const byId=new Map(current.map(pin=>[pin.id,pin]));for(const row of rows)byId.set(row.id,{...byId.get(row.id),...row,pin_photos:row.pin_photos?.length?row.pin_photos:(byId.get(row.id)?.pin_photos??[])});return [...byId.values()].filter(pin=>pin.created_at>=cutoff).sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at));}); }
-      else{ setPins(rows); setSelected(current=>current&&!rows.some(pin=>pin.id===current.id)?null:current); }
-      lastSyncAtRef.current=new Date().toISOString();
-    }catch(error){console.warn('Pinler yüklenemedi:',error);if(!silent)setNotice({kind:'error',text:'Bağlantı sorunu yaşanıyor, lütfen tekrar deneyin.'});}
-  },[canSeePins]);
+
 
   useEffect(()=>{const speechWindow=window as Window & {SpeechRecognition?:new()=>SpeechRecognitionInstance;webkitSpeechRecognition?:new()=>SpeechRecognitionInstance};setSpeechSupported(!!(speechWindow.SpeechRecognition||speechWindow.webkitSpeechRecognition));return()=>{recognitionRef.current?.stop();};},[]);
   useEffect(()=>{const hintTimeout=window.setTimeout(()=>setVoicePinHintVisible(false),4000);return()=>window.clearTimeout(hintTimeout);},[]);
