@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ICE_SERVERS } from './lib/liveClient';
+import ChatPanel from './components/chat/ChatPanel';
 
 type Profile = { id: string; status: 'pending' | 'active' | 'disabled'; role: 'user' | 'admin'; username: string | null };
 type Session = { user?: { id: string } } | null;
@@ -748,6 +749,33 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
   const initials = (name: string) => name.trim().slice(0, 1).toLocaleUpperCase('tr') || 'Ü';
   const callLabel = callStatus === 'calling' ? 'Aranıyor…' : callStatus === 'ringing' ? 'Gelen arama' : callStatus === 'connecting' ? 'Bağlanıyor…' : 'Görüşme sürüyor';
   const formatDuration = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+  const chatPanelProps = {
+    selected,
+    messages,
+    chats,
+    userId,
+    loadingMessages,
+    loadingChats,
+    sending,
+    draft,
+    onDraftChange: setDraft,
+    onSendMessage: sendMessage,
+    bottomRef,
+    initials,
+    callStatus,
+    onStartCall: startCall,
+    chatMenuPeerId,
+    onChatMenuPeerIdChange: setChatMenuPeerId,
+    mutedPeerIds,
+    blockedPeerIds,
+    preferenceBusyPeerId,
+    hidingChatPeerId,
+    onToggleMute: toggleMute,
+    onToggleBlock: (peer: Member) => toggleBlock(peer),
+    onHideChat: hideChat,
+    onSelectMember: setSelected,
+    onClearMessages: () => setMessages([])
+  };
 
   return (
     <>
@@ -774,34 +802,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
           </nav>
 
           {selected ? (
-            <div className="aytar-communication-chat">
-              <div className="aytar-communication-chathead">
-                <button type="button" onClick={() => setSelected(null)} aria-label="Üyelere dön"><ArrowLeft size={17} /></button>
-                <span className="aytar-communication-avatar">{initials(selected.username)}</span>
-                <div><strong>{selected.username}</strong><small><i /> Çevrimiçi</small></div>
-                <button type="button" className="aytar-communication-call" title="Sesli ara" onClick={() => void startCall('audio')} disabled={callStatus !== 'idle'}><Phone size={16} /></button>
-                <button type="button" className="aytar-communication-call" title="Görüntülü ara" onClick={() => void startCall('video')} disabled={callStatus !== 'idle'}><Video size={16} /></button>
-                <div style={{ position: 'relative' }}>
-                  <button type="button" aria-label="Sohbet seçenekleri" title="Sohbet seçenekleri" onClick={() => setChatMenuPeerId(current => current === selected.user_id ? null : selected.user_id)} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 8 }}><MoreVertical size={18} /></button>
-                  {chatMenuPeerId === selected.user_id && <div role="menu" style={{ position: 'absolute', zIndex: 30, right: 0, top: '100%', minWidth: 190, padding: 5, borderRadius: 10, background: '#111827', border: '1px solid rgba(255,255,255,.14)', boxShadow: '0 8px 24px rgba(0,0,0,.35)' }}>
-                    <button type="button" role="menuitem" disabled={preferenceBusyPeerId === selected.user_id} onClick={() => void toggleMute(selected.user_id)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}><VolumeX size={16} /> {mutedPeerIds.includes(selected.user_id) ? 'Sessizi Kaldır' : 'Sessize Al'}</button>
-                    <button type="button" role="menuitem" disabled={preferenceBusyPeerId === selected.user_id} onClick={() => void toggleBlock(selected)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}><ShieldBan size={16} /> {blockedPeerIds.includes(selected.user_id) ? 'Engeli Kaldır' : 'Engelle'}</button>
-                  </div>}
-                </div>
-              </div>
-              <div className="aytar-communication-messages">
-                {loadingMessages ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Mesajlar yükleniyor...</div>
-                  : messages.length === 0 ? <div className="aytar-communication-empty">Henüz mesaj yok.<br />İlk mesajı sen gönder.</div>
-                  : messages.map(message => <div key={message.id} className={`aytar-message-row ${message.sender_id === userId ? 'mine' : 'theirs'}`}>
-                    <p>{message.body}</p><time>{new Date(message.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time>
-                  </div>)}
-                <div ref={bottomRef} />
-              </div>
-              <form className="aytar-communication-compose" onSubmit={sendMessage}>
-                <textarea value={draft} onChange={event => setDraft(event.target.value)} placeholder="Mesaj yaz..." maxLength={4000} rows={1} />
-                <button type="submit" disabled={!draft.trim() || sending} aria-label="Mesaj gönder">{sending ? <LoaderCircle className="gps-spinner" size={17} /> : <Send size={17} />}</button>
-              </form>
-            </div>
+            <ChatPanel mode="conversation" {...chatPanelProps} />
           ) : tab === 'members' ? (
             <div className="aytar-communication-members">
               <div className="aytar-communication-search"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Üye ara..." /></div>
@@ -815,48 +816,8 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                 </button>)}
             </div>
            ) : tab === 'chats' ? (
-            <div className="aytar-communication-members">
-              <div className="aytar-call-history-title"><strong>Sohbet geçmişi</strong></div>
-              {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler yükleniyor...</div>
-                : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Henüz sohbet geçmişin yok.</div>
-                : chats.map(chat => (
-                  <div key={chat.member.user_id} className="aytar-communication-member" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <button type="button" onClick={() => { setChatMenuPeerId(null); setSelected(chat.member); setMessages([]); }}
-                      style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 10, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
-                      <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
-                      <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
-                      {mutedPeerIds.includes(chat.member.user_id) && <span title="Sessize alındı" aria-label="Sessiz" style={{ display: 'inline-flex', color: '#9ca3af', marginLeft: 3 }}><VolumeX size={14} /></span>}
-                      <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
-                    </button>
-                    <button type="button" aria-label={`${chat.member.username} sohbet seçenekleri`} title="Sohbet seçenekleri"
-                      onClick={() => setChatMenuPeerId(current => current === chat.member.user_id ? null : chat.member.user_id)}
-                      style={{ flex: '0 0 auto', border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 8 }}>
-                      <MoreVertical size={18} />
-                    </button>
-                    {chatMenuPeerId === chat.member.user_id && (
-                      <div role="menu" style={{ position: 'absolute', zIndex: 20, right: 8, top: 'calc(100% - 4px)', minWidth: 170, padding: 5, borderRadius: 10, background: '#111827', border: '1px solid rgba(255,255,255,.14)', boxShadow: '0 8px 24px rgba(0,0,0,.35)' }}>
-                        <button type="button" role="menuitem" onClick={() => { setChatMenuPeerId(null); setSelected(chat.member); setMessages([]); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                          <MessageSquare size={16} /> Sohbete Git
-                        </button>
-                        <button type="button" role="menuitem" disabled={preferenceBusyPeerId === chat.member.user_id} onClick={() => void toggleMute(chat.member.user_id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                          <VolumeX size={16} /> {mutedPeerIds.includes(chat.member.user_id) ? 'Sessizi Kaldır' : 'Sessize Al'}
-                        </button>
-                        <button type="button" role="menuitem" disabled={preferenceBusyPeerId === chat.member.user_id} onClick={() => void toggleBlock(chat.member)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}>
-                          <ShieldBan size={16} /> {blockedPeerIds.includes(chat.member.user_id) ? 'Engeli Kaldır' : 'Engelle'}
-                        </button>
-                        <button type="button" role="menuitem" disabled={hidingChatPeerId === chat.member.user_id} onClick={() => void hideChat(chat.member.user_id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}>
-                          <Trash2 size={16} /> {hidingChatPeerId === chat.member.user_id ? 'Gizleniyor…' : 'Sohbeti Sil'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-) : tab === 'calls' ? (
+            <ChatPanel mode="history" {...chatPanelProps} />
+          ) : tab === 'calls' ? (
             <div className="aytar-call-history">
               <div className="aytar-call-history-title"><strong>Son aramalar</strong><button type="button" onClick={() => setCallHistory([])} disabled={callHistory.length === 0}>Temizle</button></div>
               {callHistory.length === 0 ? <div className="aytar-communication-empty">Henüz arama geçmişi yok.</div> : callHistory.map(item => (
