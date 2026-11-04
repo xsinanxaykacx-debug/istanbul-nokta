@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { X } from 'lucide-react';
 
 type AdminProfile = {
   id: string;
@@ -61,7 +62,7 @@ export default function AdminPanel({
       <div className="invite-modal" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-head">
           <div><p className="eyebrow">YÖNETİCİ PANELİ</p><h2>Yönetim Merkezi</h2></div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Kapat"><span aria-hidden="true">×</span></button>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Kapat"><X size={18} /></button>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
           <button onClick={() => onAdminTabChange('users')} style={{ background: 'none', border: 'none', color: adminTab === 'users' ? '#fff' : '#94a3b8', borderBottom: adminTab === 'users' ? '2px solid #3b82f6' : 'none', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold' }}>Kullanıcılar</button>
