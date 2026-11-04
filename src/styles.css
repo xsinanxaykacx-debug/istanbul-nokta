@@ -3841,3 +3841,6 @@ div.aytar-live-overlay video.aytar-live-video {
     font-weight: 700;
   }
 }
+
+/* AYTAR auth providers — keeps the existing light modal style */
+.auth-provider-button{width:100%;min-height:42px;border:1px solid #dfe6e1;border-radius:10px;background:#fff;color:#26382e;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-top:10px}.auth-provider-button:hover{background:#f5f8f5;border-color:#b8cbbd}.auth-provider-button:disabled{opacity:.6;cursor:wait}.auth-google-mark{width:20px;height:20px;border:1px solid #e3e8e4;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#4285f4}.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0 5px;color:#89958d;font-size:10px}.auth-divider:before,.auth-divider:after{content:'';height:1px;flex:1;background:#e8ede9}.auth-form .auth-provider-button{margin-top:14px}
