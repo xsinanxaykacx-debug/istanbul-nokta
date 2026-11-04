@@ -1,4 +1,4 @@
-import { Camera, LoaderCircle, MapPin, Mic, Navigation, Radar, ShieldAlert, Volume2, X } from 'lucide-react';
+import { Camera, LoaderCircle, MapPin, Navigation, Radar, ShieldAlert, Volume2, X } from 'lucide-react';
 
 type Props = {
   selected: any;
