@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Radar, Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit, Sparkles, Volume2, Award, Trophy, Star, Bell, BellOff } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit, Sparkles, Award, Trophy, Star, Bell, BellOff } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
