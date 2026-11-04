@@ -1628,7 +1628,6 @@ export default function App() {
             normalizeCategory={normalizeCategory}
             isTelegramPin={isTelegramPin}
             relativeTime={relativeTime}
-            pinTitle={pinTitle}
             pinDescription={pinDescription}
             selectedPhotos={selectedPhotos}
             setLightboxIndex={setLightboxIndex}
@@ -1742,6 +1741,7 @@ export default function App() {
             LazyPinThumbnail={LazyPinThumbnail}
             formatRouteDistance={formatRouteDistance}
             relativeTime={relativeTime}
+            pinTitle={pinTitle}
           />
           {!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}
         </div>}
