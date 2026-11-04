@@ -10,6 +10,7 @@ type Profile = { id: string; status: 'pending' | 'active' | 'disabled'; role: 'u
 type Session = { user?: { id: string } } | null;
 type Member = { user_id: string; username: string; last_seen_at: string };
 type DirectMessage = { id: string; sender_id: string; recipient_id: string; body: string; created_at: string };
+type ChatSummary = { member: Member; lastMessage: DirectMessage };
 type CallKind = 'audio' | 'video';
 type SignalKind = 'offer' | 'answer' | 'ice' | 'reject' | 'hangup';
 type CallSignal = {
@@ -31,6 +32,8 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
   const [members, setMembers] = useState<Member[]>([]);
   const [selected, setSelected] = useState<Member | null>(null);
   const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [chats, setChats] = useState<ChatSummary[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -501,6 +504,44 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     return () => { void supabase!.removeChannel(channel); };
   }, [open, active, loadMembers]);
 
+  // Build one conversation row per person from the current user's message history.
+  useEffect(() => {
+    if (!open || tab !== 'chats' || !userId || !supabase) return;
+    let disposed = false;
+    const loadChats = async () => {
+      setLoadingChats(true);
+      const { data, error } = await supabase!
+        .from('aytar_direct_messages')
+        .select('id,sender_id,recipient_id,body,created_at')
+        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+        .order('created_at', { ascending: false }).limit(5000);
+      if (disposed) return;
+      if (error) {
+        onNotice({ kind: 'error', text: `Sohbetler y\u00fcklenemedi: ${error.message}` });
+        setChats([]); setLoadingChats(false); return;
+      }
+      const latestByPeer = new Map<string, DirectMessage>();
+      for (const message of (data ?? []) as DirectMessage[]) {
+        const peerId = message.sender_id === userId ? message.recipient_id : message.sender_id;
+        if (peerId && !latestByPeer.has(peerId)) latestByPeer.set(peerId, message);
+      }
+      const peerIds = [...latestByPeer.keys()];
+      if (peerIds.length === 0) { setChats([]); setLoadingChats(false); return; }
+      const { data: profilesData, error: profilesError } = await supabase!
+        .from('profiles').select('id,username').in('id', peerIds);
+      if (disposed) return;
+      if (profilesError) onNotice({ kind: 'error', text: `Sohbet \u00fcyeleri al\u0131namad\u0131: ${profilesError.message}` });
+      const usernames = new Map((profilesData ?? []).map((item: { id: string; username: string | null }) => [item.id, item.username]));
+      setChats(peerIds.map(peerId => ({
+        member: { user_id: peerId, username: usernames.get(peerId) || 'AYTAR \u00fcyesi', last_seen_at: '' },
+        lastMessage: latestByPeer.get(peerId)!
+      })));
+      setLoadingChats(false);
+    };
+    void loadChats();
+    return () => { disposed = true; };
+  }, [open, tab, userId, onNotice]);
+
   useEffect(() => {
     if (!open || !selected || !userId || !supabase) return;
     let disposed = false;
@@ -633,9 +674,17 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                   <MessageCircle size={17} />
                 </button>)}
             </div>
-          ) : tab === 'chats' ? (
-            <div className="aytar-communication-empty aytar-communication-empty-tall">Sohbet başlatmak için Üyeler sekmesinden çevrimiçi bir üye seç.</div>
-          ) : tab === 'calls' ? (
+           ) : tab === 'chats' ? (
+            <div className="aytar-communication-members">
+              {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler y\u00fckleniyor...</div>
+                : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Hen\u00fcz sohbet ge\u00e7mi\u015fin yok.</div>
+                : chats.map(chat => <button type="button" key={chat.member.user_id} className="aytar-communication-member" onClick={() => { setSelected(chat.member); setMessages([]); }}>
+                  <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
+                  <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
+                  <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
+                </button>)}
+            </div>
+) : tab === 'calls' ? (
             <div className="aytar-call-history">
               <div className="aytar-call-history-title"><strong>Son aramalar</strong><button type="button" onClick={() => setCallHistory([])} disabled={callHistory.length === 0}>Temizle</button></div>
               {callHistory.length === 0 ? <div className="aytar-communication-empty">Henüz arama geçmişi yok.</div> : callHistory.map(item => (
