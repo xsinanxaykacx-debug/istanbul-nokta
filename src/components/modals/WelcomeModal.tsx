@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function WelcomeModal({ onClose }: { onClose: (dontShowAgain: boolean) => void }) {
+export default function WelcomeModal({ onClose }: { onClose: (dontShowAgain: boolean) => void }) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const items = [
     { icon: '📍', color: '#22d3ee', title: 'Haritada paylaş', text: 'Pin bırak, açıklama, emoji ve fotoğraf ekle. Pinler 24 saat sonra kaybolur.' },
