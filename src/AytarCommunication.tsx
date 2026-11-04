@@ -184,14 +184,25 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     return () => { disposed = true; window.clearInterval(heartbeat); };
   }, [active, userId, onNotice]);
 
-  // Private signaling is row-scoped by recipient_id and protected by RLS.
+  const isBlockedWith = useCallback(async (peerId: string): Promise<boolean> => {
+    if (!supabase || !userId) return true;
+    const { data, error } = await supabase.from('aytar_blocked_users')
+      .select('blocker_id')
+      .or(`and(blocker_id.eq.${userId},blocked_id.eq.${peerId}),and(blocker_id.eq.${peerId},blocked_id.eq.${userId})`)
+      .limit(1);
+    if (error) throw new Error('Engelleme durumu doğrulanamadı. İşlem güvenlik için durduruldu.');
+    return (data?.length ?? 0) > 0;
+  }, [userId]);
+
+  // Private signaling is row-scoped and additionally protected by database RLS.
   const sendSignal = useCallback(async (recipientId: string, callId: string, kind: SignalKind, payload: Record<string, unknown> = {}) => {
     if (!supabase || !userId) throw new Error('Arama için oturum bulunamadı.');
+    if (await isBlockedWith(recipientId)) throw new Error('Bu kullanıcıyla arama yapamazsınız.');
     const { error } = await supabase.from('aytar_call_signals').insert({
       call_id: callId, sender_id: userId, recipient_id: recipientId, kind, payload
     });
     if (error) throw new Error(error.message);
-  }, [userId]);
+  }, [userId, isBlockedWith]);
 
   const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
     const queued = [...pendingIceRef.current];
@@ -314,6 +325,10 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       return;
     }
     try {
+      if (await isBlockedWith(selected.user_id)) {
+        onNotice({ kind: 'error', text: 'Bu kullanıcıyla mesajlaşamazsınız' });
+        return;
+      }
       updateCallStatus('calling');
       callCreatedAtRef.current = Date.now();
       callConnectedAtRef.current = null;
@@ -344,12 +359,17 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       closeCallMedia('failed');
       onNotice({ kind: 'error', text: `Arama başlatılamadı: ${error instanceof Error ? error.message : String(error)}` });
     }
-  }, [selected, userId, getLocalMedia, createPeerConnection, sendSignal, closeCallMedia, onNotice, profile?.username]);
+  }, [selected, userId, getLocalMedia, createPeerConnection, sendSignal, closeCallMedia, onNotice, profile?.username, isBlockedWith]);
 
   const acceptCall = useCallback(async () => {
     const incoming = incomingCallRef.current;
     if (!incoming || callStatusRef.current !== 'ringing') return;
     try {
+      if (await isBlockedWith(incoming.peerId)) {
+        onNotice({ kind: 'error', text: 'Bu kullanıcıyla mesajlaşamazsınız' });
+        closeCallMedia('rejected');
+        return;
+      }
       const stream = await getLocalMedia(incoming.mode);
       localIceReadyRef.current = true;
       const pc = createPeerConnection(incoming.peerId, incoming.callId, incoming.mode);
@@ -365,7 +385,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       onNotice({ kind: 'error', text: `Arama kabul edilemedi: ${error instanceof Error ? error.message : String(error)}` });
       closeCallMedia('failed');
     }
-  }, [getLocalMedia, createPeerConnection, flushPendingIce, sendSignal, onNotice, closeCallMedia]);
+  }, [getLocalMedia, createPeerConnection, flushPendingIce, sendSignal, onNotice, closeCallMedia, isBlockedWith]);
 
   const rejectCall = useCallback(async () => {
     const incoming = incomingCallRef.current;
@@ -396,9 +416,19 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'aytar_call_signals',
         filter: `recipient_id=eq.${userId}`
-      }, payload => {
+      }, async payload => {
         const signal = payload.new as CallSignal;
         if (disposed || seenSignalIdsRef.current.has(signal.id)) return;
+        try {
+          if (await isBlockedWith(signal.sender_id)) {
+            seenSignalIdsRef.current.add(signal.id);
+            if (signal.kind === 'offer') closeCallMedia('rejected');
+            return;
+          }
+        } catch {
+          if (signal.kind === 'offer') closeCallMedia('rejected');
+          return;
+        }
         seenSignalIdsRef.current.add(signal.id);
         if (seenSignalIdsRef.current.size > 500) seenSignalIdsRef.current.clear();
 
@@ -470,6 +500,9 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
             .then(({ data, error }) => {
               if (disposed || error || !data?.length || callStatusRef.current !== 'idle') return;
               const signal = data[0] as CallSignal;
+              try {
+                if (await isBlockedWith(signal.sender_id)) return;
+              } catch { return; }
               if (seenSignalIdsRef.current.has(signal.id)) return;
               seenSignalIdsRef.current.add(signal.id);
               const description = signal.payload.description as RTCSessionDescriptionInit | undefined;
@@ -502,7 +535,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       void supabase!.removeChannel(channel);
       closeCallMedia();
     };
-  }, [active, userId, sendSignal, flushPendingIce, closeCallMedia, onNotice]);
+  }, [active, userId, sendSignal, flushPendingIce, closeCallMedia, onNotice, isBlockedWith]);
 
   useEffect(() => {
     try { localStorage.setItem('aytar-call-history-v1', JSON.stringify(callHistory)); }
@@ -667,6 +700,17 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     const body = draft.trim();
     if (!supabase || !userId || !selected || !body || sending) return;
     setSending(true);
+    try {
+      if (await isBlockedWith(selected.user_id)) {
+        onNotice({ kind: 'error', text: 'Bu kullanıcıyla mesajlaşamazsınız' });
+        setSending(false);
+        return;
+      }
+    } catch {
+      onNotice({ kind: 'error', text: 'Bu kullanıcıyla mesajlaşamazsınız' });
+      setSending(false);
+      return;
+    }
     const { data, error } = await supabase.from('aytar_direct_messages')
       .insert({ sender_id: userId, recipient_id: selected.user_id, body })
       .select('id,sender_id,recipient_id,body,created_at').single();
