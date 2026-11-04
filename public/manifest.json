@@ -1,7 +1,7 @@
 {
-  "name": "AYTAR - Daima ?leri",
+  "name": "AYTAR - Daima İleri",
   "short_name": "AYTAR",
-  "description": "?stanbul ?zerinde konum, a??klama ve foto?raf payla??m?.",
+  "description": "İstanbul Üzerinde konum, açıklama ve fotoğraf paylaşımı.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
