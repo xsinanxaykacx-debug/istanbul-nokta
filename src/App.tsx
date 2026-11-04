@@ -328,6 +328,32 @@ export default function App() {
 
   const knownPinIdsRef = useRef<Set<string>>(new Set());
 
+  const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
+
+  const {
+    pins,
+    setPins,
+    loadPins,
+    matchingIds,
+    filteredPins,
+    filteredListPins,
+    visiblePins,
+  } = usePins({
+    canSeePins,
+    selected,
+    setSelected,
+    setSearchResultIds,
+    selectedCategoryFilter,
+    timeFilter,
+    userId: session?.user?.id,
+    debouncedQuery,
+    searchResultIds,
+    routeInfo,
+    viewportBounds,
+    onError: (message) => setNotice({ kind: 'error', text: message }),
+  });
+
+
   const draftPositionRef = useRef(draftPosition); const categoryRef = useRef(category); const descriptionRef = useRef(description); const filesRef = useRef(files);
   useEffect(() => { draftPositionRef.current = draftPosition; }, [draftPosition]);
   useEffect(() => { categoryRef.current = category; }, [category]);
@@ -364,30 +390,6 @@ export default function App() {
     }
   }, [pins, userPosition, session?.user?.id]);
   
-  const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
-
-  const {
-    pins,
-    setPins,
-    loadPins,
-    matchingIds,
-    filteredPins,
-    filteredListPins,
-    visiblePins,
-  } = usePins({
-    canSeePins,
-    selected,
-    setSelected,
-    setSearchResultIds,
-    selectedCategoryFilter,
-    timeFilter,
-    userId: session?.user?.id,
-    debouncedQuery,
-    searchResultIds,
-    routeInfo,
-    viewportBounds,
-    onError: (message) => setNotice({ kind: 'error', text: message }),
-  });
   
 
 
