@@ -1725,6 +1725,6 @@ export default function App() {
     
     <footer><span>AYTAR</span><span>Harita verisi © OpenStreetMap katkıcıları</span><span>Ücretsiz açık kaynak bileşenlerle geliştirildi</span></footer>
     
-    {authOpen&&<AuthPanel authMode={authMode} setAuthMode={setAuthMode} busy={busy} onGoogleSignIn={signInWithGoogle} onSubmit={submitAuth} email={email} setEmail={setEmail} password={password} setPassword={setPassword} hasSession={!!session} onClose={()=>setAuthOpen(false)}/ >}
+    {authOpen&&<AuthPanel authMode={authMode} setAuthMode={setAuthMode} busy={busy} onGoogleSignIn={signInWithGoogle} onSubmit={submitAuth} email={email} setEmail={setEmail} password={password} setPassword={setPassword} hasSession={!!session} onClose={()=>setAuthOpen(false)}/>}
   </main>;
 }
