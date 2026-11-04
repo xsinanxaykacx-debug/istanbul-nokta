@@ -11,6 +11,7 @@ type Props = {
   routeOrderedPins: any[];
   pins: any[];
   canAdd: boolean;
+  session: any;
   onAddAccount: () => void;
   selectedId: string | null;
   pinAddresses: Record<string, string>;
