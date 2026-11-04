@@ -6,13 +6,15 @@ self.addEventListener('push', (event) => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; }
   catch { payload = { body: event.data ? event.data.text() : 'Yeni bildirimin var.' }; }
+  const isIncomingCall = payload.kind === 'incoming_call';
   const title = payload.title || 'AYTAR';
   event.waitUntil(self.registration.showNotification(title, {
     body: payload.body || 'Yeni bir bildirimin var.',
     icon: '/icon-192.png', badge: '/icon-192.png',
     tag: payload.tag || 'aytar-notification', renotify: Boolean(payload.tag),
+    requireInteraction: isIncomingCall,
     data: { url: payload.url || '/', kind: payload.kind || 'general' },
-    vibrate: payload.kind === 'incoming_call' ? [250, 100, 250, 100, 500] : [150, 80, 150],
+    vibrate: isIncomingCall ? [250, 100, 250, 100, 500] : [150, 80, 150],
   }));
 });
 
