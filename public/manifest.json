@@ -1,7 +1,8 @@
+
 {
   "name": "AYTAR - Daima İleri",
   "short_name": "AYTAR",
-  "description": "İstanbul Üzerinde konum, açıklama ve fotoğraf paylaşımı.",
+  "description": "İstanbul üzerinde konum, açıklama ve fotoğraf paylaşımı.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -9,25 +10,13 @@
   "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
+      "src": "/aytar.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512-maskable.png",
+      "src": "/aytar.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
