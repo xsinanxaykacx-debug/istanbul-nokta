@@ -1,5 +1,7 @@
 import { Camera, LoaderCircle, LocateFixed, Mic, X } from 'lucide-react';
 
+type SpeechSetter = (value: string | ((current: string) => string)) => void;
+
 type Props = {
   draftPosition: [number, number];
   description: string;
@@ -14,7 +16,7 @@ type Props = {
   speechSupported: boolean;
   listeningField: string | null;
   hasProfanity: boolean;
-  startListening: (field: string, setter: (value: string) => void) => void;
+  startListening: (field: string, setter: SpeechSetter) => void;
   isRecording: boolean;
   voiceNoteBlob: Blob | null;
   voiceNotePreviewUrl: string | null;
