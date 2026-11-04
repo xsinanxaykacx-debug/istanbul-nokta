@@ -83,6 +83,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!recipients.length) return res.status(200).json({ sent: 0 });
+
+  // Mute suppresses only push notifications; in-app messages remain untouched.
+  // Block is mutual for delivery: either side blocking the other suppresses the push.
+  if ((event.table === 'aytar_direct_messages' || event.table === 'aytar_call_signals')
+      && notice.kind !== 'new_pin') {
+    const sender = String(row.sender_id ?? '');
+    const recipient = String(row.recipient_id ?? '');
+    if (!sender || !recipient) return res.status(202).json({ ignored: true });
+
+    const { data: muteRows, error: muteError } = await db.from('aytar_muted_users')
+      .select('user_id')
+      .eq('user_id', recipient)
+      .eq('muted_id', sender)
+      .limit(1);
+    if (muteError) return res.status(500).json({ error: 'Could not verify mute preferences' });
+    if (muteRows?.length) return res.status(200).json({ attempted: 0, sent: 0, suppressed: 'muted' });
+
+    const { data: blockRows, error: blockError } = await db.from('aytar_blocked_users')
+      .select('blocker_id')
+      .or(`and(blocker_id.eq.${sender},blocked_id.eq.${recipient}),and(blocker_id.eq.${recipient},blocked_id.eq.${sender})`)
+      .limit(1);
+    if (blockError) return res.status(500).json({ error: 'Could not verify block preferences' });
+    if (blockRows?.length) return res.status(200).json({ attempted: 0, sent: 0, suppressed: 'blocked' });
+  }
+
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
   const { data, error } = await db.from('push_subscriptions')
     .select('id,endpoint,p256dh,auth').in('user_id', recipients);
