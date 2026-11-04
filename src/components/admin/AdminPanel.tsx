@@ -37,7 +37,7 @@ interface AdminPanelProps {
   onUpdateUserStatus: (userId: string, newStatus: string) => void | Promise<void>;
   onDeleteBulkPins: () => void | Promise<void>;
   onResolveReport: (reportId: string, action: 'ignore' | 'delete') => void | Promise<void>;
-  pinDescription: (pin: AdminPin) => string;
+  pinDescription: (pin: any) => string;
 }
 
 export default function AdminPanel({
