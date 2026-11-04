@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  MessageCircle, Users, X, Send, Search, Circle, ArrowLeft, LoaderCircle,
+  MessageCircle, Users, X, Send, Search, Circle, ArrowLeft, LoaderCircle, MoreVertical, MessageSquare, Trash2,
   Video, Phone, MessagesSquare, PhoneCall, PhoneOff, Mic, MicOff, Camera, CameraOff
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -9,7 +9,7 @@ import { ICE_SERVERS } from './lib/liveClient';
 type Profile = { id: string; status: 'pending' | 'active' | 'disabled'; role: 'user' | 'admin'; username: string | null };
 type Session = { user?: { id: string } } | null;
 type Member = { user_id: string; username: string; last_seen_at: string };
-type DirectMessage = { id: string; sender_id: string; recipient_id: string; body: string; created_at: string };
+type DirectMessage = { id: string; sender_id: string; recipient_id: string; body: string; created_at: string; hidden_for?: string[] | null };
 type ChatSummary = { member: Member; lastMessage: DirectMessage };
 type CallKind = 'audio' | 'video';
 type SignalKind = 'offer' | 'answer' | 'ice' | 'reject' | 'hangup';
@@ -35,6 +35,8 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [loadingChats, setLoadingChats] = useState(false);
   const [clearingChats, setClearingChats] = useState(false);
+  const [chatMenuPeerId, setChatMenuPeerId] = useState<string | null>(null);
+  const [hidingChatPeerId, setHidingChatPeerId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -513,8 +515,9 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       setLoadingChats(true);
       const { data, error } = await supabase!
         .from('aytar_direct_messages')
-        .select('id,sender_id,recipient_id,body,created_at')
+        .select('id,sender_id,recipient_id,body,created_at,hidden_for')
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+        .not('hidden_for', 'cs', `{${userId}}`)
         .order('created_at', { ascending: false }).limit(5000);
       if (disposed) return;
       if (error) {
@@ -550,8 +553,9 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       setLoadingMessages(true);
       const { data, error } = await supabase!
         .from('aytar_direct_messages')
-        .select('id,sender_id,recipient_id,body,created_at')
+        .select('id,sender_id,recipient_id,body,created_at,hidden_for')
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${selected.user_id}),and(sender_id.eq.${selected.user_id},recipient_id.eq.${userId})`)
+        .not('hidden_for', 'cs', `{${userId}}`)
         .order('created_at', { ascending: true }).limit(200);
       if (!disposed) {
         if (error) onNotice({ kind: 'error', text: `Mesajlar yüklenemedi: ${error.message}` });
@@ -593,6 +597,27 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       onNotice({ kind: 'success', text: 'Sohbet geçmişiniz temizlendi.' });
     }
     setClearingChats(false);
+  };
+
+  const hideChat = async (peerId: string) => {
+    if (!supabase || !userId || hidingChatPeerId) return;
+    const confirmed = window.confirm('Bu sohbeti silmek istediğinize emin misiniz? Sadece sizin ekranınızdan gizlenecek, karşı taraf görmeye devam edecek.');
+    if (!confirmed) return;
+
+    setHidingChatPeerId(peerId);
+    setChatMenuPeerId(null);
+    const { error } = await supabase.rpc('hide_direct_chat', { p_peer_id: peerId });
+    if (error) {
+      onNotice({ kind: 'error', text: `Sohbet gizlenemedi: ${error.message}` });
+    } else {
+      setChats(current => current.filter(chat => chat.member.user_id !== peerId));
+      if (selected?.user_id === peerId) {
+        setSelected(null);
+        setMessages([]);
+      }
+      onNotice({ kind: 'success', text: 'Sohbet yalnızca sizin ekranınızdan gizlendi.' });
+    }
+    setHidingChatPeerId(null);
   };
 
   const sendMessage = async (event: React.FormEvent) => {
@@ -706,11 +731,33 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
               </div>
               {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler yükleniyor...</div>
                 : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Henüz sohbet geçmişin yok.</div>
-                : chats.map(chat => <button type="button" key={chat.member.user_id} className="aytar-communication-member" onClick={() => { setSelected(chat.member); setMessages([]); }}>
-                  <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
-                  <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
-                  <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
-                </button>)}
+                : chats.map(chat => (
+                  <div key={chat.member.user_id} className="aytar-communication-member" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <button type="button" onClick={() => { setChatMenuPeerId(null); setSelected(chat.member); setMessages([]); }}
+                      style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 10, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
+                      <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
+                      <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
+                      <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
+                    </button>
+                    <button type="button" aria-label={`${chat.member.username} sohbet seçenekleri`} title="Sohbet seçenekleri"
+                      onClick={() => setChatMenuPeerId(current => current === chat.member.user_id ? null : chat.member.user_id)}
+                      style={{ flex: '0 0 auto', border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 8 }}>
+                      <MoreVertical size={18} />
+                    </button>
+                    {chatMenuPeerId === chat.member.user_id && (
+                      <div role="menu" style={{ position: 'absolute', zIndex: 20, right: 8, top: 'calc(100% - 4px)', minWidth: 170, padding: 5, borderRadius: 10, background: '#111827', border: '1px solid rgba(255,255,255,.14)', boxShadow: '0 8px 24px rgba(0,0,0,.35)' }}>
+                        <button type="button" role="menuitem" onClick={() => { setChatMenuPeerId(null); setSelected(chat.member); setMessages([]); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                          <MessageSquare size={16} /> Sohbete Git
+                        </button>
+                        <button type="button" role="menuitem" disabled={hidingChatPeerId === chat.member.user_id} onClick={() => void hideChat(chat.member.user_id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}>
+                          <Trash2 size={16} /> {hidingChatPeerId === chat.member.user_id ? 'Gizleniyor…' : 'Sohbeti Sil'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
 ) : tab === 'calls' ? (
             <div className="aytar-call-history">
