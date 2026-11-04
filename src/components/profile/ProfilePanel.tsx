@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 type ProfilePanelProps = {
   profile: {
@@ -9,7 +10,7 @@ type ProfilePanelProps = {
   badge: {
     name: string;
     color: string;
-    icon: React.ReactNode;
+    icon: ReactNode;
   };
   onClose: () => void;
 };
