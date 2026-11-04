@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  MessageCircle, Users, X, Send, Search, Circle, ArrowLeft, LoaderCircle, MoreVertical, MessageSquare, Trash2,
+  MessageCircle, Users, X, Send, Search, Circle, ArrowLeft, LoaderCircle, MoreVertical, MessageSquare, Trash2, VolumeX, ShieldBan, ShieldCheck,
   Video, Phone, MessagesSquare, PhoneCall, PhoneOff, Mic, MicOff, Camera, CameraOff
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -36,6 +36,10 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
   const [loadingChats, setLoadingChats] = useState(false);
   const [chatMenuPeerId, setChatMenuPeerId] = useState<string | null>(null);
   const [hidingChatPeerId, setHidingChatPeerId] = useState<string | null>(null);
+  const [mutedPeerIds, setMutedPeerIds] = useState<string[]>([]);
+  const [blockedPeerIds, setBlockedPeerIds] = useState<string[]>([]);
+  const [preferenceBusyPeerId, setPreferenceBusyPeerId] = useState<string | null>(null);
+  const [blockConfirmationPeer, setBlockConfirmationPeer] = useState<Member | null>(null);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -95,6 +99,66 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     else setMembers((data ?? []) as Member[]);
     setLoadingMembers(false);
   }, [active]);
+
+  useEffect(() => {
+    if (!supabase || !userId || !active) {
+      setMutedPeerIds([]);
+      setBlockedPeerIds([]);
+      return;
+    }
+    let disposed = false;
+    const loadPreferences = async () => {
+      const [muted, blocked] = await Promise.all([
+        supabase!.from('aytar_muted_users').select('muted_id').eq('user_id', userId),
+        supabase!.from('aytar_blocked_users').select('blocked_id').eq('blocker_id', userId)
+      ]);
+      if (disposed) return;
+      if (muted.error) onNotice({ kind: 'error', text: `Sessize alma listesi alınamadı: ${muted.error.message}` });
+      else setMutedPeerIds((muted.data ?? []).map(row => row.muted_id));
+      if (blocked.error) onNotice({ kind: 'error', text: `Engelleme listesi alınamadı: ${blocked.error.message}` });
+      else setBlockedPeerIds((blocked.data ?? []).map(row => row.blocked_id));
+    };
+    void loadPreferences();
+    return () => { disposed = true; };
+  }, [active, userId, onNotice]);
+
+  const toggleMute = async (peerId: string) => {
+    if (!supabase || !userId || preferenceBusyPeerId) return;
+    const isMuted = mutedPeerIds.includes(peerId);
+    setPreferenceBusyPeerId(peerId);
+    const result = isMuted
+      ? await supabase.from('aytar_muted_users').delete().eq('user_id', userId).eq('muted_id', peerId)
+      : await supabase.from('aytar_muted_users').insert({ user_id: userId, muted_id: peerId });
+    if (result.error) onNotice({ kind: 'error', text: `Sessize alma işlemi başarısız: ${result.error.message}` });
+    else {
+      setMutedPeerIds(current => isMuted ? current.filter(id => id !== peerId) : [...current, peerId]);
+      onNotice({ kind: 'success', text: isMuted ? 'Sessiz kaldırıldı.' : 'Kişi sessize alındı.' });
+    }
+    setChatMenuPeerId(null);
+    setPreferenceBusyPeerId(null);
+  };
+
+  const toggleBlock = async (peer: Member, confirmed = false) => {
+    if (!supabase || !userId || preferenceBusyPeerId) return;
+    const isBlocked = blockedPeerIds.includes(peer.user_id);
+    if (!isBlocked && !confirmed) {
+      setBlockConfirmationPeer(peer);
+      setChatMenuPeerId(null);
+      return;
+    }
+    setPreferenceBusyPeerId(peer.user_id);
+    const result = isBlocked
+      ? await supabase.from('aytar_blocked_users').delete().eq('blocker_id', userId).eq('blocked_id', peer.user_id)
+      : await supabase.from('aytar_blocked_users').insert({ blocker_id: userId, blocked_id: peer.user_id });
+    if (result.error) onNotice({ kind: 'error', text: `Engelleme işlemi başarısız: ${result.error.message}` });
+    else {
+      setBlockedPeerIds(current => isBlocked ? current.filter(id => id !== peer.user_id) : [...current, peer.user_id]);
+      onNotice({ kind: 'success', text: isBlocked ? 'Engel kaldırıldı.' : 'Kişi engellendi. (Mesaj ve arama engeli sonraki aşamada etkinleştirilecek.)' });
+    }
+    setBlockConfirmationPeer(null);
+    setChatMenuPeerId(null);
+    setPreferenceBusyPeerId(null);
+  };
 
   // Presence heartbeat: offline status expires after 90 seconds.
   const presenceErrorShownRef = useRef(false);
@@ -673,6 +737,13 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                 <div><strong>{selected.username}</strong><small><i /> Çevrimiçi</small></div>
                 <button type="button" className="aytar-communication-call" title="Sesli ara" onClick={() => void startCall('audio')} disabled={callStatus !== 'idle'}><Phone size={16} /></button>
                 <button type="button" className="aytar-communication-call" title="Görüntülü ara" onClick={() => void startCall('video')} disabled={callStatus !== 'idle'}><Video size={16} /></button>
+                <div style={{ position: 'relative' }}>
+                  <button type="button" aria-label="Sohbet seçenekleri" title="Sohbet seçenekleri" onClick={() => setChatMenuPeerId(current => current === selected.user_id ? null : selected.user_id)} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 8 }}><MoreVertical size={18} /></button>
+                  {chatMenuPeerId === selected.user_id && <div role="menu" style={{ position: 'absolute', zIndex: 30, right: 0, top: '100%', minWidth: 190, padding: 5, borderRadius: 10, background: '#111827', border: '1px solid rgba(255,255,255,.14)', boxShadow: '0 8px 24px rgba(0,0,0,.35)' }}>
+                    <button type="button" role="menuitem" disabled={preferenceBusyPeerId === selected.user_id} onClick={() => void toggleMute(selected.user_id)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}><VolumeX size={16} /> {mutedPeerIds.includes(selected.user_id) ? 'Sessizi Kaldır' : 'Sessize Al'}</button>
+                    <button type="button" role="menuitem" disabled={preferenceBusyPeerId === selected.user_id} onClick={() => void toggleBlock(selected)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}><ShieldBan size={16} /> {blockedPeerIds.includes(selected.user_id) ? 'Engeli Kaldır' : 'Engelle'}</button>
+                  </div>}
+                </div>
               </div>
               <div className="aytar-communication-messages">
                 {loadingMessages ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Mesajlar yükleniyor...</div>
@@ -710,6 +781,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                       style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 10, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
                       <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
                       <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
+                      {mutedPeerIds.includes(chat.member.user_id) && <span title="Sessize alındı" aria-label="Sessiz" style={{ display: 'inline-flex', color: '#9ca3af', marginLeft: 3 }}><VolumeX size={14} /></span>}
                       <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
                     </button>
                     <button type="button" aria-label={`${chat.member.username} sohbet seçenekleri`} title="Sohbet seçenekleri"
@@ -722,6 +794,14 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
                         <button type="button" role="menuitem" onClick={() => { setChatMenuPeerId(null); setSelected(chat.member); setMessages([]); }}
                           style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
                           <MessageSquare size={16} /> Sohbete Git
+                        </button>
+                        <button type="button" role="menuitem" disabled={preferenceBusyPeerId === chat.member.user_id} onClick={() => void toggleMute(chat.member.user_id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                          <VolumeX size={16} /> {mutedPeerIds.includes(chat.member.user_id) ? 'Sessizi Kaldır' : 'Sessize Al'}
+                        </button>
+                        <button type="button" role="menuitem" disabled={preferenceBusyPeerId === chat.member.user_id} onClick={() => void toggleBlock(chat.member)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}>
+                          <ShieldBan size={16} /> {blockedPeerIds.includes(chat.member.user_id) ? 'Engeli Kaldır' : 'Engelle'}
                         </button>
                         <button type="button" role="menuitem" disabled={hidingChatPeerId === chat.member.user_id} onClick={() => void hideChat(chat.member.user_id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 10px', border: 0, borderRadius: 7, background: 'transparent', color: '#f87171', cursor: 'pointer', textAlign: 'left' }}>
@@ -780,6 +860,18 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
               </>}
               <button type="button" className="hangup" onClick={() => void endCall()} title="Görüşmeyi bitir" aria-label="Görüşmeyi bitir"><PhoneOff size={19} /><span>Bitir</span></button>
             </footer>
+          </section>
+        </div>
+      )}
+      {blockConfirmationPeer && (
+        <div role="presentation" onClick={() => setBlockConfirmationPeer(null)} style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0,0,0,.72)' }}>
+          <section role="alertdialog" aria-modal="true" aria-labelledby="aytar-block-title" onClick={event => event.stopPropagation()} style={{ width: 'min(100%, 390px)', padding: 22, borderRadius: 14, background: '#111827', border: '1px solid rgba(248,113,113,.65)', boxShadow: '0 16px 48px rgba(0,0,0,.55)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#f87171', marginBottom: 12 }}><ShieldBan size={22} /><strong id="aytar-block-title">Kişiyi engelle</strong></div>
+            <p style={{ color: '#e5e7eb', lineHeight: 1.5, margin: '0 0 18px' }}><strong>{blockConfirmationPeer.username}</strong> kişisini engellemek istediğinize emin misiniz? Bu aşamada engel tercihi kaydedilir; mesaj ve arama engellemesi sonraki aşamada etkinleştirilecektir.</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 9 }}>
+              <button type="button" onClick={() => setBlockConfirmationPeer(null)} style={{ padding: '9px 13px', borderRadius: 8, border: '1px solid rgba(255,255,255,.2)', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Vazgeç</button>
+              <button type="button" disabled={preferenceBusyPeerId === blockConfirmationPeer.user_id} onClick={() => void toggleBlock(blockConfirmationPeer, true)} style={{ padding: '9px 13px', borderRadius: 8, border: '1px solid #dc2626', background: '#b91c1c', color: '#fff', cursor: 'pointer' }}>Engelle</button>
+            </div>
           </section>
         </div>
       )}
