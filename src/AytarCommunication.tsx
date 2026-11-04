@@ -34,6 +34,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [loadingChats, setLoadingChats] = useState(false);
+  const [clearingChats, setClearingChats] = useState(false);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -573,6 +574,27 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
+  const clearChatHistory = async () => {
+    if (!supabase || !userId || clearingChats || chats.length === 0) return;
+    const confirmed = window.confirm('Tüm sohbet geçmişiniz silinecek, emin misiniz?');
+    if (!confirmed) return;
+
+    setClearingChats(true);
+    const { error } = await supabase
+      .from('aytar_direct_messages')
+      .delete()
+      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`);
+
+    if (error) {
+      onNotice({ kind: 'error', text: `Sohbet geçmişi temizlenemedi: ${error.message}` });
+    } else {
+      setChats([]);
+      setMessages([]);
+      onNotice({ kind: 'success', text: 'Sohbet geçmişiniz temizlendi.' });
+    }
+    setClearingChats(false);
+  };
+
   const sendMessage = async (event: React.FormEvent) => {
     event.preventDefault();
     const body = draft.trim();
@@ -676,6 +698,12 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
             </div>
            ) : tab === 'chats' ? (
             <div className="aytar-communication-members">
+              <div className="aytar-call-history-title">
+                <strong>Sohbet geçmişi</strong>
+                <button type="button" onClick={() => void clearChatHistory()} disabled={loadingChats || clearingChats || chats.length === 0}>
+                  {clearingChats ? 'Temizleniyor…' : 'Temizle'}
+                </button>
+              </div>
               {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler yükleniyor...</div>
                 : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Henüz sohbet geçmişin yok.</div>
                 : chats.map(chat => <button type="button" key={chat.member.user_id} className="aytar-communication-member" onClick={() => { setSelected(chat.member); setMessages([]); }}>
