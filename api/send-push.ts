@@ -48,6 +48,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     recipients = [recipient];
     notice = { title: 'AYTAR · Gelen arama', body: 'Sana gelen bir arama var. Uygulamayı aç.',
       url: '/?incomingCall=1', tag: `call-${String(row.call_id ?? row.id ?? Date.now())}`, kind: 'incoming_call' };
+  } else if (event.table === 'aytar_direct_messages') {
+    const sender = String(row.sender_id ?? '');
+    const recipient = String(row.recipient_id ?? '');
+    if (!sender || !recipient || sender === recipient) return res.status(202).json({ ignored: true });
+    recipients = [recipient];
+
+    const { data: senderProfile } = await db.from('profiles')
+      .select('username').eq('id', sender).maybeSingle();
+    const senderName = String(senderProfile?.username ?? 'Yeni mesaj');
+    const preview = String(row.body ?? '').trim().replace(/\\s+/g, ' ').slice(0, 100);
+    notice = {
+      title: 'AYTAR · Yeni mesaj',
+      body: preview ? `${senderName}: ${preview}` : `${senderName} sana yeni bir mesaj gönderdi.`,
+      url: '/',
+      tag: `message-${String(row.id ?? Date.now())}`,
+      kind: 'new_message',
+    };
   } else {
     return res.status(202).json({ ignored: true });
   }
