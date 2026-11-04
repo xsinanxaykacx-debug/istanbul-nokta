@@ -35,7 +35,6 @@ const AytarLogo = ({ size = 24, className = "" }) => (
 
 type Profile = { id: string; status: 'pending'|'active'|'disabled'; role: 'user'|'admin'; username: string | null; total_pins_created?: number; total_votes_received?: number };
 type InviteCode = { id: string; code: string | null; created_at: string; redeemed_at: string | null; is_enabled: boolean };
-type PinVote = { vote_type: number; user_id: string };
 type Notice = { kind: 'success'|'error'|'info'; text: string };
 type PlaceResult = { place_id: number; lat: string; lon: string; display_name: string; address?: Record<string,string> };
 type SpeechSetter = (value: string | ((current: string) => string)) => void;
