@@ -554,7 +554,7 @@ export default function App() {
     return()=>{
       disposed=true;
       stopFallback();
-      void supabase.removeChannel(channel);
+      void supabase?.removeChannel(channel);
     };
   },[session?.user?.id]);
 
