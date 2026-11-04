@@ -5,7 +5,7 @@ type SpeechSetter = (value: string | ((current: string) => string)) => void;
 type Props = {
   draftPosition: [number, number];
   description: string;
-  setDescription: (value: string) => void;
+  setDescription: SpeechSetter;
   category: string;
   setCategory: (value: string) => void;
   files: File[];
