@@ -497,7 +497,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
             .eq('recipient_id', userId).eq('kind', 'offer')
             .gte('created_at', new Date(Date.now() - 45000).toISOString())
             .order('created_at', { ascending: false }).limit(1)
-            .then(({ data, error }) => {
+            .then(async ({ data, error }) => {
               if (disposed || error || !data?.length || callStatusRef.current !== 'idle') return;
               const signal = data[0] as CallSignal;
               try {
