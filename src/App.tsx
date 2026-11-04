@@ -1628,6 +1628,7 @@ export default function App() {
             normalizeCategory={normalizeCategory}
             isTelegramPin={isTelegramPin}
             relativeTime={relativeTime}
+            pinTitle={pinTitle}
             pinDescription={pinDescription}
             selectedPhotos={selectedPhotos}
             setLightboxIndex={setLightboxIndex}
