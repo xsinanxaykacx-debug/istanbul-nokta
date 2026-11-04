@@ -12,6 +12,8 @@ import type { MLCEngine } from "@mlc-ai/web-llm";
 import Map3D from './Map3D';
 import AytarCommunication from './AytarCommunication';
 import WelcomeModal from './components/modals/WelcomeModal';
+import AuthPanel from './components/auth/AuthPanel';
+import ProfilePanel from './components/profile/ProfilePanel';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
 
@@ -1709,45 +1711,8 @@ export default function App() {
       </aside>
     </section>
     
-    {/* PROFİL MODALI */}
     {profileOpen && profile && (
-      <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setProfileOpen(false); }}>
-        <div className="invite-modal" style={{ maxWidth: '400px', width: '90%' }}>
-          <div className="modal-head">
-            <div>
-              <p className="eyebrow">KULLANICI PROFİLİ</p>
-              <h2>{profile.username || 'Gözcü'}</h2>
-            </div>
-            <button type="button" className="icon-button" onClick={() => setProfileOpen(false)} aria-label="Kapat"><X size={18}/></button>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '15px' }}>
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '32px', fontWeight: 'bold' }}>
-              {(profile.username || 'U').charAt(0).toUpperCase()}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', color: badge.color, fontWeight: 'bold', fontSize: '14px' }}>
-              {badge.icon} {badge.name}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>{profile.total_pins_created || 0}</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '5px' }}>Toplam Pin</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e' }}>{profile.total_votes_received || 0}</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '5px' }}>Toplam Oy</div>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
-            <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
-              Daha fazla pin ekleyerek yeni rozetler kazanabilirsin!
-            </p>
-          </div>
-        </div>
-      </div>
+      <ProfilePanel profile={profile} badge={badge} onClose={() => setProfileOpen(false)} />
     )}
 
     {summaryOpen && ( <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setSummaryOpen(false); }}><div className="invite-modal summary-modal"><div className="modal-head" style={{ flexShrink: 0 }}><div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><BrainCircuit size={22} color="#3b82f6" /><h2>Akıllı Özet</h2></div><button type="button" className="icon-button" onClick={() => setSummaryOpen(false)} aria-label="Kapat"><X size={18}/></button></div><div className="summary-modal-content">{isSummarizing ? ( <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '150px', gap: '12px', color: '#94a3b8' }}><LoaderCircle size={28} className="gps-spinner" /><span>Yapay Zeka pinleri okuyor ve özetliyor...</span></div> ) : ( <p style={{ lineHeight: '1.6', fontSize: '14px', whiteSpace: 'pre-wrap', margin: 0 }}>{summaryText}</p> )}</div></div></div> )}
@@ -1760,6 +1725,6 @@ export default function App() {
     
     <footer><span>AYTAR</span><span>Harita verisi © OpenStreetMap katkıcıları</span><span>Ücretsiz açık kaynak bileşenlerle geliştirildi</span></footer>
     
-    {authOpen&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setAuthOpen(false);}}><div className="auth-modal"><div className="modal-head"><div><p className="eyebrow">{authMode==='login'?'TEKRAR HOŞ GELDİN':'TOPLULUĞA KATIL'}</p><h2>{authMode==='login'?'Giriş yap':'Hesap oluştur'}</h2></div><button className="icon-button" onClick={()=>setAuthOpen(false)} aria-label="Kapat"><X size={18}/></button></div><button type="button" className="auth-provider-button" onClick={()=>void signInWithGoogle()} disabled={busy}><span className="auth-google-mark">G</span>Google ile devam et</button><div className="auth-divider"><span>veya e-posta ile</span></div><form onSubmit={submitAuth} className="auth-form"><label className="field-label" htmlFor="email">E-posta</label><input id="email" type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="ornek@eposta.com"/><label className="field-label" htmlFor="password">Şifre <span>en az 8 karakter</span></label><input id="password" type="password" minLength={8} required autoComplete={authMode==='login'?'current-password':'new-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="En az 8 karakter"/><button className="primary-button full-width" disabled={busy}>{busy?'İşleniyor…':authMode==='login'?'E-posta ile giriş yap':'E-posta ile kayıt ol'}</button></form><button className="text-button" onClick={()=>setAuthMode(authMode==='login'?'signup':'login')}>{authMode==='login'?'Hesabın yok mu? Kayıt ol':'Zaten hesabın var mı? Giriş yap'}</button>{!session&&<p className="modal-privacy">Kayıt sonrası hesabın otomatik olarak aktifleşir ve hemen kullanmaya başlayabilirsin.</p>}</div></div>}
+    {authOpen&&<AuthPanel authMode={authMode} setAuthMode={setAuthMode} busy={busy} onGoogleSignIn={signInWithGoogle} onSubmit={submitAuth} email={email} setEmail={setEmail} password={password} setPassword={setPassword} hasSession={!!session} onClose={()=>setAuthOpen(false)}/ >}
   </main>;
 }
