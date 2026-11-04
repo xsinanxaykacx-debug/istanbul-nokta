@@ -153,7 +153,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
     if (result.error) onNotice({ kind: 'error', text: `Engelleme işlemi başarısız: ${result.error.message}` });
     else {
       setBlockedPeerIds(current => isBlocked ? current.filter(id => id !== peer.user_id) : [...current, peer.user_id]);
-      onNotice({ kind: 'success', text: isBlocked ? 'Engel kaldırıldı.' : 'Kişi engellendi. (Mesaj ve arama engeli sonraki aşamada etkinleştirilecek.)' });
+      onNotice({ kind: 'success', text: isBlocked ? 'Engel kaldırıldı.' : 'Kişi engellendi.' });
     }
     setBlockConfirmationPeer(null);
     setChatMenuPeerId(null);
@@ -911,7 +911,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
         <div role="presentation" onClick={() => setBlockConfirmationPeer(null)} style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0,0,0,.72)' }}>
           <section role="alertdialog" aria-modal="true" aria-labelledby="aytar-block-title" onClick={event => event.stopPropagation()} style={{ width: 'min(100%, 390px)', padding: 22, borderRadius: 14, background: '#111827', border: '1px solid rgba(248,113,113,.65)', boxShadow: '0 16px 48px rgba(0,0,0,.55)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#f87171', marginBottom: 12 }}><ShieldBan size={22} /><strong id="aytar-block-title">Kişiyi engelle</strong></div>
-            <p style={{ color: '#e5e7eb', lineHeight: 1.5, margin: '0 0 18px' }}><strong>{blockConfirmationPeer.username}</strong> kişisini engellemek istediğinize emin misiniz? Bu aşamada engel tercihi kaydedilir; mesaj ve arama engellemesi sonraki aşamada etkinleştirilecektir.</p>
+            <p style={{ color: '#e5e7eb', lineHeight: 1.5, margin: '0 0 18px' }}>Bu kişiyi engellemek istediğinize emin misiniz? Engellediğinizde size mesaj atamaz ve sizi arayamaz. Engeli istediğiniz zaman kaldırabilirsiniz.</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 9 }}>
               <button type="button" onClick={() => setBlockConfirmationPeer(null)} style={{ padding: '9px 13px', borderRadius: 8, border: '1px solid rgba(255,255,255,.2)', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Vazgeç</button>
               <button type="button" disabled={preferenceBusyPeerId === blockConfirmationPeer.user_id} onClick={() => void toggleBlock(blockConfirmationPeer, true)} style={{ padding: '9px 13px', borderRadius: 8, border: '1px solid #dc2626', background: '#b91c1c', color: '#fff', cursor: 'pointer' }}>Engelle</button>
