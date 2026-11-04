@@ -517,7 +517,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
         .order('created_at', { ascending: false }).limit(5000);
       if (disposed) return;
       if (error) {
-        onNotice({ kind: 'error', text: `Sohbetler y\u00fcklenemedi: ${error.message}` });
+        onNotice({ kind: 'error', text: `Sohbetler yüklenemedi: ${error.message}` });
         setChats([]); setLoadingChats(false); return;
       }
       const latestByPeer = new Map<string, DirectMessage>();
@@ -530,10 +530,10 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
       const { data: profilesData, error: profilesError } = await supabase!
         .from('profiles').select('id,username').in('id', peerIds);
       if (disposed) return;
-      if (profilesError) onNotice({ kind: 'error', text: `Sohbet \u00fcyeleri al\u0131namad\u0131: ${profilesError.message}` });
+      if (profilesError) onNotice({ kind: 'error', text: `Sohbet üyeleri alınamadı: ${profilesError.message}` });
       const usernames = new Map((profilesData ?? []).map((item: { id: string; username: string | null }) => [item.id, item.username]));
       setChats(peerIds.map(peerId => ({
-        member: { user_id: peerId, username: usernames.get(peerId) || 'AYTAR \u00fcyesi', last_seen_at: '' },
+        member: { user_id: peerId, username: usernames.get(peerId) || 'AYTAR üyesi', last_seen_at: '' },
         lastMessage: latestByPeer.get(peerId)!
       })));
       setLoadingChats(false);
@@ -676,8 +676,8 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
             </div>
            ) : tab === 'chats' ? (
             <div className="aytar-communication-members">
-              {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler y\u00fckleniyor...</div>
-                : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Hen\u00fcz sohbet ge\u00e7mi\u015fin yok.</div>
+              {loadingChats ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Sohbetler yükleniyor...</div>
+                : chats.length === 0 ? <div className="aytar-communication-empty aytar-communication-empty-tall">Henüz sohbet geçmişin yok.</div>
                 : chats.map(chat => <button type="button" key={chat.member.user_id} className="aytar-communication-member" onClick={() => { setSelected(chat.member); setMessages([]); }}>
                   <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
                   <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
