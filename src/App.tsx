@@ -15,6 +15,9 @@ import WelcomeModal from './components/modals/WelcomeModal';
 import AuthPanel from './components/auth/AuthPanel';
 import ProfilePanel from './components/profile/ProfilePanel';
 import SearchPanel from './components/search/SearchPanel';
+import PinList from './components/pins/PinList';
+import PinCreateForm from './components/pins/PinCreateForm';
+import PinDetail from './components/pins/PinDetail';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
 
@@ -1602,80 +1605,75 @@ export default function App() {
       <aside className={`side-panel ${isPanelOpen ? 'is-open' : ''}`}>
         {bulkSelectMode && ( <div style={{ padding: '15px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #ef4444', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span style={{ color: '#ef4444', fontWeight: 'bold' }}>{bulkSelectedPins.length} Pin Seçildi</span><button onClick={() => void deleteBulkPins()} className="delete-pin-button" disabled={bulkSelectedPins.length === 0 || busy} style={{ marginTop: 0, padding: '8px 16px' }}><X size={16}/> Seçilenleri Sil</button></div> )}
         {selected&&!routeMode?<div className="panel-content">
-          {editPinMode?<form className="pin-edit-form" onSubmit={savePinEdits}>
-            <div className="panel-heading"><div><p className="eyebrow">KONUMU DÜZENLE</p><h2>{pinTitle(selected)}</h2><small className="edit-form-subtitle">Değişikliklerin yalnızca bu konuma uygulanır.</small></div><button type="button" className="icon-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}} aria-label="Düzenlemeyi kapat"><X size={18}/></button></div>
-            <div className="edit-field-group"><label className="field-label" htmlFor="edit-category">Kategori</label><select id="edit-category" className="category-select" value={editCategory} onChange={e=>{setEditCategory(e.target.value);setEditError(null);}}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="SARI">SARI</option></select></div>
-            <div className="edit-field-group"><label className="field-label" htmlFor="edit-description">Açıklama</label><textarea id="edit-description" value={editDescription} onChange={e=>{setEditDescription(e.target.value);setEditError(null);}} maxLength={5000} rows={4} placeholder="Konum açıklaması"/><div className="edit-description-meta"><small>En fazla 5.000 karakter</small><small>{editDescription.length.toLocaleString('tr-TR')}/5.000</small></div>{containsProfanity(editDescription)&&<p className="form-error" role="alert">Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}</div>
-            <div className="edit-photos-heading"><span className="field-label">Mevcut fotoğraflar</span><small>{editPhotos.length+editFiles.length}/3</small></div>
-            {editPhotos.length>0?<div className="edit-photo-list">{editPhotos.map(photo=><div className="edit-photo-item" key={photo.id}><img src={photoUrls[photo.storage_path]||photo.public_url} alt="Mevcut pin fotoğrafı"/><span>{photo.storage_path.split('/').pop()}</span><button type="button" className="edit-photo-remove" onClick={()=>{setEditPhotos(current=>current.filter(item=>item.id!==photo.id));setEditError(null);}} aria-label="Fotoğrafı sil" title="Fotoğrafı sil"><X size={15}/></button></div>)}</div>:<p className="comments-empty">Mevcut fotoğraf yok.</p>}
-            <div className="edit-field-group"><label className="field-label" htmlFor="edit-photo-input">Yeni fotoğraf ekle <span>Kalan hak: {Math.max(0,3-editPhotos.length-editFiles.length)}</span></label><label className="upload-box edit-upload-box" htmlFor="edit-photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Toplam en fazla 3 fotoğraf</small><input id="edit-photo-input" type="file" accept="image/*" multiple disabled={editPhotos.length+editFiles.length>=3||busy} onChange={e=>{const chosen=Array.from(e.target.files??[]);const totalAllowed=Math.max(0,3-editPhotos.length);const allowed=Math.max(0,totalAllowed-editFiles.length);setEditFiles(current=>[...current,...chosen.slice(0,Math.max(0,totalAllowed-current.length))].slice(0,totalAllowed));setEditError(chosen.length>allowed?'Toplam fotoğraf sayısı 3 adedi geçemez.':null);if(chosen.length>allowed)setNotice({kind:'error',text:'Toplam fotoğraf sayısı 3 adedi geçemez.'});e.currentTarget.value='';}}/></label></div>
-            {editFiles.length>0&&<div className="file-list">{editFiles.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label="Yeni fotoğrafı kaldır" onClick={()=>{setEditFiles(current=>current.filter((_,i)=>i!==index));setEditError(null);}}><X size={14}/></button></div>)}</div>}
-            {editError&&<p className="form-error edit-form-error" role="alert">{editError}</p>}<div className="edit-form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={()=>{setEditPinMode(false);setEditFiles([]);setEditError(null);}}>İptal</button><button type="submit" className="primary-button" disabled={busy||editPhotos.length+editFiles.length>3||containsProfanity(editDescription)}>{busy?<><LoaderCircle size={15} className="gps-spinner"/> Kaydediliyor…</>:'Değişiklikleri Kaydet'}</button></div>
-          </form>:<>
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">KONUM DETAYI</p>
-                <span className={`category-badge ${categoryClass(selected.category)}`}>{normalizeCategory(selected.category)}</span>
-                {isTelegramPin(selected.description, selected.owner_id)&&<span className="radar-source-badge"><Radar size={13}/> AYTAR RADAR</span>}
-                <h2>{pinTitle(selected)}</h2>
-              </div>
-              <button className="icon-button" onClick={()=>{setSelected(null);setLightboxIndex(null);setEditPinMode(false);setIsPanelOpen(false);}} aria-label="Konum detayını kapat"><X size={18}/></button>
-            </div>
-            <p className="pin-date">{relativeTime(selected.created_at)}</p>
-            <p className="pin-description">{pinDescription(selected)||'Açıklama eklenmemiş.'}</p>
-            {selected.voice_note_url && ( <div className="pin-voice-note-player"><Volume2 size={18} className="voice-note-icon" /><audio controls src={selected.voice_note_url} className="voice-note-audio">Tarayıcınız ses oynatmayı desteklemiyor.</audio></div> ) }
-            <div className={`photo-grid ${selectedPhotos.length===1?'single-photo':''}`}>
-              {selectedPhotos.map((photo,index)=><button key={photo.id} type="button" className="photo-tile" onClick={()=>setLightboxIndex(index)} aria-label={`Fotoğraf ${index+1} / ${selectedPhotos.length} büyüt`}><img src={photoUrls[photo.storage_path]||''} alt={`Konum fotoğrafı ${index+1}`} loading="lazy"/></button>)}
-            </div>
-            <div className="selected-address"><MapPin size={17} aria-hidden="true"/><span>{selectedAddress||`${selected.lat.toFixed(5)}, ${selected.lng.toFixed(5)}`}</span></div>
-            <p className="coordinates selected-coordinates">{selected.lat.toFixed(5)}, {selected.lng.toFixed(5)}</p>
-            <div className="pin-interactions-row">
-              <div className="pin-reactions-bar">
-                <div className="reaction-group">
-                  {['🚓', '🧑‍✈️', '🚒', '👮‍♂️', '🚧'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
-                </div>
-                <div className="reaction-group weather-group">
-                  {['☀️', '🌧️', '❄️', '☁️', '⛈️'].map(emoji => { const count = reactions.filter(r => r.emoji === emoji).length; const isMine = reactions.some(r => r.user_id === session?.user?.id && r.emoji === emoji); return ( <button key={emoji} type="button" className={`reaction-btn weather-btn ${isMine ? 'is-active' : ''}`} onClick={() => void toggleReaction(emoji)} disabled={!session?.user}> <span>{emoji}</span> {count > 0 && <span>{count}</span>} </button> ); })}
-                </div>
-              </div>
-              {(()=>{ const votes=selected.pin_votes??[]; const score=votes.reduce((sum,vote)=>sum+Number(vote.vote_type||0),0); const myVote=session?.user?.id?votes.find(vote=>vote.user_id===session.user.id)?.vote_type??0:0; const ownPin=!!session?.user?.id&&selected.owner_id===session.user.id; return ( <div className="pin-vote-bar" aria-label={`Toplam oy skoru: ${score}`}> <button type="button" className={`pin-vote-button vote-up ${myVote===1?'is-active':''}`} aria-label="Artı oy ver" aria-pressed={myVote===1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(1)}>+</button> <strong className={`pin-vote-score ${score>0?'score-positive':score<0?'score-negative':''}`}>{score>0?`+${score}`:score}</strong> <button type="button" className={`pin-vote-button vote-down ${myVote===-1?'is-active':''}`} aria-label="Eksi oy ver" aria-pressed={myVote===-1} disabled={!session?.user||ownPin||busy} onClick={()=>void togglePinVote(-1)}>−</button> </div> ); })()}
-            </div>
-            <div className="pin-comments-section">
-              <h3 className="comments-title">Yorumlar ({comments.length})</h3>
-              <div className="comments-list">
-                {comments.length === 0 && <p className="comments-empty">Henüz yorum yok. İlk yorumu sen yap!</p>}
-                {comments.map(c => ( <div key={c.id} className="comment-item"> <div className="comment-header"> <strong>{c.profiles?.username || 'Kullanıcı'}</strong> <small>{relativeTime(c.created_at)}</small> </div> <p className="comment-text">{c.content}</p> </div> ))}
-              </div>
-              {session?.user && ( <form className="comment-form" onSubmit={submitComment}> <input value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Bir yorum yaz..." maxLength={500} /> <button type="submit" disabled={busyComment || !newComment.trim()}>{busyComment ? '...' : 'Gönder'}</button> </form> )}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
-              <a className="directions-link" href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`} target="_blank" rel="noopener noreferrer" style={{ textAlign: 'center', width: '100%', display: 'block' }}>Yol tarifi</a>
-              {session?.user && ( <button type="button" className="primary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px' }} onClick={() => { if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setRouteStart([pos.coords.latitude, pos.coords.longitude]); setRouteEnd([selected.lat, selected.lng]); setRouteMode(true); setSelected(null); setIsPanelOpen(true); }, () => setNotice({kind:'error', text:'Rota oluşturmak için konum izni gerekli.'})); } }}><Navigation size={16} style={{ marginRight: '8px' }}/> Buraya Rota Oluştur</button> )}
-              {canDeleteSelected && ( <div className="pin-owner-actions"> <button type="button" className="secondary-button" disabled={busy} onClick={beginPinEdit}>Düzenle</button> <button type="button" className="delete-pin-button" disabled={busy} onClick={()=>void deletePinById(selected.id)}><X size={16}/>{busy?"Siliniyor…":"Bu Noktayı Sil"}</button> </div> )}
-              {session?.user && !canDeleteSelected && ( <button type="button" className="secondary-button" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.5)', padding: '10px' }} onClick={() => void reportPin(selected.id, pinDescription(selected), selected.category)}><ShieldAlert size={16} style={{ marginRight: '8px' }}/> Bu Noktayı Rapor Et</button> )}
-            </div>
-          </>}
+          <PinDetail
+            selected={selected}
+            editPinMode={editPinMode}
+            editDescription={editDescription}
+            setEditDescription={setEditDescription}
+            editCategory={editCategory}
+            setEditCategory={setEditCategory}
+            editPhotos={editPhotos}
+            setEditPhotos={setEditPhotos}
+            editFiles={editFiles}
+            setEditFiles={setEditFiles}
+            editError={editError}
+            setEditError={setEditError}
+            photoUrls={photoUrls}
+            busy={busy}
+            containsProfanity={containsProfanity}
+            onSaveEdits={savePinEdits}
+            onExitEdit={() => { setEditPinMode(false); setEditFiles([]); setEditError(null); }}
+            pinTitle={pinTitle}
+            categoryClass={categoryClass}
+            normalizeCategory={normalizeCategory}
+            isTelegramPin={isTelegramPin}
+            relativeTime={relativeTime}
+            pinDescription={pinDescription}
+            selectedPhotos={selectedPhotos}
+            setLightboxIndex={setLightboxIndex}
+            selectedAddress={selectedAddress}
+            reactions={reactions}
+            session={session}
+            onToggleReaction={toggleReaction}
+            onToggleVote={togglePinVote}
+            comments={comments}
+            newComment={newComment}
+            setNewComment={setNewComment}
+            onSubmitComment={submitComment}
+            busyComment={busyComment}
+            onClose={() => { setSelected(null); setLightboxIndex(null); setEditPinMode(false); setIsPanelOpen(false); }}
+            onBuildRoute={(pin) => { if(navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { setRouteStart([pos.coords.latitude,pos.coords.longitude]); setRouteEnd([pin.lat,pin.lng]); setRouteMode(true); setSelected(null); setIsPanelOpen(true); }, () => setNotice({kind:'error',text:'Rota oluşturmak için konum izni gerekli.'})); } }}
+            canDeleteSelected={canDeleteSelected}
+            onBeginEdit={beginPinEdit}
+            onDelete={(pinId) => void deletePinById(pinId)}
+            onReport={(pin) => void reportPin(pin.id,pinDescription(pin),pin.category)}
+          />
         </div>
-        :draftPosition&&canAdd&&!routeMode?<form className="panel-content" onSubmit={addPin}>
-          <div className="panel-heading"><div><p className="eyebrow">YENİ PAYLAŞIM</p><h2>Konum ekle</h2></div><button type="button" className="icon-button" onClick={()=>{setDraftPosition(null);setIsPanelOpen(false);}} aria-label="Konum ekleme formunu kapat"><X size={18}/></button></div>
-          <div className="draft-coordinates-row"><p className="coordinates">{draftPosition[0].toFixed(5)}, {draftPosition[1].toFixed(5)}</p><button type="button" className="use-location-button" onClick={()=>locateUser(true)} disabled={locating} title="GPS konumunu kullan">{locating?<LoaderCircle className="gps-spinner" size={15}/>:<LocateFixed size={15}/>}<span>{locating?'Konum alınıyor…':'Konumumu Kullan'}</span></button></div>
-          <p className="draft-location-hint">📍 Konumu değiştirmek için haritada başka bir noktaya tıklayabilir veya yandaki GPS butonunu kullanabilirsiniz.</p>
-          <label className="field-label" htmlFor="category">Kategori</label>
-          <select id="category" className="category-select" value={category} onChange={e=>setCategory(e.target.value)}><option value="YEŞİL">YEŞİL</option><option value="MAVİ">MAVİ</option><option value="KIRMIZI">KIRMIZI</option><option value="SARI">SARI</option></select>
-          <label className="field-label" htmlFor="description">Açıklama</label>
-          <div className={`voice-textarea-wrap ${speechSupported?'voice-supported':''}`}><textarea id="description" className={speechSupported?'voice-enabled-input':''} value={description} onChange={e=>setDescription(e.target.value)} maxLength={5000} placeholder={listeningField==='description'?'Dinleniyor...':'Bu konum hakkında ne paylaşmak istersin?'} rows={3}/>{hasProfanity&&<p role="alert" style={{color:"#dc2626",fontSize:"13px",margin:"6px 0 0"}}>⚠️ Açıklamanızda uygun olmayan bir ifade tespit edildi.</p>}{speechSupported&&<button type="button" className={`voice-button textarea-voice-button ${listeningField==='description'?'is-listening':''}`} onClick={()=>startListening('description',setDescription)} aria-label={listeningField==='description'?'Dinlemeyi durdur':'Açıklamaya sesli giriş'} title={listeningField==='description'?'Dinleniyor...':'Sesli giriş'}><Mic size={16}/></button>}</div>
-          <label className="field-label" style={{marginTop: '12px'}}>Sesli Not <span>İsteğe bağlı</span></label>
-          <div className="voice-note-recorder">
-            {!isRecording && !voiceNoteBlob && ( <button type="button" className="record-btn" onClick={startRecording}> <Mic size={18}/> Bas ve Konuş </button> )}
-            {isRecording && ( <button type="button" className="record-btn is-recording" onClick={stopRecording}> <div className="recording-pulse" /> Kaydı Bitir </button> )}
-            {voiceNotePreviewUrl && !isRecording && ( <div className="voice-note-preview"> <audio controls src={voiceNotePreviewUrl} className="voice-note-audio-preview" /> <button type="button" className="clear-voice-btn" onClick={clearVoiceNote} aria-label="Sesi sil"><X size={16}/></button> </div> )}
-          </div>
-          <label className="field-label" htmlFor="photo-input">Fotoğraflar <span>İsteğe bağlı · En fazla 3 adet</span></label>
-          <label className="upload-box" htmlFor="photo-input"><Camera size={22}/><strong>Fotoğraf seç</strong><small>Görsel dosyası · dosya başına en fazla 12 MB</small><input id="photo-input" type="file" accept="image/*" capture="environment" multiple onChange={e=>{const selectedFiles=Array.from(e.target.files??[]);setFiles(selectedFiles);setNotice(selectedFiles.length>3?{kind:'error',text:'En fazla 3 fotoğraf seçebilirsin.'}:null);}}/></label>
-          {files.length>0&&<div className="file-list">{files.map((file,i)=><div key={`${file.name}-${i}`}><span>{file.name}</span><button type="button" onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Dosyayı kaldır"><X size={14}/></button></div>)}</div>}
-          <button className="primary-button full-width" disabled={busy||files.length>3||hasProfanity}>{busy?'Kaydediliyor…':'Konumu kaydet'}</button>
-          <p className="info-text" style={{fontSize:"12px",color:"#94a3b8",marginTop:"10px",textAlign:"center"}}>Bilgilendirme: Paylaşımlarınız haritada 24 saat boyunca görünür kalır.</p>
-        </form>
+        :draftPosition&&canAdd&&!routeMode?<PinCreateForm
+          draftPosition={draftPosition}
+          description={description}
+          setDescription={setDescription}
+          category={category}
+          setCategory={setCategory}
+          files={files}
+          setFiles={setFiles}
+          busy={busy}
+          locating={locating}
+          locateUser={locateUser}
+          speechSupported={speechSupported}
+          listeningField={listeningField}
+          hasProfanity={hasProfanity}
+          startListening={startListening}
+          isRecording={isRecording}
+          voiceNoteBlob={voiceNoteBlob}
+          voiceNotePreviewUrl={voiceNotePreviewUrl}
+          startRecording={startRecording}
+          stopRecording={stopRecording}
+          clearVoiceNote={clearVoiceNote}
+          setNotice={setNotice}
+          onSubmit={addPin}
+          onClose={() => { setDraftPosition(null); setIsPanelOpen(false); }}
+        />
         :<div className="empty-panel">
           <div className="panel-top-controls">
             {routeMode&&<section className="route-info-card" aria-live="polite"><div className="route-info-row"><div className="route-info-copy"><div className="route-info-heading"><Navigation size={16}/><h2>Rota Bilgisi</h2></div>{!routeStart?<p>Başlangıç noktası seçilmedi</p>:!routeEnd?<p>Bitiş noktası seçilmedi</p>:routeLoading?<p className="route-status"><LoaderCircle size={14} className="gps-spinner"/> Rota hesaplanıyor…</p>:routeInfo?<p className="route-summary">{routeInfo.distance} · ~{routeInfo.duration} · {routeInfo.pinsOnRoute.length} durak</p>:routeError?<p className="route-error" role="alert">{routeError}</p>:null}</div>
@@ -1717,7 +1715,33 @@ export default function App() {
             <button type="button" className="ai-summary-btn" onClick={handleSummarize}><Sparkles size={16}/> Yapay Zeka ile Özetle</button>
             {routeMode&&routeInfo&&routeOrderedPins.length>0&&<div className="route-stop-list-heading"><strong>Güzergâh durakları</strong><span>{routeOrderedPins.length} nokta</span></div>}
           </div>
-          {filteredListPins.length===0&&timeFilter!=='all'&&filteredPins.length===0?<><div className="empty-icon"><Clock size={24}/></div><h2>Bu zaman aralığında nokta yok</h2><p>Daha geniş bir zaman aralığı seçebilir veya tüm son 24 saati görüntüleyebilirsin.</p></>:filteredListPins.length===0&&selectedCategoryFilter!=='Tümü'&&filteredPins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>Bu kategoride henüz nokta yok</h2><p>Başka bir kategori seçebilir veya yeni bir nokta ekleyebilirsin.</p></>:filteredListPins.length===0&&debouncedQuery.trim()?<><div className="empty-icon"><Search size={24}/></div><h2>Eşleşen nokta yok</h2><p>Farklı bir kelimeyle tekrar ara.</p></>:routeMode&&routeInfo&&routeOrderedPins.length===0?<><div className="empty-icon"><Navigation size={24}/></div><h2>Güzergâhta nokta yok</h2><p>Rota çizgisinin 100 metre yakınında paylaşılmış nokta bulunamadı.</p></>:pins.length===0?<><div className="empty-icon"><MapPin size={24}/></div><h2>İstanbul haritası</h2><p>{canAdd?'Haritada bir noktaya tıklayarak yeni paylaşım oluştur.':'Haritayı gezebilirsin.'}</p></>:<div className="pin-list" aria-label="Paylaşılan noktalar">{routeOrderedPins.map(({pin,routeOrder,routeDistance})=>{const first=[...(pin.pin_photos??[])].sort((a,b)=>a.sort_order-b.sort_order)[0];const title=pinTitle(pin);const score=pin.pin_votes?.reduce((sum,v)=>sum+v.vote_type,0)||0;return <button key={pin.id} type="button" className={`pin-list-item ${routeOrder!==null?'route-stop-item':''} ${selected?.id===pin.id?'is-selected':''}`} aria-label={routeOrder!==null?`${routeOrder}. durak: ${title}, haritada göster`:`Aç: ${title}`} onClick={()=>{setSelected(pin);setSearchPlace(null);setDraftPosition(null);setLightboxIndex(null);setIsPanelOpen(true);}}>{routeOrder!==null&&<span className="route-stop-number">{routeOrder}</span>}<div className="pin-list-left"><span className="pin-thumb">{first&&!thumbFailed[pin.id]?<LazyPinThumbnail path={first.storage_path} url={photoUrls[first.storage_path]} onVisible={ensurePhotoUrls} onError={()=>setThumbFailed(old=>({...old,[pin.id]:true}))} category={pin.category} />:<span className="mini-pin"><MapPin size={16} style={{ stroke: categoryFilterColors[normalizeCategory(pin.category)], color: categoryFilterColors[normalizeCategory(pin.category)] }} /></span>}</span><small className={`pin-category-label ${categoryClass(pin.category)}`}><span className="pin-category-dot"/>{normalizeCategory(pin.category)}</small></div><div className="pin-list-right"><strong className="pin-list-title" title={pinAddresses[pin.id]||title}>{pinAddresses[pin.id]||title||'Adres aranıyor...'}</strong><div className="pin-list-meta"><small>{routeDistance!==null?`${formatRouteDistance(routeDistance)} · `:''}{relativeTime(pin.created_at)} · {pin.pin_photos?.length??0} fotoğraf</small><span className={`pin-score-badge ${score>0?'score-pos':score<0?'score-neg':'score-zero'}`} aria-label={`Oy skoru: ${score}`}>{score>0?`+${score}`:score}</span></div></div></button>;})}</div>}
+          <PinList
+            filteredListPins={filteredListPins}
+            timeFilter={timeFilter}
+            filteredPins={filteredPins}
+            selectedCategoryFilter={selectedCategoryFilter}
+            debouncedQuery={debouncedQuery}
+            routeMode={routeMode}
+            routeInfo={routeInfo}
+            routeOrderedPins={routeOrderedPins}
+            pins={pins}
+            canAdd={canAdd}
+            session={session}
+            onAddAccount={() => setAuthOpen(true)}
+            selectedId={selected?.id ?? null}
+            pinAddresses={pinAddresses}
+            photoUrls={photoUrls}
+            thumbFailed={thumbFailed}
+            ensurePhotoUrls={ensurePhotoUrls}
+            onThumbError={(pinId) => setThumbFailed(old => ({...old,[pinId]:true}))}
+            onSelectPin={(pin) => { setSelected(pin); setSearchPlace(null); setDraftPosition(null); setLightboxIndex(null); setIsPanelOpen(true); }}
+            categoryClass={categoryClass}
+            normalizeCategory={normalizeCategory}
+            categoryFilterColors={categoryFilterColors}
+            LazyPinThumbnail={LazyPinThumbnail}
+            formatRouteDistance={formatRouteDistance}
+            relativeTime={relativeTime}
+          />
           {!session&&<button className="secondary-button full-width" onClick={()=>setAuthOpen(true)}>Hesap oluştur</button>}
         </div>}
         <div className="panel-footnote"><ShieldCheck size={15}/><span>Konum erişimi veritabanı politikalarıyla korunur.</span></div>
