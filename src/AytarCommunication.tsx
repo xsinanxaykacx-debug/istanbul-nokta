@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  MessageCircle, Users, X, Send, Search, Circle, ArrowLeft, LoaderCircle, MoreVertical, MessageSquare, Trash2, VolumeX, ShieldBan,
+  MessageCircle, Users, X, Search, Circle, LoaderCircle, ShieldBan,
   Video, Phone, MessagesSquare, PhoneCall, PhoneOff, Mic, MicOff, Camera, CameraOff
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
