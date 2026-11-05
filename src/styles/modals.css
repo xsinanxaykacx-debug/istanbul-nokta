@@ -1,0 +1,102 @@
+/* Modal, invite, summary and lightbox styles extracted from styles.css. */
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-head h2{font:800 20px Manrope,sans-serif;letter-spacing:-.5px;margin:0}
+.modal-backdrop{position:fixed;z-index:2000;inset:0;background:#12241bc2;backdrop-filter:blur(5px);display:grid;place-items:center;padding:18px}
+.modal-privacy{font-size:11px;line-height:1.6;color:#87928b;text-align:center;margin:14px 0 0}
+.lightbox-backdrop{ position: fixed; z-index: 3000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 60px 70px; background: #07110deF; touch-action: pan-y; }
+.lightbox-image{ display: block; max-width: min(100%, 1200px); max-height: calc(100vh - 120px); width: auto; height: auto; object-fit: contain; border-radius: 6px; }
+.lightbox-close{ position: absolute; top: 16px; right: 18px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #ffffff55; border-radius: 50%; background: #17231ddd; color: white; }
+.lightbox-nav{ position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 48px; height: 58px; display: grid; place-items: center; border: 1px solid #ffffff55; border-radius: 12px; background: #17231ddd; color: white; }
+.lightbox-prev{ left: 16px; }
+.lightbox-next{ right: 16px; }
+.lightbox-counter{ position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); color: white; background: #17231ddd; padding: 7px 12px; border-radius: 30px; font-size: 12px; font-variant-numeric: tabular-nums; }
+@media(max-width:760px){
+.lightbox-backdrop{ padding: 55px 12px; }
+.lightbox-image{ max-width: 100%; max-height: calc(100vh - 110px); }
+.lightbox-prev{ left: 7px; }
+.lightbox-next{ right: 7px; }
+.lightbox-nav{ width: 40px; height: 48px; background: #17231dbb; }
+
+}
+.invite-backdrop{ z-index: 2200; }
+.invite-modal{ width: min(520px, 100%); max-height: min(86vh, 760px); overflow-y: auto; padding: 25px; border: 1px solid #e5e9e7; border-radius: 20px; background: #fff; box-shadow: 0 30px 100px #0b1e1466; }
+.invite-intro{ margin: 13px 0 3px; color: #748078; font-size: 12px; line-height: 1.7; }
+.invite-create{ margin-top: 13px; min-height: 44px; }
+.invite-limit{ margin: 9px 0 0; color: #a06420; font-size: 11px; text-align: center; }
+.invite-list{ display: grid; gap: 8px; margin-top: 18px; }
+.invite-row{ display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #e8eeea; border-radius: 12px; background: #fbfcfb; }
+.invite-code-info{ display: grid; gap: 6px; min-width: 0; }
+.invite-code-info strong{ color: #2a4033; font-size: 12px; overflow-wrap: anywhere; }
+.invite-code-info small{ color: #7e8a82; font-size: 10px; }
+.invite-empty{ padding: 22px 12px; border: 1px dashed #dce5df; border-radius: 12px; color: #7b8981; font-size: 12px; line-height: 1.7; text-align: center; }
+.invite-footnote{ margin: 14px 0 0; color: #87928b; font-size: 10px; line-height: 1.6; }
+@media (max-width: 760px){
+.invite-backdrop{ align-items: flex-end; padding: 0; }
+.invite-modal{ width: 100%; max-width: none; max-height: 88dvh; padding: 23px 18px calc(20px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; border-bottom: 0; }
+.invite-row{ padding: 10px; }
+
+}
+.modal-head h2{ color: var(--text-dark); }
+.modal-backdrop > section, .invite-modal{ border-color: var(--border-color); }
+.modal-head h2, .invite-code-info strong{ color: var(--text-dark); }
+.modal-privacy, .invite-intro, .invite-code-info small, .invite-footnote{ color: var(--text-muted); }
+.invite-modal, .invite-row{
+  border-color: var(--border-color);
+}
+.invite-modal{
+  background: var(--surface);
+  color: var(--text-dark);
+  border-color: var(--border-color);
+}
+.invite-row{ background: var(--surface); color: var(--text-dark); }
+.modal-backdrop{ background: rgba(3, 8, 20, .78); }
+.invite-row{ border-color: var(--border-color); }
+.invite-code-info small{ color: var(--text-muted); }
+.app-shell.light-theme .invite-modal{
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+.app-shell.light-theme .invite-modal{
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.app-shell.light-theme .modal-head h2, .app-shell.light-theme .modal-head .eyebrow{
+  color: #0f172a !important;
+}
+.modal-backdrop{
+  z-index: 100000 !important; 
+}
+.summary-modal{
+  display: flex !important;
+  flex-direction: column !important;
+  width: 92% !important;
+  max-width: 500px !important;
+  max-height: 80vh !important; /* Ekranın %80'ini geçmesin */
+  margin: auto !important;
+  background: var(--surface, #151f32) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
+  padding: 0 !important; /* Padding'i içerideki elemanlara dağıtacağız */
+}
+.summary-modal .modal-head{
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  flex-shrink: 0 !important;
+}
+.summary-modal-content{
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  padding: 20px !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+@media (max-width: 768px){
+.summary-modal{
+    max-height: 85dvh !important; /* Dinamik ekran yüksekliğine tam oturması için */
+  }
+
+}
