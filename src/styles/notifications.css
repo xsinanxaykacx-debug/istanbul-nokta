@@ -1,0 +1,24 @@
+.setup-banner, .notice{margin-top:15px;padding:12px 15px;border-radius:11px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px}.setup-banner{background:#fff4df;color:#805819;border:1px solid #f0dfb9}.notice.success{background:#e8f6ed;color:#1e6c47}.notice.error{background:#fff0ed;color:#a33f2d}.notice.info{background:#eaf2fb;color:#315d88}.notice button{background:transparent;border:0;color:inherit}
+.setup-banner, .notice{ flex: 0 0 auto; margin-top: 8px; }
+@media (max-width: 760px) {
+  .notice, .setup-banner{ font-size: 11px; padding: 8px 10px; }}
+.setup-banner, .notice{ border-color: var(--border-color); }
+.setup-banner, .notice{
+  border-color: var(--border-color);
+}
+.notice.success{ background: #12372b; color: #86efac; }
+.notice.error{ background: #3b2026; color: #fca5a5; }
+.notice.info{ background: #172d47; color: #93c5fd; }
+.setup-banner{ background: #352d1c; border-color: #66502a; color: #fcd58b; }
+
+
+/* Mobile screen-space optimization sprint */
+@media (max-width: 768px) {
+
+  .notice, .setup-banner{
+    flex: 0 0 auto;
+    margin-top: 5px;
+    padding: 7px 9px;
+    gap: 7px;
+    font-size: 11px;
+  }}
