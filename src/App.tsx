@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Moon, Navigation, Plus, Search, ShieldCheck, SlidersHorizontal, Sun, UserRound, X, BrainCircuit, Sparkles, Award, Trophy, Star, Bell, BellOff } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Navigation, Plus, Search, ShieldCheck, SlidersHorizontal, UserRound, X, BrainCircuit, Sparkles, Award, Trophy, Star, Bell, BellOff } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
@@ -282,7 +282,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const Map3DView = Map3D;
-  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [theme,setTheme]=useState<'dark'|'light'>('dark'); const isDarkMode=theme==='dark'; const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -360,24 +360,6 @@ export default function App() {
   useEffect(() => { categoryRef.current = category; }, [category]);
   useEffect(() => { descriptionRef.current = description; }, [description]);
   useEffect(() => { filesRef.current = files; }, [files]);
-
-  useEffect(() => {
-    try {
-      const savedTheme = window.localStorage.getItem('aytar-theme');
-      if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme);
-    } catch {
-      // localStorage kullanılamazsa varsayılan koyu tema korunur.
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    try {
-      window.localStorage.setItem('aytar-theme', theme);
-    } catch {
-      // Tema geçişi localStorage olmadan da çalışmaya devam eder.
-    }
-  }, [theme]);
 
   useEffect(() => {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
@@ -1073,7 +1055,6 @@ export default function App() {
     | { type: 'ZOOM'; action: 'in' | 'out' }
     | { type: 'SEARCH_PLACE'; query: string }
     | { type: 'CLEAR_ROUTE' }
-    | { type: 'THEME'; mode: 'dark' | 'light' }
     | { type: 'DELETE_PIN'; target: 'selected' | 'nearest' }
     | { type: 'CLEAR_SEARCH' }
     | { type: 'CHANGE_CATEGORY'; category: string }
@@ -1119,8 +1100,6 @@ export default function App() {
     if (/(?:yakınlaş|yaklaştır|zoom yap|büyüt|yaklaş)/.test(normalized)) return { type: 'ZOOM', action: 'in' };
     if (/(?:uzaklaş|uzaklaştır|küçült)/.test(normalized)) return { type: 'ZOOM', action: 'out' };
     if (/(?:rota temizle|rotayı temizle|rotayı iptal et|rotayı kapat)/.test(normalized)) return { type: 'CLEAR_ROUTE' };
-    if (/(?:gece modu|karanlık mod|siyah tema)/.test(normalized)) return { type: 'THEME', mode: 'dark' };
-    if (/(?:gündüz modu|aydınlık mod|beyaz tema)/.test(normalized)) return { type: 'THEME', mode: 'light' };
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:aç|göster|aktif)/.test(normalized)) return { type: 'HEATMAP', enabled: true };
     if (/(?:ısı|isi)(?:\s*haritas[ıi])?\s*(?:kapat|gizle)/.test(normalized)) return { type: 'HEATMAP', enabled: false };
     if (/traf(?:ik|iği)\s*(?:aç|göster|aktif)/.test(normalized)) return { type: 'TRAFFIC', enabled: true };
@@ -1169,7 +1148,7 @@ export default function App() {
           messages: [
             {
               role: "system",
-              content: "Sen bir harita asistanısın. Kullanıcının cümlesini şu kategorilerden birine ayır: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, TEMA_GECE, TEMA_GUNDUZ, BILINMIYOR. Yalnızca kategori adını büyük harfle döndür."
+              content: "Sen bir harita asistanısın. Kullanıcının cümlesini şu kategorilerden birine ayır: TRAFFIC_ACIK, TRAFFIC_KAPALI, ROTA, ARAMA, PIN_SIL, ZOOM_IN, ZOOM_OUT, BILINMIYOR. Yalnızca kategori adını büyük harfle döndür."
             },
             { role: "user", content: transcript }
           ],
@@ -1182,8 +1161,6 @@ export default function App() {
         if (resultText.includes("TRAFFIC_KAPALI")) return { type: 'TRAFFIC', enabled: false };
         if (resultText.includes("ZOOM_IN")) return { type: 'ZOOM', action: 'in' };
         if (resultText.includes("ZOOM_OUT")) return { type: 'ZOOM', action: 'out' };
-        if (resultText.includes("TEMA_GECE")) return { type: 'THEME', mode: 'dark' };
-        if (resultText.includes("TEMA_GUNDUZ")) return { type: 'THEME', mode: 'light' };
         if (resultText.includes("PIN_SIL")) return { type: 'DELETE_PIN', target: 'selected' };
         if (resultText.includes("ROTA")) return { type: 'ROUTE', destination: transcript };
         if (resultText.includes("ARAMA")) return { type: 'SEARCH_PLACE', query: transcript };
@@ -1220,7 +1197,6 @@ export default function App() {
       case 'ZOOM':
         if (mapRef.current) { command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut(); setNotice({ kind: 'success', text: command.action === 'in' ? 'Yakınlaştırıldı.' : 'Uzaklaştırıldı.' }); } return;
       case 'CLEAR_ROUTE': setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null); setIsPanelOpen(false); if(isNavigating) stopNavigation(); setNotice({ kind: 'success', text: 'Rota temizlendi.' }); return;
-      case 'THEME': setTheme(command.mode === 'dark' ? 'dark' : 'light'); setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' }); return;
       case 'SEARCH_PLACE':
         setNotice({ kind: 'info', text: `"${command.query}" aranıyor...` });
         try {
@@ -1381,12 +1357,9 @@ export default function App() {
   const center:[number,number]=[41.0082,28.9784];
   const badge = getUserBadge(profile);
 
-  return <main className={`app-shell ${isDarkMode ? '' : 'light-theme'}`}>
+  return <main className="app-shell">
     {showWelcome&&<WelcomeModal onClose={dontShowAgain=>{if(dontShowAgain){try{window.localStorage.setItem('aytar_welcome_seen','true');}catch(error){console.warn('Rehber tercihi kaydedilemedi:',error);}}setShowWelcome(false);}}/>}
     <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><AytarLogo size={22} /></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
-      <button type="button" className="icon-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
-        {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
-      </button>
       {llmLoading && <span style={{fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px', marginRight: '10px'}}><BrainCircuit size={14} className="gps-spinner"/> YZ Yükleniyor...</span>}
       {session?<div className="profile-menu-wrap"><button type="button" className={`status-chip profile-trigger ${active?'active':''}`} onClick={()=>setProfileMenuOpen(open=>!open)} aria-expanded={profileMenuOpen} aria-label="Profil menüsünü aç">{profile?.username || (active?'Aktif üye':'Hesap devre dışı')}<ChevronDown size={14}/></button>{profileMenuOpen&&<div className="profile-dropdown"><p className="profile-welcome">Hoş geldin, <strong>{profile?.username || session.user?.email?.split('@')[0] || 'üye'}</strong></p><div className="profile-badge-inline" style={{margin: '0 7px 10px', padding: '5px 0', color: badge.color, fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'}}>{badge.icon} {badge.name}</div><button type="button" className="profile-menu-item" onClick={() => { setProfileOpen(true); setProfileMenuOpen(false); }}><UserRound size={16}/> Profilim</button>{active&&<button type="button" className="profile-menu-item" disabled={pushBusy||!isPushSupported()} onClick={()=>void togglePushNotifications()}>{pushEnabled?<BellOff size={16}/>:<Bell size={16}/>} {pushBusy?'İşleniyor…':pushEnabled?'Bildirimleri Kapat':'Bildirimleri Aç'}</button>}{profile?.role === 'admin' && <button type="button" className="profile-menu-item" onClick={() => void openAdminPanel()}><ShieldCheck size={16}/> Admin Paneli</button>}{active&&<button type="button" className="profile-menu-item" onClick={()=>void openInviteCodes()}><UserRound size={16}/> Davet Kodlarım</button>}<button type="button" className="profile-menu-item logout-item" onClick={()=>void signOut()}><LogOut size={16}/> Çıkış Yap</button></div>}</div>:<button className="primary-button" onClick={()=>setAuthOpen(true)}><LogIn size={17}/> Giriş / Kayıt</button>}</div></header>
     
