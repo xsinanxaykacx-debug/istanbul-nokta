@@ -540,7 +540,8 @@ body, .app-shell{ color: var(--text-dark); }
 
 .field-label{ color: var(--text-dark); }
 
-.empty-panel > p, .pin-description{ color: var(--text-muted); }
+.empty-panel > p{ color: var(--text-muted); }
+.pin-description{ color: var(--text-primary); }
 
 /* Voice-to-text controls */
 .voice-textarea-wrap{ position: relative; width: 100%; }
@@ -641,13 +642,13 @@ body, .app-shell{ color: var(--text-dark); }
 }
 
 /* Midnight Sapphire — cohesive dark palette overrides */
-html, body, #root, .app-shell{ background: var(--bg-main); color: var(--text-dark); }
+html, body, #root, .app-shell{ background: var(--bg-main); color: var(--text-primary); }
 
 body{ color-scheme: dark; }
 
 .topbar{ border-bottom-color: var(--border-color); }
 
-.brand, .brand strong, h1, h2, h3, strong, .panel-heading h2, .empty-panel h2, .pin-meta strong, .pin-list-item strong, .profile-welcome strong{ color: var(--text-dark); }
+.brand, .brand strong, h1, h2, h3, strong, .panel-heading h2, .empty-panel h2, .pin-meta strong, .pin-list-item strong, .profile-welcome strong{ color: var(--text-primary); }
 
 .brand small, .intro-copy, .eyebrow, .stat-label, .coordinates, .pin-date, .pin-list-item small, .pin-meta small, footer, .panel-footnote, .empty-panel p, .field-label span{ color: var(--text-muted); }
 
@@ -657,21 +658,21 @@ body{ color-scheme: dark; }
 
 .side-panel, .profile-dropdown{
   background: var(--surface);
-  color: var(--text-dark);
+  color: var(--text-primary);
   border-color: var(--border-color);
 }
 
 .panel-footnote{ background: var(--surface); border-top-color: var(--border-color); }
 
-.pin-list-item, .file-list div{ background: var(--surface); color: var(--text-dark); }
+.pin-list-item, .file-list div{ background: var(--surface); color: var(--text-primary); }
 
 .pin-list-item:hover, .profile-menu-item:hover{
   background: #1d2b42;
   border-color: #3d566d;
-  color: var(--text-dark);
+  color: var(--text-primary);
 }
 
-.pin-list-item strong, .pin-meta strong{ color: var(--text-dark); }
+.pin-list-item strong, .pin-meta strong{ color: var(--text-primary); }
 
 .primary-button{
   background: var(--primary);
@@ -1475,8 +1476,8 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 /* Açık Tema (Gündüz Modu) */
 .app-shell.light-theme{
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
 }
 
 .app-shell.light-theme .topbar, .app-shell.light-theme .side-panel, .app-shell.light-theme .profile-dropdown{
@@ -1531,7 +1532,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
 }
 
 .app-shell.light-theme .pin-title, .app-shell.light-theme .pin-description, .app-shell.light-theme .pin-date, .app-shell.light-theme .pin-list-title{
-  color: #334155 !important;
+  color: var(--text-primary) !important;
 }
 
 /* Form Elemanları (Input, Select, Textarea) */
@@ -1580,7 +1581,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
 }
 
 .app-shell.light-theme .pin-list-meta small{
-  color: #64748b !important;
+  color: var(--text-muted) !important;
 }
 
 /* Modallar (Admin Paneli, Giriş, Davet) */
