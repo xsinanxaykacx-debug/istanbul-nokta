@@ -6,6 +6,7 @@
 @import './styles/admin.css';
 @import './styles/auth.css';
 @import './styles/modals.css';
+@import './styles/mobile.css';
 
 .app-shell{max-width:1600px;margin:0 auto;padding:0 30px}
 .topbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e6e9e8}
@@ -69,34 +70,6 @@
 .text-button{border:0;background:transparent;color:#3f765b;font-size:12px;font-weight:700;margin-top:13px;width:100%;padding:8px}
 footer{display:flex;justify-content:space-between;gap:12px;padding:23px 2px 25px;font-size:10px;color:#87918b}
 
-@media(max-width:1050px){
-.workspace{grid-template-columns:minmax(0,1fr) 320px}
-.app-shell{padding:0 20px}
-
-}
-
-@media(max-width:760px){
-.app-shell{padding:0 12px}
-.topbar{height:70px}
-.brand-mark{width:38px;height:38px}
-.brand strong{font-size:15px}
-.brand small{font-size:10px}
-.top-actions .primary-button{font-size:11px;padding:10px}
-.intro{padding:25px 0 18px;align-items:flex-start}
-.intro h1{font-size:25px}
-.intro-copy{font-size:12px;max-width:250px;line-height:1.5}
-.map-stats{padding-top:17px}
-.stat-number{font-size:21px}
-.stat-label{font-size:9px;max-width:75px}
-.workspace{display:flex;flex-direction:column;gap:12px}
-.side-panel{min-height:280px;border-radius:14px}
-.panel-content, .empty-panel{padding:19px}
-.empty-panel{padding-top:30px}
-footer{flex-wrap:wrap;justify-content:center;text-align:center;padding:18px 0;gap:7px 15px}
-footer span:first-child{width:100%}
-
-}
-
 .pin-list{ width: 100%; }
 
 .pin-list-item{ width: 100%; min-height: 68px; gap: 10px; }
@@ -139,50 +112,18 @@ footer span:first-child{width:100%}
 
 .directions-link:hover{ text-decoration: underline; }
 
-
-
-
-
-
-
-
-
-
 .pin-date{ margin: 14px 0 0; color: #87928b; font-size: 11px; }
 
-
-
 /* GPS Sprint */
-
-
 
 .gps-spinner{animation:gps-spin .9s linear infinite}
 
 @keyframes gps-spin{to{transform:rotate(360deg)}}
 
-
 /* Reference-code onboarding */
 .pending-status{cursor:pointer;border:1px solid #f0d6a1;background:#fff5df;color:#835b12;font:inherit;font-size:11px;font-weight:800;padding:8px 11px;border-radius:999px}
 
 .pending-status:hover{background:#ffedc6}
-
-
-
-
-
-
-
-
-
-
-
-
-@media(max-width:760px){
-.pending-status{font-size:10px;padding:7px 9px}
-
-}
-
-
 
 /* Invite code management */
 .profile-menu-wrap{ position: relative; }
@@ -209,37 +150,9 @@ footer span:first-child{width:100%}
 
 .profile-menu-item.logout-item svg{ color: #8b4438; }
 
-
-
-
-
-
-
-
-
-
-
 .copy-code-button{ display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; min-height: 34px; padding: 7px 9px; border: 1px solid #dce7df; border-radius: 9px; background: #fff; color: #245945; font-size: 11px; font-weight: 700; }
 
 .copy-code-button:hover{ background: #edf5ef; }
-
-
-
-@media (max-width: 760px){
-
-  .profile-dropdown{ right: -2px; width: min(245px, calc(100vw - 24px)); }
-
-  
-  
-  
-  .copy-code-button{ padding: 8px; }
-
-  .copy-code-button span{ display: none; }
-
-
-}
-
-
 
 /* Pin deletion is available only to the pin owner and admins. */
 .delete-pin-button{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 42px; margin-top: 14px; padding: 11px 14px; border: 1px solid #f1c7c7; border-radius: 10px; background: #fff3f3; color: #b42318; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .15s, border-color .15s; }
@@ -248,39 +161,17 @@ footer span:first-child{width:100%}
 
 .delete-pin-button:disabled{ opacity: .6; cursor: not-allowed; }
 
-
-
 /* Draft pin appearance and GPS control. */
-
-
-
 
 .draft-coordinates-row{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 11px 0 0; }
 
 .draft-coordinates-row .coordinates{ margin: 0; overflow-wrap: anywhere; }
 
-
-
-
 .draft-location-hint{ margin: 7px 0 16px; color: #819087; font-size: 10px; line-height: 1.55; }
 
 .draft-coordinates-row + .draft-location-hint{ margin-top: 7px; }
 
-@media(max-width:420px){
- .draft-coordinates-row{ align-items: flex-start; flex-direction: column; }
-  
-}
-
-
-
 /* Pin categories: marker colors, list labels, detail badge and form selector. */
-
-
-
-
-
-
-
 
 .category-select{
   display: block;
@@ -299,7 +190,6 @@ footer span:first-child{width:100%}
   border-color: #6a9c82;
   box-shadow: 0 0 0 3px #dcefe3;
 }
-
 
 .pin-category-label{
   display: flex !important;
@@ -329,7 +219,6 @@ footer span:first-child{width:100%}
 
 .category-kirmizi{ color: #FF1744 !important; }
 
-
 .category-badge{
   display: inline-flex;
   align-items: center;
@@ -353,7 +242,6 @@ footer span:first-child{width:100%}
   border-radius: 50%;
   background: currentColor;
 }
-
 
 /* Gözcü fullscreen app layout sprint */
 html, body, #root{
@@ -390,7 +278,6 @@ body{ height: 100vh; height: 100dvh; }
   margin-top: 10px;
 }
 
-
 .side-panel{
   height: 100%;
   min-height: 0;
@@ -402,59 +289,6 @@ body{ height: 100vh; height: 100dvh; }
 .panel-content, .empty-panel{ min-height: 0; }
 
 footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
-
-@media (max-width: 1050px){
-
-  .app-shell{ padding: 0 20px; }
-
-  .topbar{ flex-basis: 72px; }
-
-  .workspace{ grid-template-columns: minmax(0, 1fr) minmax(270px, 320px); gap: 10px; }
-
-  
-  footer{ padding: 8px 0; }
-
-
-}
-
-@media (max-width: 760px){
-
-  .app-shell{ padding: 0 10px; }
-
-  .topbar{ flex-basis: 64px; height: 64px; }
-
-  .workspace{
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  
-  .side-panel{ grid-row: 2; height: 100%; min-height: 0; max-height: 100%; border-radius: 12px; }
-
-  .panel-content, .empty-panel{ padding: 14px; }
-
-  .empty-panel{ padding-top: 18px; }
-
-  .panel-footnote{ padding: 10px 12px; }
-
-  footer{
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 7px 0 calc(7px + env(safe-area-inset-bottom));
-    font-size: 9px;
-    text-align: left;
-  }
-
-  footer span:first-child{ width: auto; }
-
-
-}
-
-
 
 /* Compact right panel: keep the form and privacy note on-screen without panel scrolling. */
 .side-panel{
@@ -581,53 +415,7 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   line-height: 1.35;
 }
 
-@media (max-width: 1050px){
-
-  .side-panel > form.panel-content{
-    padding: 10px 12px 8px;
-  }
-
-  .side-panel > form.panel-content .draft-location-hint{
-    font-size: 9px;
-  }
-
-
-}
-
-@media (max-width: 760px){
-
-  .side-panel > form.panel-content{
-    padding: 8px 11px 7px;
-  }
-
-  .side-panel > form.panel-content .panel-heading h2{
-    font-size: 16px;
-  }
-
-  .side-panel > form.panel-content .field-label{
-    margin: 5px 0 3px;
-  }
-
-  .side-panel > form.panel-content .upload-box{
-    gap: 6px;
-    padding: 6px 8px;
-  }
-
-  .side-panel > form.panel-content .upload-box small{
-    font-size: 8px;
-  }
-
-  .side-panel > .panel-footnote{
-    padding: 7px 10px;
-  }
-
-
-}
-
-
-
 /* Category filter buttons below the place search. */
-
 
 .category-filter-row{
   display: flex;
@@ -642,27 +430,6 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   pointer-events: auto;
   scrollbar-width: thin;
 }
-
-
-
-
-@media (max-width: 760px){
-
-  
-  
-  .category-filter-row{
-    width: 100%;
-    max-width: calc(100vw - 44px);
-    gap: 6px;
-    margin-top: 7px;
-    padding-bottom: 7px;
-  }
-
-  
-
-}
-
-
 
 /* Premium visual refresh: theme tokens are defined in styles/base.css. */
 html, body, #root{ background: var(--bg-main); }
@@ -768,26 +535,11 @@ body, .app-shell{ color: var(--text-dark); }
 
 .upload-box:hover{ border-color: var(--primary); background: #f0fdf7; }
 
-
-
-
-
 .category-badge{ background: var(--surface); }
 
 .field-label{ color: var(--text-dark); }
 
 .empty-panel > p, .pin-description{ color: var(--text-muted); }
-
-@media (prefers-reduced-motion: reduce){
-
-  .primary-button, .secondary-button, .delete-pin-button, .copy-code-button, .profile-menu-item, .pin-list-item, .icon-button{
-    transition: none;
-  }
-
-
-}
-
-
 
 /* Voice-to-text controls */
 .voice-textarea-wrap{ position: relative; width: 100%; }
@@ -830,16 +582,6 @@ body, .app-shell{ color: var(--text-dark); }
 }
 .textarea-voice-button{ top: 7px; right: 7px; }
 
-@media (prefers-reduced-motion: reduce){
-
-  .voice-button{ transition: none; }
-
-  .voice-button.is-listening{ animation: none; }
-
-
-}
-
-
 /* Reverse-geocoded address in the selected pin details */
 .selected-address{
   display: flex;
@@ -863,7 +605,6 @@ body, .app-shell{ color: var(--text-dark); }
   color: #9ca3af;
   font-size: 0.75rem;
 }
-
 
 /* AYTAR: yakın işaretçi grupları */
 .pin-cluster-icon-wrap{
@@ -897,15 +638,6 @@ body, .app-shell{ color: var(--text-dark); }
   outline-offset: 2px;
   border-radius: 50%;
 }
-
-@media (prefers-reduced-motion: reduce){
-
-  .pin-cluster-icon{ transition: none; }
-
-
-}
-
-
 
 /* Midnight Sapphire — cohesive dark palette overrides */
 html, body, #root, .app-shell{ background: var(--bg-main); color: var(--text-dark); }
@@ -988,8 +720,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #6ee7b7;
 }
 
-
-
 .selected-address{ color: var(--text-dark); }
 
 .selected-address > svg{ color: var(--text-muted); }
@@ -1000,7 +730,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .directions-link:hover, .text-button:hover{ color: #a7f3d0; }
 
-
 .profile-dropdown{ box-shadow: 0 12px 34px rgba(0, 0, 0, .38); }
 
 .profile-welcome{ color: var(--text-muted); border-bottom-color: var(--border-color); }
@@ -1009,34 +738,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .profile-menu-item svg{ color: var(--text-muted); }
 
-
-
 .voice-button{ background: var(--surface); color: var(--text-dark); border-color: var(--border-color); }
 
 .voice-button:hover{ background: #1d2b42; color: #6ee7b7; border-color: var(--primary); }
-
-
-
 
 .pin-cluster-icon{ background: #0f8060; }
 
 .pin-cluster-icon-wrap:hover .pin-cluster-icon{ background: #10b981; }
 
-
-
-
-
-
-
-
-
-
-
-
 .status-chip.active{ background: #123a33; color: #6ee7b7; }
 
 .status-chip{ background: #352d1c; color: #fcd58b; }
-
 
 .pending-status{ background: #352d1c; border-color: #66502a; color: #fcd58b; }
 
@@ -1045,15 +757,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .panel-content textarea{
   border-radius: 12px;
 }
-
-@media (prefers-reduced-motion: reduce){
-
-  .pin-list-item, .primary-button, .secondary-button, .icon-button{ transition: none; }
-
-
-}
-
-
 
 /* Mobile UI sprint: compact map action and collapsible category filter. */
 
@@ -1104,35 +807,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: var(--primary);
 }
 
-
-@media (max-width: 768px){
-
-  
-  
-  .category-filter-row{
-    width: fit-content;
-    max-width: calc(100vw - 44px);
-    flex-wrap: wrap;
-    overflow: visible;
-    margin-top: 7px;
-    padding: 2px;
-  }
-
-  .category-filter-row.is-open{
-    max-width: calc(100vw - 44px);
-    gap: 5px;
-    padding: 7px;
-  }
-
-  
-  
-  .filter-toggle-button{ width: 32px; height: 32px; }
-
-
-}
-
-
-
 /* Pin list address summary layout */
 .pin-list-item{
   min-height: 76px;
@@ -1177,8 +851,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   text-overflow: ellipsis;
 }
 
-
-
 /* Compact time filter for recent pins */
 .time-filter-control{
   display: inline-flex;
@@ -1217,19 +889,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .time-filter-control option{ background: var(--surface); color: var(--text-dark); }
 
-@media (max-width: 768px){
-
-  .time-filter-control{ min-height: 32px; margin-top: 5px; padding: 0 8px; gap: 5px; }
-
-  .time-filter-control > svg{ width: 14px; height: 14px; }
-
-  .time-filter-control select{ max-width: min(190px, calc(100vw - 90px)); padding: 6px 14px 6px 0; font-size: 11px; }
-
-
-}
-
-
-
 /* Keep floating map filters interactive above Leaflet's click surface. */
 .category-filter-row, .time-filter-control{
   position: relative;
@@ -1241,8 +900,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   pointer-events: auto;
   touch-action: manipulation;
 }
-
-
 
 /* Filters now live in the right panel, directly above pin search. */
 .panel-filters{
@@ -1289,202 +946,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
   max-width: none;
 }
 
-@media (max-width: 760px){
-
-  .panel-filters .category-filter-row{ max-width: 100%; }
-
-  .panel-filters .category-filter-row.is-open{ max-width: 100%; }
-
-  .panel-filters .time-filter-control select{ max-width: none; }
-
-
-}
-
-
-
 /* Mobile screen-space optimization sprint */
-@media (max-width: 768px){
-
-  html, body, #root{
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-
-  body{
-    height: 100dvh;
-    min-height: 0;
-    padding-bottom: 0;
-    overscroll-behavior: none;
-  }
-
-
-  #root{
-    height: 100dvh;
-    min-height: 0;
-  }
-
-
-  .app-shell{
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0 8px;
-  }
-
-
-  .topbar{
-    flex: 0 0 auto;
-    height: 54px;
-    min-height: 54px;
-    gap: 8px;
-  }
-
-
-  .brand{ gap: 8px; min-width: 0; }
-
-  .brand-mark{ width: 31px; height: 31px; border-radius: 10px; }
-
-  .brand-mark svg{ width: 17px; height: 17px; }
-
-  .brand strong{ font-size: 13px; line-height: 1.2; letter-spacing: -.2px; }
-
-  .brand small{ margin-top: 1px; font-size: 9px; }
-
-  .top-actions{ gap: 6px; min-width: 0; }
-
-  .status-chip, .pending-status, .profile-trigger{ padding: 6px 8px; font-size: 10px; }
-
-  .top-actions .primary-button, .top-actions .secondary-button{ padding: 7px 9px; font-size: 10px; gap: 5px; }
-
-
-  .workspace{
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    min-height: 0;
-    overflow: hidden;
-    padding: 7px 0 0;
-  }
-
-  
-  
-  
-  
-
-  .side-panel{
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    width: 100%;
-    height: calc(100dvh - 60px);
-    min-height: 0;
-    overflow: hidden;
-    border-radius: 12px;
-  }
-
-
-  .panel-content, .empty-panel{
-    min-height: 0;
-    padding: 10px;
-  }
-
-
-  .empty-panel{
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    min-height: 0;
-    padding-top: 9px;
-    text-align: left;
-    overflow: hidden;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-
-  .panel-filters{
-    flex: 0 0 auto;
-    gap: 4px;
-    margin: 0 0 7px;
-  }
-
-
-  .panel-filters .category-filter-row{
-    gap: 4px;
-    padding: 0;
-  }
-
-
-  
-
-  .panel-filters .filter-toggle-button{ width: 27px; height: 27px; }
-
-  .panel-filters .category-filter-row.is-open{ gap: 4px; padding: 5px; border-radius: 10px; }
-
-  .panel-filters .time-filter-control{ min-height: 27px; padding: 0 7px; gap: 5px; }
-
-  .panel-filters .time-filter-control select{ padding: 4px 13px 4px 0; font-size: 10px; }
-
-
-  .pin-list{
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    gap: 4px;
-    margin: 6px 0 0;
-  }
-
-
-  .pin-list-item{
-    min-height: 53px;
-    padding: 5px 7px;
-    gap: 7px;
-    border-radius: 8px;
-  }
-
-
-  .pin-thumb, .pin-thumb img{ width: 36px; height: 36px; }
-
-  .pin-thumb{ flex-basis: 36px; border-radius: 7px; }
-
-  .pin-list-copy{ gap: 2px; }
-
-  .pin-list-copy strong{ font-size: 10px; line-height: 1.25; }
-
-  .pin-list-copy .pin-category-label{ font-size: 9px; }
-
-  .pin-list-copy > small:last-child{ font-size: 9px; line-height: 1.2; }
-
-  .empty-panel > .empty-icon{ width: 32px; height: 32px; margin: 2px 0 7px; }
-
-  .empty-panel h2{ font-size: 15px; }
-
-  .empty-panel p{ font-size: 11px; line-height: 1.45; margin: 5px 0 8px; }
-
-
-  footer{ display: none !important; }
-
-  .panel-footnote{ flex: 0 0 auto; padding: 7px 9px; font-size: 9px; }
-
-
-}
-
 
 /* Lazy pin thumbnails: resolve the photo URL only as the row approaches view. */
 .pin-thumb-image-slot{ display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; border-radius: inherit; }
 
 .pin-thumb-image-slot img{ display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-
 
 .primary-button:disabled{
   opacity: 0.5;
@@ -1492,16 +959,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   filter: grayscale(50%);
 }
 
-
-
 /* AYTAR: TomTom route planning */
-
-
-
-
-
-
-
 
 .route-info-card{ margin: 0 0 12px; padding: 13px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--surface); }
 
@@ -1521,23 +979,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .route-card-actions .secondary-button{ padding: 7px 10px; font-size: 11px; }
 
-@media (max-width: 768px){
-
-  
-  
-  .route-info-card{ margin-bottom: 7px; padding: 9px; }
-
-  .route-info-heading h2{ font-size: 12px; }
-
-  .route-info-card p{ font-size: 10px; }
-
-  .route-info-card .route-stop-hint{ display: none; }
-
-
-}
-
-
-
 /* Route stops are ordered from the route start and can be focused on the map. */
 .route-stop-hint{ margin-bottom: 2px !important; }
 
@@ -1552,19 +993,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .route-stop-number{ display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: #2684ff; color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(38, 132, 255, .25); }
 
 .route-stop-item .pin-thumb{ flex-shrink: 0; }
-
-@media (max-width: 768px){
-
-  .route-stop-list-heading{ margin-top: 8px; font-size: 11px; }
-
-  .route-stop-number{ flex-basis: 21px; width: 21px; height: 21px; font-size: 10px; }
-
-  .pin-list-item.route-stop-item{ gap: 6px; }
-
-
-}
-
-
 
 /* Fix right-panel vertical layout: keep controls compact and scroll the pin list. */
 .side-panel{
@@ -1612,7 +1040,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   -webkit-overflow-scrolling: touch;
   align-content: start;
 }
-
 
 /* Compact route information card: title, summary and clear action share one row. */
 .route-info-card{
@@ -1674,61 +1101,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.2;
   white-space: nowrap;
 }
-
-@media (max-width: 768px){
-
-  .panel-top-controls .route-info-card{
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    margin-bottom: 5px;
-    padding: 8px 12px;
-  }
-
-  .panel-top-controls .route-info-card .route-info-heading{
-    flex: 0 0 auto;
-    margin: 0;
-    padding: 0;
-    gap: 4px;
-  }
-
-  .panel-top-controls .route-info-card .route-info-heading h2{
-    font-size: 14px;
-  }
-
-  .panel-top-controls .route-info-card p{
-    margin: 0;
-    padding: 0;
-    font-size: 12px;
-    line-height: 1.2;
-  }
-
-  .panel-top-controls .route-info-card .route-summary{
-    flex: 1 1 auto;
-    min-width: 120px;
-  }
-
-  .panel-top-controls .route-info-card .route-card-actions{
-    flex: 0 0 auto;
-    margin: 0 0 0 auto;
-  }
-
-  .panel-top-controls .route-info-card .route-card-actions .secondary-button{
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-
-  .panel-top-controls .route-info-card .route-stop-hint{
-    display: none;
-  }
-
-
-}
-
-
-
 
 /* Definitive compact route bar: the copy and clear action share one row. */
 .panel-top-controls .route-info-card{
@@ -1810,38 +1182,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   display: none;
 }
 
-@media (max-width: 768px){
-
-  .panel-top-controls .route-info-card{
-    margin-bottom: 4px;
-    padding: 8px 10px;
-  }
-
-  .panel-top-controls .route-info-row{ gap: 6px; }
-
-  .panel-top-controls .route-info-copy{ gap: 6px; }
-
-  .panel-top-controls .route-info-copy .route-info-heading{ gap: 3px; }
-
-  .panel-top-controls .route-info-copy .route-info-heading svg{
-    width: 14px;
-    height: 14px;
-  }
-
-  .panel-top-controls .route-info-copy .route-info-heading h2{ font-size: 12px; }
-
-  .panel-top-controls .route-info-copy p{ font-size: 11px; }
-
-  .panel-top-controls .route-info-card .route-card-actions .secondary-button{
-    padding: 4px 8px;
-    font-size: 12px;
-  }
-
-
-}
-
-
-
 /* Independent voice command for creating a new pin. */
 .voice-pin-control{
   position: absolute;
@@ -1912,26 +1252,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   0%, 100%{ box-shadow: 0 0 0 0 rgba(220, 38, 38, .38), 0 4px 16px rgba(79, 35, 150, .2); }
   50%{ box-shadow: 0 0 0 8px rgba(220, 38, 38, 0), 0 4px 16px rgba(79, 35, 150, .2); }
 }
-@media (max-width: 768px){
-
-  .voice-pin-control{ left: 116px; right: auto; bottom: 8px; }
-
-  .voice-pin-button{ width: 44px; height: 44px; border-radius: 11px; }
-
-  .voice-pin-button.is-listening{ width: auto; min-width: 44px; height: 44px; padding: 0 9px; }
-
-  .voice-pin-tooltip{ left: 0; right: auto; max-width: min(270px, calc(100vw - 132px)); }
-
-
-}
-
-@media (prefers-reduced-motion: reduce){
- .voice-pin-button{ transition: none; }
- .voice-pin-button.is-listening{ animation: none; }
- 
-}
-
-
 
 /* Pin editing and plus/minus votes */
 .pin-owner-actions{ display:flex; align-items:center; gap:8px; margin-top:12px; }
@@ -1984,16 +1304,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .pin-vote-bar small{ flex-basis:100%; text-align:center; color:var(--text-muted,#64748b); font-size:11px; }
 
-@media (max-width:768px){
- .pin-owner-actions{ gap:6px; }
- .pin-vote-bar{ gap:10px; padding:9px; }
- .pin-vote-button{ width:36px; height:34px; }
- .edit-photo-item img{ width:42px; height:42px; flex-basis:42px; }
- 
-}
-
-
-
 /* Compact vote score badge in the pin list */
 .pin-score-badge{
   display: inline-flex;
@@ -2027,8 +1337,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .pin-score-badge.score-neutral{
   color: #64748b;
 }
-
-
 
 /* Pin list: fixed two-column layout, with metadata and vote score sharing one row. */
 .pin-list-item{
@@ -2160,33 +1468,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .pin-list-item.route-stop-item .pin-list-left{ margin-left: 10px; }
 
-@media (max-width: 768px){
-
-  .pin-list-item{ gap: 8px; padding: 7px; }
-
-  .pin-list-left{ flex-basis: 48px; width: 48px; min-width: 48px; gap: 5px; }
-
-  .pin-list-left .pin-thumb{ flex-basis: 38px; width: 38px; height: 38px; }
-
-  .pin-list-left .pin-category-label{ font-size: 8px; }
-
-  .pin-list-right{ gap: 5px; }
-
-  .pin-list-title{ font-size: 12px; }
-
-  .pin-list-meta{ gap: 5px; }
-
-  .pin-list-meta small{ font-size: 10px; }
-
-  .pin-list-meta .pin-score-badge{ padding: 2px 6px; font-size: 10px; }
-
-  .pin-list-item.route-stop-item .pin-list-left{ margin-left: 8px; }
-
-
-}
-
 /* Haritayı karanlık moda çeviren sihirli kod */
-
 
 /* Pinlerin ve popup'ların renginin değişmemesi için */
 
@@ -2196,13 +1478,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a;
 }
 
-
 .app-shell.light-theme .topbar, .app-shell.light-theme .side-panel, .app-shell.light-theme .profile-dropdown{
   background-color: #ffffff;
   border-color: #cbd5e1;
   color: #0f172a;
 }
-
 
 .app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
   background-color: #f8fafc;
@@ -2210,15 +1490,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-color: #cbd5e1;
 }
 
-
 /* Açık temada haritanın rengini düzelt (Koyu filtreyi kaldır) */
-
 
 .app-shell.light-theme .pin-list-item, .app-shell.light-theme .empty-panel{
   background-color: #ffffff;
   border-color: #cbd5e1;
 }
-
 
 /* Admin paneli de açık temada düzgün görünsün */
 
@@ -2232,7 +1509,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a !important;
 }
 
-
 /* Üst bar */
 .app-shell.light-theme .topbar{
   background-color: #ffffff !important;
@@ -2243,23 +1519,19 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a !important;
 }
 
-
 /* Sağ Panel (Side Panel) */
 .app-shell.light-theme .side-panel{
   background-color: #ffffff !important;
   border-left: 1px solid #e2e8f0 !important;
 }
 
-
 .app-shell.light-theme .panel-content h2, .app-shell.light-theme .panel-content h3, .app-shell.light-theme .panel-heading h2, .app-shell.light-theme .panel-heading .eyebrow{
   color: #0f172a !important;
 }
 
-
 .app-shell.light-theme .pin-title, .app-shell.light-theme .pin-description, .app-shell.light-theme .pin-date, .app-shell.light-theme .pin-list-title{
   color: #334155 !important;
 }
-
 
 /* Form Elemanları (Input, Select, Textarea) */
 .app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
@@ -2268,11 +1540,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border: 1px solid #cbd5e1 !important;
 }
 
-
 .app-shell.light-theme input::placeholder, .app-shell.light-theme textarea::placeholder{
   color: #64748b !important;
 }
-
 
 /* Butonlar */
 .app-shell.light-theme .secondary-button{
@@ -2285,13 +1555,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   background-color: #e2e8f0 !important;
 }
 
-
 .app-shell.light-theme .delete-pin-button{
   background-color: #fef2f2 !important;
   color: #ef4444 !important;
   border-color: #fca5a5 !important;
 }
-
 
 /* Filtre Menüsü ve Arama Kutuları */
 .app-shell.light-theme .panel-filters, .app-shell.light-theme .time-filter-control{
@@ -2299,9 +1567,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
-
-
-
 
 /* Pin Listesi */
 .app-shell.light-theme .pin-list-item{
@@ -2317,18 +1582,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #64748b !important;
 }
 
-
 /* Modallar (Admin Paneli, Giriş, Davet) */
-
-
-
 
 /* Admin Panelindeki Kullanıcı Satırları */
 
-
 /* Harita Araç Çubuğu (Arama Barı) */
-
-
 
 /* Alt Bilgi (Footer) */
 .app-shell.light-theme footer{
@@ -2337,13 +1595,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #64748b !important;
 }
 
-
 /* My Pins filter: a distinct violet accent that remains readable in both themes. */
-
-
-
-
-
 
 /* Pin edit form: clearer field rhythm, file rows and inline error feedback. */
 .pin-edit-form{
@@ -2470,37 +1722,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   opacity: .65;
 }
 
-@media (max-width: 768px){
-
-  .pin-edit-form{
-    gap: 11px;
-  }
-
-  .pin-edit-form textarea{
-    min-height: 100px;
-    padding: 10px;
-  }
-
-  .edit-photo-item{
-    gap: 8px;
-    padding: 6px;
-  }
-
-  .edit-form-actions{
-    gap: 7px;
-  }
-
-  .edit-form-actions button{
-    min-height: 38px;
-    padding: 8px 9px;
-    font-size: 12px;
-  }
-
-
-}
-
-
-
 /* Light theme: ensure selected-pin details remain readable in daylight mode. */
 .app-shell.light-theme .selected-address{
   color: #334155 !important;
@@ -2523,379 +1744,28 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #047857 !important;
 }
 
-
-
 /* Telegram-sourced pins use a distinct AYTAR RADAR color and badge. */
-
 
 .radar-source-badge{ display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 4px 7px; border: 1px solid #ddd6fe; border-radius: 999px; background: #f5f3ff; color: #6d28d9; font-size: 10px; font-weight: 800; vertical-align: middle; }
 
-
-
 /* Keep category filters visible above the compact time/search row on mobile. */
-@media (max-width: 768px){
-
-  .panel-filter-search-row{
-    flex-wrap: wrap !important;
-  }
-
-  .panel-filter-search-row .panel-filters{
-    display: contents !important;
-  }
-
-  .panel-filter-search-row .category-filter-row{
-    display: flex !important;
-    flex: 0 0 100% !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-
-}
-
-
 
 /* Admin panel: bulk pin management */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET
    ============================================ */
-@media (max-width: 768px){
-
-  html, body, #root{
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-
-  .app-shell{
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-
-  .topbar{
-    flex: 0 0 auto !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    padding: 0 12px !important;
-  }
-
-
-  /* Workspace = kalan alan, relative konum */
-  .workspace{
-    flex: 1 1 auto !important;
-    display: block !important;
-    position: relative !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 0 !important;
-  }
-
-
-  /* Harita = tam ekran */
-  
-
-  /* Panel = bottom sheet */
-  .side-panel{
-    position: absolute !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: 55vh !important;
-    flex: none !important;
-    z-index: 100 !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5) !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-    background: var(--surface, #151f32) !important;
-    border: none !important;
-    border-top: 1px solid var(--border-color, #334155) !important;
-  }
-
-
-  /* Bottom sheet tutamaç çizgisi (opsiyonel görsel) */
-  .side-panel::before{
-    content: '';
-    display: block;
-    width: 40px;
-    height: 4px;
-    margin: 8px auto 4px;
-    border-radius: 2px;
-    background: rgba(148, 163, 184, 0.4);
-    flex: 0 0 auto;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-
-  footer{
-    display: none !important;
-  }
-
-
-}
 
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET (v2)
    Panel default KAPALI, sadece .is-open ile açılır
    ============================================ */
-@media (max-width: 768px){
-
-  html, body, #root{
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-
-  .app-shell{
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-
-  .topbar{
-    flex: 0 0 auto !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    padding: 0 12px !important;
-  }
-
-
-  .workspace{
-    flex: 1 1 auto !important;
-    display: block !important;
-    position: relative !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 0 !important;
-  }
-
-
-  
-
-  /* Panel default gizli, aşağıda */
-  .side-panel{
-    position: absolute !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: 55vh !important;
-    flex: none !important;
-    z-index: 100 !important;
-    border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5) !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-    background: var(--surface, #151f32) !important;
-    border: none !important;
-    border-top: 1px solid var(--border-color, #334155) !important;
-    transform: translateY(100%) !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    pointer-events: none !important;
-    will-change: transform !important;
-  }
-
-
-  .side-panel.is-open{
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
-  }
-
-
-  .side-panel::before{
-    content: '';
-    display: block;
-    width: 40px;
-    height: 4px;
-    margin: 8px auto 4px;
-    border-radius: 2px;
-    background: rgba(148, 163, 184, 0.4);
-    flex: 0 0 auto;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-
-  footer{
-    display: none !important;
-  }
-
-
-}
-
 
 /* Liste butonu — map control stack içinde */
-
-
-
 
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET (FINAL)
    ============================================ */
-@media (max-width: 768px){
-
-  html, body, #root{
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-
-  .app-shell{
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100dvh !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-
-  .topbar{
-    flex: 0 0 auto !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    padding: 0 12px !important;
-  }
-
-
-  .workspace{
-    flex: 1 1 auto !important;
-    display: block !important;
-    position: relative !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 0 !important;
-  }
-
-
-  
-
-  /* BOTTOM SHEET - KESİN ÇÖZÜM */
-  .side-panel{
-    position: fixed !important; /* absolute yerine fixed kullanıyoruz ki tam otursun */
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    width: 100% !important;
-    height: 60vh !important; /* Yüksekliği netleştirdik */
-    max-height: 50vh !important;
-    min-height: 50vh !important;
-    z-index: 9999 !important; /* Diğer her şeyin üstünde */
-    display: flex !important;
-    flex-direction: column !important;
-    border-radius: 20px 20px 0 0 !important;
-    background: var(--surface, #151f32) !important;
-    border: none !important;
-    border-top: 1px solid var(--border-color, #334155) !important;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) !important;
-    
-    /* Animasyon ve Kesin Gizleme */
-    transform: translateY(100%) !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    pointer-events: none !important;
-    visibility: hidden !important; /* KESİN ÇÖZÜM: En altta kalan yazıyı yok eder */
-  }
-
-
-  /* Panel açıldığında */
-  .side-panel.is-open{
-    transform: translateY(0) !important;
-    pointer-events: auto !important;
-    visibility: visible !important;
-  }
-
-
-  /* Tutamaç Çizgisi */
-  .side-panel::before{
-    content: '';
-    display: block;
-    width: 40px;
-    height: 4px;
-    margin: 8px auto 4px;
-    border-radius: 2px;
-    background: rgba(148, 163, 184, 0.4);
-    flex: 0 0 auto;
-  }
-
-
-  /* İçeriğin Kaydırılabilir Olması */
-  .side-panel > .empty-panel, .side-panel > .panel-content{
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-
-  footer{
-    display: none !important;
-  }
-
-
-}
 
 /* ============================================
    EMOJİ TEPKİLERİ VE YORUMLAR (CHAT)
@@ -2909,7 +1779,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .reaction-btn.is-active{ border-color: var(--primary); background: rgba(16, 185, 129, 0.15); color: var(--primary); font-weight: 700; }
 
 .reaction-btn span{ font-size: 12px; font-weight: 800; }
-
 
 .pin-comments-section{ margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
 
@@ -2951,7 +1820,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-bottom: 1px solid var(--border-color);
 }
 
-
 /* Oylama Kutusunu Küçültme */
 .pin-vote-bar{
   display: flex;
@@ -2965,7 +1833,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: fit-content;
 }
 
-
 .pin-vote-button{
   width: 26px !important;
   height: 26px !important;
@@ -2973,20 +1840,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-radius: 50% !important;
 }
 
-
 .pin-vote-score{
   font-size: 14px !important;
   min-width: 18px !important;
   text-align: center;
 }
 
-
 /* Emoji Çubuğu Boşluklarını Sıfırla */
 .pin-reactions-bar{
   margin: 0 !important; 
   padding: 0 !important;
 }
-
 
 /* Yorumlar Başlığı ve Kutusu */
 .pin-comments-section{
@@ -3008,7 +1872,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 6px;
 }
 
-
 /* Emojinin kendisi */
 .reaction-btn span:first-child{
   font-size: 16px; /* Emojileri büyüt */
@@ -3017,7 +1880,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   align-items: center;
   justify-content: center;
 }
-
 
 /* Emojinin yanındaki sayı (örn: 1) */
 .reaction-btn span:last-child{
@@ -3044,7 +1906,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin-bottom: 15px;
 }
 
-
 .record-btn{
   display: inline-flex;
   align-items: center;
@@ -3062,17 +1923,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
   transition: all 0.2s ease;
 }
 
-
 .record-btn:hover{
   background: #dc2626;
 }
-
 
 .record-btn.is-recording{
   background: #b91c1c;
   animation: pulse-bg 1.5s infinite;
 }
-
 
 @keyframes pulse-bg {
   0%{ box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.7); }
@@ -3088,7 +1946,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   animation: blink 1s infinite alternate;
 }
 
-
 @keyframes blink {
   from{ opacity: 1; }
   to{ opacity: 0.2; }
@@ -3101,13 +1958,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 10px;
 }
 
-
 .voice-note-audio-preview{
   flex: 1;
   height: 36px;
   outline: none;
 }
-
 
 .clear-voice-btn{
   display: grid;
@@ -3121,7 +1976,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   cursor: pointer;
 }
 
-
 /* Detay Ekranındaki Ses Oynatıcı */
 .pin-voice-note-player{
   display: flex;
@@ -3134,19 +1988,16 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 15px 0;
 }
 
-
 .voice-note-icon{
   color: #3b82f6;
   flex-shrink: 0;
 }
-
 
 .voice-note-audio{
   flex: 1;
   height: 36px;
   outline: none;
 }
-
 
 /* Yapay Zeka Özet Butonu */
 .ai-summary-btn{
@@ -3167,12 +2018,10 @@ select option{ background: var(--surface); color: var(--text-dark); }
   transition: all 0.2s ease;
 }
 
-
 .ai-summary-btn:hover{
   background: rgba(139, 92, 246, 0.2);
   transform: translateY(-1px);
 }
-
 
 .app-shell.light-theme .ai-summary-btn{
   background: #f5f3ff;
@@ -3186,15 +2035,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 /* 1. Tüm modalların arka planını en öne çıkar (Alttaki panelin üzerine) */
 
-
 /* 2. Özet Modalının kendisi */
-
 
 /* 3. Modalın Başlık Kısmı (Sabit kalacak) */
 
-
 /* 4. Modalın İçerik Kısmı (Sadece burası kaydırılacak) */
-
 
 /* Mobilde (bottom sheet açıkken) arkada kalan panellerin tıklanmasını engelle */
 
@@ -3230,39 +2075,22 @@ select option{ background: var(--surface); color: var(--text-dark); }
   align-items: center;
 }
 
-
 .weather-group{
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px dashed rgba(148, 163, 184, 0.2);
 }
 
-
 .weather-btn{
   background: rgba(59, 130, 246, 0.05) !important;
 }
-
 
 .weather-btn.is-active{
   background: rgba(59, 130, 246, 0.2) !important;
   border-color: #3b82f6 !important;
 }
 
-
 /* Mobilde emojilerin biraz daha kompakt olması için */
-@media (max-width: 768px){
-
-  .reaction-group{
-    gap: 4px;
-  }
-
-  .weather-group{
-    margin-top: 4px;
-    padding-top: 4px;
-  }
-
-
-}
 
 /* AYTAR Özel Logo Efekti ve Tam Yuvarlak Yapı */
 .brand-mark{
@@ -3277,23 +2105,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
   box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
 }
 
-
 .brand-mark svg{
   color: #ffffff; /* Hilal ve dalgaların rengi beyaz */
   filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6));
 }
 
-
 /* Mobil ekranda boyut biraz daha küçülsün */
-@media (max-width: 760px){
-
-  .brand-mark{
-    width: 38px;
-    height: 38px;
-  }
-
-
-}
 
 /* Rota Bilgisi Kartı ve Araç Seçici Düzeni */
 .panel-top-controls .route-info-card{
@@ -3307,7 +2124,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-radius: 12px;
 }
 
-
 .panel-top-controls .route-info-row{
   display: flex;
   flex-direction: column;
@@ -3315,13 +2131,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 10px;
 }
 
-
 .panel-top-controls .route-info-copy{
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 
 .panel-top-controls .route-info-heading{
   display: flex;
@@ -3330,12 +2144,10 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0;
 }
 
-
 .panel-top-controls .route-info-heading h2{
   font-size: 14px;
   margin: 0;
 }
-
 
 .panel-top-controls .route-info-copy p{
   margin: 0;
@@ -3345,7 +2157,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   word-break: normal;
 }
 
-
 /* Butonlar ve Select kutusu yan yana düzgün dursun */
 .panel-top-controls .route-card-actions{
   display: flex;
@@ -3353,7 +2164,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: 100%;
   gap: 8px;
 }
-
 
 .panel-top-controls .route-card-actions select{
   flex: 1;
@@ -3366,7 +2176,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-size: 12px;
   outline: none;
 }
-
 
 .panel-top-controls .route-card-actions button{
   flex: 0 0 auto;
@@ -3552,21 +2361,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .app-shell.light-theme .aytar-live-session-item:hover{ background: #fef2f2; border-color: #fca5a5; }
 
-@media (max-width: 768px){
-
-  .aytar-live-viewer-list{ right: 8px; top: 56px; width: calc(100vw - 16px); }
-
-
-}
-
-@media (prefers-reduced-motion: reduce){
-
-  .aytar-live-button, .aytar-live-button.is-active, .aytar-live-live-dot{ animation: none; transition: none; }
-
-
-}
-
-
 /* Sadece yayın penceresi için kesin boyutlar */
 div.aytar-live-overlay{
   position: fixed !important;
@@ -3586,13 +2380,11 @@ div.aytar-live-overlay{
   overflow: hidden !important;
 }
 
-
 div.aytar-live-overlay .aytar-live-header{
   padding: 6px 12px !important;
   flex-shrink: 0 !important;
   background: #0f172a !important;
 }
-
 
 div.aytar-live-overlay video.aytar-live-video{
   width: 100% !important;
@@ -3600,20 +2392,6 @@ div.aytar-live-overlay video.aytar-live-video{
   object-fit: cover !important;
   display: block !important;
   background: #000 !important;
-}
-
-
-@media (max-width: 768px){
-
-  div.aytar-live-overlay{
-    bottom: 10px !important;
-    right: 10px !important;
-    left: 10px !important;
-    width: auto !important;
-    height: 30vh !important;
-  }
-
-
 }
 
 div.aytar-live-overlay{
@@ -3634,13 +2412,11 @@ div.aytar-live-overlay{
   overflow: hidden !important;
 }
 
-
 div.aytar-live-overlay .aytar-live-header{
   padding: 8px 12px !important;
   flex-shrink: 0 !important;
   background: #0f172a !important;
 }
-
 
 div.aytar-live-overlay video.aytar-live-video{
   width: 100% !important;
@@ -3649,21 +2425,6 @@ div.aytar-live-overlay video.aytar-live-video{
   display: block !important;
   background: #000 !important;
 }
-
-
-@media (max-width: 768px){
-
-  div.aytar-live-overlay{
-    bottom: 10px !important;
-    right: 10px !important;
-    left: 10px !important;
-    width: auto !important;
-    height: 30vh !important;
-  }
-
-
-}
-
 
 /* AYTAR auth providers — keeps the existing light modal style */
 
