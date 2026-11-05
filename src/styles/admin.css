@@ -63,3 +63,34 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* Theme-aware admin text colors */
+.invite-modal{
+  color: var(--text-primary);
+}
+
+.invite-modal .modal-head h2,
+.invite-modal .modal-head .eyebrow,
+.admin-pin-title{
+  color: var(--text-primary) !important;
+}
+
+.admin-pin-meta,
+.admin-pin-management > p{
+  color: var(--text-muted) !important;
+}
+
+.admin-pin-toolbar,
+.admin-pin-row,
+.admin-pin-select-all,
+.admin-pin-info{
+  color: var(--text-primary);
+}
+
+.invite-modal > div[style*="border-bottom"] > button{
+  color: var(--text-muted) !important;
+}
+
+.invite-modal > div[style*="border-bottom"] > button[style*="border-bottom: 2px solid"]{
+  color: var(--text-primary) !important;
+}
