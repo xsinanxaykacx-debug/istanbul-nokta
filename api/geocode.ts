@@ -90,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let cacheKey: string;
   if (type === 'search') {
-    const query = typeof req.query.q === 'string' ? req.query.q.trim().replace(/\\s+/g, ' ') : '';
+    const query = typeof req.query.q === 'string' ? req.query.q.trim().replace(/\s+/g, ' ') : '';
     if (!query || query.length > 200) {
       return res.status(400).json({ error: 'Geçerli bir arama metni gerekli.' });
     }
