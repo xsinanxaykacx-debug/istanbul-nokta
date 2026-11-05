@@ -171,18 +171,8 @@ export default function Map3D({
     const mapInstance = map.current;
     if (!mapInstance) return;
 
-    // Harita stilini yüklemeden önce hatalı shield filtrelerini ayıkla.
-    mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty', {
-      transformStyle: (_previousStyle, nextStyle) => ({
-        ...nextStyle,
-        layers: nextStyle.layers.filter((layer) => {
-          if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
-          return !('filter' in layer && containsNullFilterValue(layer.filter));
-        }),
-      }),
-    });
-
-    // Stil sprite'ında bulunmayan POI ikonları için şeffaf yedek görsel.
+    // Eksik sprite ikonları her stil yüklemesinde şeffaf yedekle karşılanır.
+    // Listener, ilk stil isteğinden önce bağlanır ve setStyle çağrılarında korunur.
     mapInstance.on('styleimagemissing', (event) => {
       if (mapInstance.hasImage(event.id)) return;
       mapInstance.addImage(event.id, {
@@ -191,6 +181,32 @@ export default function Map3D({
         data: new Uint8Array([0, 0, 0, 0]),
       });
     });
+
+    // MapLibre'ın bu haritadaki tüm sonraki setStyle çağrılarını da temizle.
+    // Böylece 3D stil yeniden yüklendiğinde (2D/3D geçişi dahil) aynı filtre uygulanır.
+    const originalSetStyle = mapInstance.setStyle.bind(mapInstance);
+    mapInstance.setStyle = ((style: Parameters<typeof mapInstance.setStyle>[0], options?: Parameters<typeof mapInstance.setStyle>[1]) => {
+      const callerTransform = options?.transformStyle;
+      return originalSetStyle(style, {
+        ...options,
+        transformStyle: (previousStyle, nextStyle) => {
+          const transformedStyle = callerTransform
+            ? callerTransform(previousStyle, nextStyle)
+            : nextStyle;
+
+          return {
+            ...transformedStyle,
+            layers: transformedStyle.layers.filter((layer) => {
+              if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
+              return !('filter' in layer && containsNullFilterValue(layer.filter));
+            }),
+          };
+        },
+      });
+    }) as typeof mapInstance.setStyle;
+
+    // İlk 3D stil yüklemesi de aynı merkezi temizleme yolundan geçer.
+    mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty');
 
     mapInstance.once('load', () => {
       void (async () => {
