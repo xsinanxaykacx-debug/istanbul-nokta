@@ -67,6 +67,51 @@ function install3DStyleSanitizer(): void {
   mapLibreStyleSanitizerInstalled = true;
 }
 
+const MAPLIBRE_WARNING_PATTERN = /highway[-_ ]?shield|road[-_ ]?shield|\\boffice\\b|ferry[-_ ]?terminal|\\bgate\\b|maplibre-gl-worker|maplibre-vendor/i;
+
+function getConsoleMessage(args: unknown[]): string {
+  return args.map((value) => {
+    if (typeof value === 'string') return value;
+    if (value instanceof Error) return `${value.name}: ${value.message} ${value.stack ?? ''}`;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }).join(' ');
+}
+
+function install3DWarningSilencer(): () => void {
+  const originalWarn = console.warn;
+  const originalError = console.error;
+
+  const filteredWarn = (...args: unknown[]) => {
+    if (MAPLIBRE_WARNING_PATTERN.test(getConsoleMessage(args))) return;
+    originalWarn.apply(console, args);
+  };
+  const filteredError = (...args: unknown[]) => {
+    if (MAPLIBRE_WARNING_PATTERN.test(getConsoleMessage(args))) return;
+    originalError.apply(console, args);
+  };
+
+  const filteredWindowError = (event: ErrorEvent) => {
+    const details = `${event.message ?? ''} ${event.filename ?? ''} ${event.error instanceof Error ? event.error.stack ?? event.error.message : ''}`;
+    if (!MAPLIBRE_WARNING_PATTERN.test(details)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
+  console.warn = filteredWarn;
+  console.error = filteredError;
+  window.addEventListener('error', filteredWindowError, true);
+
+  return () => {
+    window.removeEventListener('error', filteredWindowError, true);
+    if (console.warn === filteredWarn) console.warn = originalWarn;
+    if (console.error === filteredError) console.error = originalError;
+  };
+}
+
 function bindMissingStyleImageFallback(mapInstance: maplibregl.Map): void {
   const addTransparentFallback = (event: { id: string }) => {
     if (mapInstance.hasImage(event.id)) return;
@@ -204,6 +249,9 @@ export default function Map3D({
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
+    // Susturma yalnızca 3D harita yaşam döngüsünde aktiftir; 2D haritaya dokunmaz.
+    const restore3DWarningSilencer = install3DWarningSilencer();
+
     maplibregl.setWorkerUrl(maplibreWorkerUrl);
     // Map3D her mount edildiğinde ve sonradan yapılan tüm setStyle çağrılarında uygula.
     install3DStyleSanitizer();
@@ -261,6 +309,7 @@ export default function Map3D({
 
     return () => {
       window.clearTimeout(resizeTimer);
+      restore3DWarningSilencer();
       if (map.current) {
         map.current.remove();
         map.current = null;
