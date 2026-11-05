@@ -3,41 +3,153 @@
 @import './styles/chat.css';
 @import './styles/search.css';
 @import './styles/notifications.css';
-.app-shell{max-width:1600px;margin:0 auto;padding:0 30px}.topbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e6e9e8}.brand{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}.brand-mark{display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:#173f34;color:#fff}.brand strong{display:block;font:800 17px Manrope,sans-serif;letter-spacing:-.4px}.brand small{display:block;color:#7d8984;font-size:11px;margin-top:2px}.top-actions{display:flex;align-items:center;gap:12px}.status-chip{font-size:12px;padding:8px 11px;border-radius:30px;background:#fff0d9;color:#875c15}.status-chip.active{background:#e0f4e8;color:#1e7650}.primary-button, .secondary-button{border:0;border-radius:11px;padding:12px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:13px;transition:transform .15s,background .15s}.primary-button{background:#173f34;color:white}.primary-button:hover{background:#245746;transform:translateY(-1px)}.secondary-button{background:#edf2ef;color:#244a3e;border:1px solid #dfe7e2}.secondary-button:hover{background:#e1ebe5}.icon-button{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e5e9e7;background:#fff;color:#56655e;border-radius:10px}.intro{display:flex;align-items:flex-end;justify-content:space-between;padding:32px 0 25px}.eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:700;color:#74847c;margin:0 0 9px}.intro h1{font:800 clamp(25px,3vw,35px) Manrope,sans-serif;letter-spacing:-1.1px;margin:0}.intro-copy{font-size:14px;color:#7b8781;margin:9px 0 0}.map-stats{text-align:right;display:flex;flex-direction:column;gap:3px}.stat-number{font:800 24px Manrope,sans-serif;color:#173f34}.stat-label{font-size:11px;color:#7b8781}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 355px;gap:18px;align-items:stretch}.overlay-icon, .empty-icon{width:48px;height:48px;margin:0 auto 14px;border-radius:15px;display:grid;place-items:center;background:#e4f0e9;color:#245945}.side-panel{background:#fff;border:1px solid #e5e9e7;border-radius:18px;min-height:520px;display:flex;flex-direction:column;overflow:hidden}.panel-content, .empty-panel{padding:23px;flex:1}.panel-heading, .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.panel-heading h2, .empty-panel h2, .modal-head h2{font:800 20px Manrope,sans-serif;letter-spacing:-.5px;margin:0}.coordinates{font-size:11px;color:#829087;font-variant-numeric:tabular-nums;margin:11px 0 19px}.field-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:#34463c;margin:16px 0 8px}.field-label span{font-size:10px;font-weight:500;color:#88948d}.panel-content textarea, .auth-form input, .activation-form input{display:block;width:100%;border:1px solid #dfe6e1;border-radius:10px;padding:12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px;resize:vertical}.panel-content textarea:focus, .auth-form input:focus, .activation-form input:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}.upload-box{border:1px dashed #cbd8cf;border-radius:12px;background:#f8faf8;min-height:115px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#537160;cursor:pointer;text-align:center;padding:14px}.upload-box strong{font-size:12px}.upload-box small{font-size:10px;color:#8a978f}.upload-box input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.file-list{margin:9px 0;display:grid;gap:6px}.file-list div{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;color:#65736a;background:#f3f6f3;border-radius:8px;padding:7px 9px}.file-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-list button{border:0;background:transparent;color:#65736a;display:grid;place-items:center}.full-width{width:100%;margin-top:13px}.empty-panel{text-align:center;padding-top:50px}.empty-panel .empty-icon{margin-bottom:17px}.empty-panel p{font-size:12px;color:#849087;line-height:1.7;margin:10px auto 20px;max-width:240px}.panel-footnote{border-top:1px solid #eef1ef;padding:14px 18px;display:flex;align-items:center;gap:9px;color:#7b8981;font-size:10px;line-height:1.5}.panel-footnote svg{flex-shrink:0;color:#4c8166}.pin-list{display:grid;gap:5px;text-align:left;margin:15px 0}.pin-list-item{display:flex;align-items:center;gap:10px;border:0;background:#f7f9f7;border-radius:10px;padding:10px;text-align:left;min-width:0}.pin-list-item:hover{background:#edf4ef}.pin-list-item>span:last-child{min-width:0}.pin-list-item strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#34453b}.pin-list-item small{display:block;font-size:10px;color:#87928b;margin-top:4px}.mini-pin{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:#e2efe7;color:#245d43;flex-shrink:0}.pin-description{font-size:13px;line-height:1.75;color:#4c5d52;white-space:pre-wrap;overflow-wrap:anywhere;margin:20px 0}.photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.photo-grid a{height:120px;border-radius:10px;overflow:hidden;background:#f1f3f1}.photo-grid a:only-child{grid-column:1/-1;height:190px}.photo-grid img{width:100%;height:100%;object-fit:cover;display:block}.text-button{border:0;background:transparent;color:#3f765b;font-size:12px;font-weight:700;margin-top:13px;width:100%;padding:8px}.modal-backdrop{position:fixed;z-index:2000;inset:0;background:#12241bc2;backdrop-filter:blur(5px);display:grid;place-items:center;padding:18px}.auth-modal{width:min(430px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:25px;box-shadow:0 30px 100px #0b1e1466}.auth-form{margin-top:12px}.auth-form .field-label{margin-top:14px}.auth-form .primary-button{margin-top:19px}.modal-privacy{font-size:11px;line-height:1.6;color:#87928b;text-align:center;margin:14px 0 0}.activation-form{border-top:1px solid #e9eeea;margin-top:17px;padding-top:16px}.activation-note{display:flex;align-items:flex-start;gap:9px;background:#fff5e5;color:#80601e;padding:11px;border-radius:10px;font-size:11px;line-height:1.6}.activation-note svg{flex-shrink:0}footer{display:flex;justify-content:space-between;gap:12px;padding:23px 2px 25px;font-size:10px;color:#87918b}
-@media(max-width:1050px){.workspace{grid-template-columns:minmax(0,1fr) 320px}.app-shell{padding:0 20px}}
-@media(max-width:760px){.app-shell{padding:0 12px}.topbar{height:70px}.brand-mark{width:38px;height:38px}.brand strong{font-size:15px}.brand small{font-size:10px}.top-actions .primary-button{font-size:11px;padding:10px}.intro{padding:25px 0 18px;align-items:flex-start}.intro h1{font-size:25px}.intro-copy{font-size:12px;max-width:250px;line-height:1.5}.map-stats{padding-top:17px}.stat-number{font-size:21px}.stat-label{font-size:9px;max-width:75px}.workspace{display:flex;flex-direction:column;gap:12px}.side-panel{min-height:280px;border-radius:14px}.panel-content, .empty-panel{padding:19px}.empty-panel{padding-top:30px}footer{flex-wrap:wrap;justify-content:center;text-align:center;padding:18px 0;gap:7px 15px}footer span:first-child{width:100%}}
+@import './styles/admin.css';
+@import './styles/auth.css';
+@import './styles/modals.css';
+
+.app-shell{max-width:1600px;margin:0 auto;padding:0 30px}
+.topbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e6e9e8}
+.brand{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}
+.brand-mark{display:grid;place-items:center;width:43px;height:43px;border-radius:14px;background:#173f34;color:#fff}
+.brand strong{display:block;font:800 17px Manrope,sans-serif;letter-spacing:-.4px}
+.brand small{display:block;color:#7d8984;font-size:11px;margin-top:2px}
+.top-actions{display:flex;align-items:center;gap:12px}
+.status-chip{font-size:12px;padding:8px 11px;border-radius:30px;background:#fff0d9;color:#875c15}
+.status-chip.active{background:#e0f4e8;color:#1e7650}
+.primary-button, .secondary-button{border:0;border-radius:11px;padding:12px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:13px;transition:transform .15s,background .15s}
+.primary-button{background:#173f34;color:white}
+.primary-button:hover{background:#245746;transform:translateY(-1px)}
+.secondary-button{background:#edf2ef;color:#244a3e;border:1px solid #dfe7e2}
+.secondary-button:hover{background:#e1ebe5}
+.icon-button{width:36px;height:36px;display:grid;place-items:center;border:1px solid #e5e9e7;background:#fff;color:#56655e;border-radius:10px}
+.intro{display:flex;align-items:flex-end;justify-content:space-between;padding:32px 0 25px}
+.eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:700;color:#74847c;margin:0 0 9px}
+.intro h1{font:800 clamp(25px,3vw,35px) Manrope,sans-serif;letter-spacing:-1.1px;margin:0}
+.intro-copy{font-size:14px;color:#7b8781;margin:9px 0 0}
+.map-stats{text-align:right;display:flex;flex-direction:column;gap:3px}
+.stat-number{font:800 24px Manrope,sans-serif;color:#173f34}
+.stat-label{font-size:11px;color:#7b8781}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 355px;gap:18px;align-items:stretch}
+.overlay-icon, .empty-icon{width:48px;height:48px;margin:0 auto 14px;border-radius:15px;display:grid;place-items:center;background:#e4f0e9;color:#245945}
+.side-panel{background:#fff;border:1px solid #e5e9e7;border-radius:18px;min-height:520px;display:flex;flex-direction:column;overflow:hidden}
+.panel-content, .empty-panel{padding:23px;flex:1}
+.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.panel-heading h2, .empty-panel h2{font:800 20px Manrope,sans-serif;letter-spacing:-.5px;margin:0}
+.coordinates{font-size:11px;color:#829087;font-variant-numeric:tabular-nums;margin:11px 0 19px}
+.field-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:#34463c;margin:16px 0 8px}
+.field-label span{font-size:10px;font-weight:500;color:#88948d}
+.panel-content textarea{display:block;width:100%;border:1px solid #dfe6e1;border-radius:10px;padding:12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px;resize:vertical}
+.panel-content textarea:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}
+.upload-box{border:1px dashed #cbd8cf;border-radius:12px;background:#f8faf8;min-height:115px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#537160;cursor:pointer;text-align:center;padding:14px}
+.upload-box strong{font-size:12px}
+.upload-box small{font-size:10px;color:#8a978f}
+.upload-box input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.file-list{margin:9px 0;display:grid;gap:6px}
+.file-list div{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;color:#65736a;background:#f3f6f3;border-radius:8px;padding:7px 9px}
+.file-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-list button{border:0;background:transparent;color:#65736a;display:grid;place-items:center}
+.full-width{width:100%;margin-top:13px}
+.empty-panel{text-align:center;padding-top:50px}
+.empty-panel .empty-icon{margin-bottom:17px}
+.empty-panel p{font-size:12px;color:#849087;line-height:1.7;margin:10px auto 20px;max-width:240px}
+.panel-footnote{border-top:1px solid #eef1ef;padding:14px 18px;display:flex;align-items:center;gap:9px;color:#7b8981;font-size:10px;line-height:1.5}
+.panel-footnote svg{flex-shrink:0;color:#4c8166}
+.pin-list{display:grid;gap:5px;text-align:left;margin:15px 0}
+.pin-list-item{display:flex;align-items:center;gap:10px;border:0;background:#f7f9f7;border-radius:10px;padding:10px;text-align:left;min-width:0}
+.pin-list-item:hover{background:#edf4ef}
+.pin-list-item>span:last-child{min-width:0}
+.pin-list-item strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#34453b}
+.pin-list-item small{display:block;font-size:10px;color:#87928b;margin-top:4px}
+.mini-pin{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:#e2efe7;color:#245d43;flex-shrink:0}
+.pin-description{font-size:13px;line-height:1.75;color:#4c5d52;white-space:pre-wrap;overflow-wrap:anywhere;margin:20px 0}
+.photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.photo-grid a{height:120px;border-radius:10px;overflow:hidden;background:#f1f3f1}
+.photo-grid a:only-child{grid-column:1/-1;height:190px}
+.photo-grid img{width:100%;height:100%;object-fit:cover;display:block}
+.text-button{border:0;background:transparent;color:#3f765b;font-size:12px;font-weight:700;margin-top:13px;width:100%;padding:8px}
+footer{display:flex;justify-content:space-between;gap:12px;padding:23px 2px 25px;font-size:10px;color:#87918b}
+
+@media(max-width:1050px){
+.workspace{grid-template-columns:minmax(0,1fr) 320px}
+.app-shell{padding:0 20px}
+
+}
+
+@media(max-width:760px){
+.app-shell{padding:0 12px}
+.topbar{height:70px}
+.brand-mark{width:38px;height:38px}
+.brand strong{font-size:15px}
+.brand small{font-size:10px}
+.top-actions .primary-button{font-size:11px;padding:10px}
+.intro{padding:25px 0 18px;align-items:flex-start}
+.intro h1{font-size:25px}
+.intro-copy{font-size:12px;max-width:250px;line-height:1.5}
+.map-stats{padding-top:17px}
+.stat-number{font-size:21px}
+.stat-label{font-size:9px;max-width:75px}
+.workspace{display:flex;flex-direction:column;gap:12px}
+.side-panel{min-height:280px;border-radius:14px}
+.panel-content, .empty-panel{padding:19px}
+.empty-panel{padding-top:30px}
+footer{flex-wrap:wrap;justify-content:center;text-align:center;padding:18px 0;gap:7px 15px}
+footer span:first-child{width:100%}
+
+}
+
 .pin-list{ width: 100%; }
+
 .pin-list-item{ width: 100%; min-height: 68px; gap: 10px; }
+
 .pin-thumb{ width: 48px; height: 48px; flex: 0 0 48px; overflow: hidden; border-radius: 10px; display: grid; place-items: center; background: #e5eee8; }
+
 .pin-thumb img{ display: block; width: 48px; height: 48px; object-fit: cover; border-radius: 10px; }
+
 .pin-thumb .mini-pin{ width: 100%; height: 100%; border-radius: 0; }
+
 .pin-list-copy{ display: block; flex: 1; min-width: 0; }
+
 .pin-list-copy strong{ display: block; }
+
 .pin-list-copy small{ line-height: 1.4; white-space: normal; }
+
 .pin-meta{ display: flex; align-items: center; gap: 9px; margin-top: 16px; }
+
 .pin-meta > span:last-child{ display: grid; gap: 2px; }
+
 .pin-meta strong{ font-size: 12px; color: #34453b; }
+
 .pin-meta small{ font-size: 10px; color: #87928b; }
+
 .avatar-placeholder{ width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #e2efe7; color: #245d43; font-weight: 700; font-size: 12px; }
+
 .pin-description{ max-height: 220px; overflow-y: auto; white-space: pre-line; }
+
 .photo-grid{ margin-top: 14px; }
+
 .photo-grid .photo-tile{ display: block; min-width: 0; width: 100%; height: 120px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: #f1f3f1; }
+
 .photo-grid .photo-tile:only-child{ grid-column: 1 / -1; height: 220px; }
+
 .photo-grid .photo-tile img{ display: block; width: 100%; height: 100%; object-fit: cover; }
+
 .directions-link{ display: inline-flex; margin-top: 10px; color: #2d6d4b; font-size: 12px; font-weight: 700; text-decoration: none; }
+
 /* Isı haritasının renklerinin koyu tema filtresinden etkilenmesini engeller */
 
 .directions-link:hover{ text-decoration: underline; }
-.lightbox-backdrop{ position: fixed; z-index: 3000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 60px 70px; background: #07110deF; touch-action: pan-y; }
-.lightbox-image{ display: block; max-width: min(100%, 1200px); max-height: calc(100vh - 120px); width: auto; height: auto; object-fit: contain; border-radius: 6px; }
-.lightbox-close{ position: absolute; top: 16px; right: 18px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #ffffff55; border-radius: 50%; background: #17231ddd; color: white; }
-.lightbox-nav{ position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 48px; height: 58px; display: grid; place-items: center; border: 1px solid #ffffff55; border-radius: 12px; background: #17231ddd; color: white; }
-.lightbox-prev{ left: 16px; }
-.lightbox-next{ right: 16px; }
-.lightbox-counter{ position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); color: white; background: #17231ddd; padding: 7px 12px; border-radius: 30px; font-size: 12px; font-variant-numeric: tabular-nums; }
-@media(max-width:760px) { .lightbox-backdrop{ padding: 55px 12px; } .lightbox-image{ max-width: 100%; max-height: calc(100vh - 110px); } .lightbox-prev{ left: 7px; } .lightbox-next{ right: 7px; } .lightbox-nav{ width: 40px; height: 48px; background: #17231dbb; } }
+
+
+
+
+
+
+
+
+
 
 .pin-date{ margin: 14px 0 0; color: #87928b; font-size: 11px; }
+
 
 
 /* GPS Sprint */
@@ -45,67 +157,97 @@
 
 
 .gps-spinner{animation:gps-spin .9s linear infinite}
+
 @keyframes gps-spin{to{transform:rotate(360deg)}}
 
 
 /* Reference-code onboarding */
 .pending-status{cursor:pointer;border:1px solid #f0d6a1;background:#fff5df;color:#835b12;font:inherit;font-size:11px;font-weight:800;padding:8px 11px;border-radius:999px}
+
 .pending-status:hover{background:#ffedc6}
-.onboarding-panel{display:flex;flex-direction:column;justify-content:center;min-height:100%;text-align:left}
-.onboarding-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:#e5f1e8;color:#2c6b4c;margin-bottom:18px}
-.onboarding-panel .eyebrow{margin-bottom:8px}
-.onboarding-panel h2{font:800 23px Manrope,sans-serif;letter-spacing:-.6px;color:#23372b;margin:0}
-.onboarding-copy{font-size:12px;line-height:1.75;color:#748078;margin:10px 0 12px}
-.onboarding-form{margin-top:2px}
-.onboarding-form input{display:block;width:100%;min-width:0;border:1px solid #dfe6e1;border-radius:10px;padding:13px 12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px}
-.onboarding-form input:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}
-.onboarding-form .primary-button{min-height:44px}
-.onboarding-form .primary-button:disabled{opacity:.6;cursor:not-allowed}
-.onboarding-footnote{font-size:10px;line-height:1.6;color:#8a958e;margin:13px 0 0}
-@media(max-width:760px){.pending-status{font-size:10px;padding:7px 9px}.onboarding-panel{min-height:300px}}
+
+
+
+
+
+
+
+
+
+
+
+
+@media(max-width:760px){
+.pending-status{font-size:10px;padding:7px 9px}
+
+}
+
 
 
 /* Invite code management */
 .profile-menu-wrap{ position: relative; }
+
 .profile-trigger{ display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dce9e0; cursor: pointer; }
+
 .profile-trigger:hover{ filter: brightness(.98); }
+
 .profile-trigger.pending-status{ border-color: #f0d6a1; }
+
 .profile-dropdown{ position: absolute; z-index: 2500; top: calc(100% + 10px); right: 0; width: 245px; padding: 10px; border: 1px solid #e5e9e7; border-radius: 15px; background: #fff; box-shadow: 0 12px 34px rgba(20, 42, 29, .16); }
+
 .profile-welcome{ margin: 3px 7px 9px; padding: 5px 0 12px; border-bottom: 1px solid #edf0ee; color: #7b8981; font-size: 12px; overflow-wrap: anywhere; }
+
 .profile-welcome strong{ color: #263b2f; }
+
 .profile-menu-item{ width: 100%; min-height: 40px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; padding: 9px 10px; background: transparent; color: #344b3d; text-align: left; font-size: 12px; font-weight: 700; }
+
 .profile-menu-item:hover{ background: #f1f6f2; }
+
 .profile-menu-item svg{ color: #5b7865; flex: 0 0 auto; }
+
 .profile-menu-item.logout-item{ color: #8b4438; }
+
 .profile-menu-item.logout-item svg{ color: #8b4438; }
-.invite-backdrop{ z-index: 2200; }
-.invite-modal{ width: min(520px, 100%); max-height: min(86vh, 760px); overflow-y: auto; padding: 25px; border: 1px solid #e5e9e7; border-radius: 20px; background: #fff; box-shadow: 0 30px 100px #0b1e1466; }
-.invite-intro{ margin: 13px 0 3px; color: #748078; font-size: 12px; line-height: 1.7; }
-.invite-create{ margin-top: 13px; min-height: 44px; }
-.invite-limit{ margin: 9px 0 0; color: #a06420; font-size: 11px; text-align: center; }
-.invite-list{ display: grid; gap: 8px; margin-top: 18px; }
-.invite-row{ display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #e8eeea; border-radius: 12px; background: #fbfcfb; }
-.invite-code-info{ display: grid; gap: 6px; min-width: 0; }
-.invite-code-info strong{ color: #2a4033; font-size: 12px; overflow-wrap: anywhere; }
-.invite-code-info small{ color: #7e8a82; font-size: 10px; }
+
+
+
+
+
+
+
+
+
+
+
 .copy-code-button{ display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; min-height: 34px; padding: 7px 9px; border: 1px solid #dce7df; border-radius: 9px; background: #fff; color: #245945; font-size: 11px; font-weight: 700; }
+
 .copy-code-button:hover{ background: #edf5ef; }
-.invite-empty{ padding: 22px 12px; border: 1px dashed #dce5df; border-radius: 12px; color: #7b8981; font-size: 12px; line-height: 1.7; text-align: center; }
-.invite-footnote{ margin: 14px 0 0; color: #87928b; font-size: 10px; line-height: 1.6; }
-@media (max-width: 760px) {
+
+
+
+@media (max-width: 760px){
+
   .profile-dropdown{ right: -2px; width: min(245px, calc(100vw - 24px)); }
-  .invite-backdrop{ align-items: flex-end; padding: 0; }
-  .invite-modal{ width: 100%; max-width: none; max-height: 88dvh; padding: 23px 18px calc(20px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; border-bottom: 0; }
-  .invite-row{ padding: 10px; }
+
+  
+  
+  
   .copy-code-button{ padding: 8px; }
+
   .copy-code-button span{ display: none; }
+
+
 }
+
 
 
 /* Pin deletion is available only to the pin owner and admins. */
 .delete-pin-button{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 42px; margin-top: 14px; padding: 11px 14px; border: 1px solid #f1c7c7; border-radius: 10px; background: #fff3f3; color: #b42318; font-size: 12px; font-weight: 800; cursor: pointer; transition: background .15s, border-color .15s; }
+
 .delete-pin-button:hover:not(:disabled){ background: #ffe5e5; border-color: #e9a4a4; }
+
 .delete-pin-button:disabled{ opacity: .6; cursor: not-allowed; }
+
 
 
 /* Draft pin appearance and GPS control. */
@@ -114,13 +256,21 @@
 
 
 .draft-coordinates-row{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 11px 0 0; }
+
 .draft-coordinates-row .coordinates{ margin: 0; overflow-wrap: anywhere; }
 
 
 
+
 .draft-location-hint{ margin: 7px 0 16px; color: #819087; font-size: 10px; line-height: 1.55; }
+
 .draft-coordinates-row + .draft-location-hint{ margin-top: 7px; }
-@media(max-width:420px) { .draft-coordinates-row{ align-items: flex-start; flex-direction: column; }  }
+
+@media(max-width:420px){
+ .draft-coordinates-row{ align-items: flex-start; flex-direction: column; }
+  
+}
+
 
 
 /* Pin categories: marker colors, list labels, detail badge and form selector. */
@@ -144,10 +294,12 @@
   color: #25352c;
   font-size: 12px;
 }
+
 .category-select:focus{
   border-color: #6a9c82;
   box-shadow: 0 0 0 3px #dcefe3;
 }
+
 
 .pin-category-label{
   display: flex !important;
@@ -157,6 +309,7 @@
   margin-top: 5px !important;
   font-weight: 700;
 }
+
 .pin-category-dot{
   display: inline-block;
   width: 7px;
@@ -165,11 +318,17 @@
   border-radius: 50%;
   background: currentColor;
 }
+
 .category-yesil{ color: #39FF14 !important; }
+
 .category-mavi{ color: #00E5FF !important; }
+
 .category-sari{ color: #FFEA00 !important; }
+
 .category-sari .pin-category-dot{ background: #FFEA00; }
+
 .category-kirmizi{ color: #FF1744 !important; }
+
 
 .category-badge{
   display: inline-flex;
@@ -185,6 +344,7 @@
   line-height: 1.2;
   font-weight: 800;
 }
+
 .category-badge::before{
   content: "";
   display: inline-block;
@@ -194,6 +354,7 @@
   background: currentColor;
 }
 
+
 /* Gözcü fullscreen app layout sprint */
 html, body, #root{
   width: 100%;
@@ -201,7 +362,9 @@ html, body, #root{
   min-height: 0;
   overflow: hidden;
 }
+
 body{ height: 100vh; height: 100dvh; }
+
 .app-shell{
   width: 100%;
   max-width: 1600px;
@@ -213,7 +376,9 @@ body{ height: 100vh; height: 100dvh; }
   overflow: hidden;
   padding: 0 30px;
 }
+
 .topbar{ flex: 0 0 82px; min-height: 0; }
+
 .workspace{
   flex: 1 1 0;
   min-height: 0;
@@ -225,6 +390,7 @@ body{ height: 100vh; height: 100dvh; }
   margin-top: 10px;
 }
 
+
 .side-panel{
   height: 100%;
   min-height: 0;
@@ -232,18 +398,31 @@ body{ height: 100vh; height: 100dvh; }
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+
 .panel-content, .empty-panel{ min-height: 0; }
+
 footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
-@media (max-width: 1050px) {
+
+@media (max-width: 1050px){
+
   .app-shell{ padding: 0 20px; }
+
   .topbar{ flex-basis: 72px; }
+
   .workspace{ grid-template-columns: minmax(0, 1fr) minmax(270px, 320px); gap: 10px; }
+
   
   footer{ padding: 8px 0; }
+
+
 }
-@media (max-width: 760px) {
+
+@media (max-width: 760px){
+
   .app-shell{ padding: 0 10px; }
+
   .topbar{ flex-basis: 64px; height: 64px; }
+
   .workspace{
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -251,11 +430,16 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
     gap: 8px;
     margin-top: 8px;
   }
+
   
   .side-panel{ grid-row: 2; height: 100%; min-height: 0; max-height: 100%; border-radius: 12px; }
+
   .panel-content, .empty-panel{ padding: 14px; }
+
   .empty-panel{ padding-top: 18px; }
+
   .panel-footnote{ padding: 10px 12px; }
+
   footer{
     flex-wrap: nowrap;
     justify-content: space-between;
@@ -264,8 +448,12 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
     font-size: 9px;
     text-align: left;
   }
+
   footer span:first-child{ width: auto; }
+
+
 }
+
 
 
 /* Compact right panel: keep the form and privacy note on-screen without panel scrolling. */
@@ -274,22 +462,27 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   flex-direction: column;
   overflow: hidden;
 }
+
 .side-panel > .panel-content, .side-panel > .empty-panel{
   flex: 1 1 auto;
   min-height: 0;
   overscroll-behavior: contain;
 }
+
 .side-panel > .panel-content{
   overflow-x: hidden;
   overflow-y: auto;
 }
+
 .side-panel > .empty-panel{
   overflow: hidden;
 }
+
 .side-panel > .empty-panel:has(.pin-list){
   display: flex;
   flex-direction: column;
 }
+
 .side-panel > .empty-panel > .pin-list{
   flex: 1 1 auto;
   min-height: 0;
@@ -298,33 +491,41 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   overscroll-behavior: contain;
   align-content: start;
 }
+
 .side-panel > form.panel-content{
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 12px 16px 10px;
 }
+
 .side-panel > form.panel-content .panel-heading h2{
   font-size: 18px;
 }
+
 .side-panel > form.panel-content .draft-coordinates-row{
   margin-top: 4px;
 }
+
 .side-panel > form.panel-content .coordinates{
   margin: 5px 0 7px;
 }
+
 .side-panel > form.panel-content .draft-location-hint{
   margin: 3px 0 7px;
   font-size: 10px;
   line-height: 1.35;
 }
+
 .side-panel > form.panel-content .field-label{
   margin: 7px 0 4px;
 }
+
 .side-panel > form.panel-content select{
   min-height: 34px;
   padding: 6px 9px;
 }
+
 .side-panel > form.panel-content textarea{
   min-height: 58px;
   max-height: 84px;
@@ -333,6 +534,7 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   resize: none;
   overflow-y: auto;
 }
+
 .side-panel > form.panel-content .upload-box{
   min-height: 0;
   flex-direction: row;
@@ -342,27 +544,32 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   text-align: left;
   border-radius: 9px;
 }
+
 .side-panel > form.panel-content .upload-box svg{
   width: 19px;
   height: 19px;
   flex: 0 0 auto;
 }
+
 .side-panel > form.panel-content .upload-box strong{
   font-size: 11px;
   white-space: nowrap;
 }
+
 .side-panel > form.panel-content .upload-box small{
   margin-left: auto;
   font-size: 9px;
   line-height: 1.25;
   text-align: right;
 }
+
 .side-panel > form.panel-content .full-width{
   flex: 0 0 auto;
   margin-top: auto;
   padding: 10px 14px;
   min-height: 40px;
 }
+
 .side-panel > .panel-footnote{
   position: static;
   flex: 0 0 auto;
@@ -373,35 +580,50 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
   font-size: 9px;
   line-height: 1.35;
 }
-@media (max-width: 1050px) {
+
+@media (max-width: 1050px){
+
   .side-panel > form.panel-content{
     padding: 10px 12px 8px;
   }
+
   .side-panel > form.panel-content .draft-location-hint{
     font-size: 9px;
   }
+
+
 }
-@media (max-width: 760px) {
+
+@media (max-width: 760px){
+
   .side-panel > form.panel-content{
     padding: 8px 11px 7px;
   }
+
   .side-panel > form.panel-content .panel-heading h2{
     font-size: 16px;
   }
+
   .side-panel > form.panel-content .field-label{
     margin: 5px 0 3px;
   }
+
   .side-panel > form.panel-content .upload-box{
     gap: 6px;
     padding: 6px 8px;
   }
+
   .side-panel > form.panel-content .upload-box small{
     font-size: 8px;
   }
+
   .side-panel > .panel-footnote{
     padding: 7px 10px;
   }
+
+
 }
+
 
 
 /* Category filter buttons below the place search. */
@@ -423,7 +645,9 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
 
 
 
-@media (max-width: 760px) {
+
+@media (max-width: 760px){
+
   
   
   .category-filter-row{
@@ -433,27 +657,41 @@ footer{ flex: 0 0 auto; min-height: 0; padding: 9px 2px 10px; margin-top: 0; }
     margin-top: 7px;
     padding-bottom: 7px;
   }
+
   
+
 }
+
 
 
 /* Premium visual refresh: theme tokens are defined in styles/base.css. */
 html, body, #root{ background: var(--bg-main); }
+
 body, .app-shell{ color: var(--text-dark); }
+
 .topbar{ border-bottom-color: var(--border-color); }
-.brand, .brand strong, .panel-heading h2, .empty-panel h2, .modal-head h2, h1, h2{ color: var(--text-dark); }
+
+.brand, .brand strong, .panel-heading h2, .empty-panel h2, h1, h2{ color: var(--text-dark); }
+
 .brand strong{ font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 800; }
+
 .brand-mark{ background: var(--primary); box-shadow: 0 5px 14px rgba(5, 150, 105, .18); }
+
 .brand small, .coordinates, .pin-date, footer, .pin-list-item small, .field-label span, .upload-box small{ color: var(--text-muted); }
-.side-panel, .modal-backdrop > section, .auth-modal, .invite-modal{ border-color: var(--border-color); }
+
+.side-panel{ border-color: var(--border-color); }
+
 .side-panel{
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, .07);
 }
+
 .panel-footnote{ background: var(--surface); border-top-color: var(--border-color); }
+
 .pin-list{ gap: 8px; }
+
 .pin-list-item{
   background: var(--surface);
   border: 1px solid transparent;
@@ -461,53 +699,65 @@ body, .app-shell{ color: var(--text-dark); }
   box-shadow: 0 2px 7px rgba(15, 23, 42, .035);
   transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
+
 .pin-list-item:hover{
   background: #f0fdf7;
   border-color: rgba(5, 150, 105, .35);
   box-shadow: 0 4px 12px rgba(5, 150, 105, .08);
   transform: translateY(-1px);
 }
+
 .pin-list-item strong{ color: var(--text-dark); }
+
 .primary-button, .secondary-button, .delete-pin-button, .copy-code-button, .profile-menu-item{
   border-radius: 999px;
   transition: all .2s ease;
 }
+
 .primary-button{
   background: var(--primary);
   color: #fff;
   box-shadow: 0 4px 12px rgba(5, 150, 105, .2);
 }
+
 .primary-button:hover{
   background: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 6px 15px rgba(5, 150, 105, .24);
 }
+
 .secondary-button{
   border-color: var(--border-color);
   background: #f1f5f9;
   color: var(--text-dark);
 }
+
 .secondary-button:hover{
   background: #e2e8f0;
   transform: translateY(-1px);
 }
+
 .icon-button{
   border-color: var(--border-color);
   background: var(--surface);
   color: var(--text-muted);
   transition: all .2s ease;
 }
+
 .icon-button:hover{ border-color: #a7f3d0; background: #ecfdf5; color: var(--primary-hover); }
-.panel-content input:not([type="file"]), .panel-content textarea, .panel-content select, .auth-form input, .activation-form input, .onboarding-form input, .category-select{
+
+.panel-content input:not([type="file"]), .panel-content textarea, .panel-content select, .category-select{
   border-color: transparent;
   border-radius: 12px;
   background: #f1f5f9;
   color: var(--text-dark);
 }
-.panel-content input:not([type="file"]):focus, .panel-content textarea:focus, .panel-content select:focus, .auth-form input:focus, .activation-form input:focus, .onboarding-form input:focus, .category-select:focus{
+
+.panel-content input:not([type="file"]):focus, .panel-content textarea:focus, .panel-content select:focus, .category-select:focus{
   border-color: #6ee7b7;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, .1);
 }
+
 .upload-box{
   border: 1px dashed #94a3b8;
   border-radius: 14px;
@@ -515,24 +765,35 @@ body, .app-shell{ color: var(--text-dark); }
   color: var(--primary-hover);
   transition: background .2s ease, border-color .2s ease;
 }
+
 .upload-box:hover{ border-color: var(--primary); background: #f0fdf7; }
 
 
 
 
+
 .category-badge{ background: var(--surface); }
+
 .field-label{ color: var(--text-dark); }
-.empty-panel > p, .onboarding-copy, .pin-description{ color: var(--text-muted); }
-@media (prefers-reduced-motion: reduce) {
+
+.empty-panel > p, .pin-description{ color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce){
+
   .primary-button, .secondary-button, .delete-pin-button, .copy-code-button, .profile-menu-item, .pin-list-item, .icon-button{
     transition: none;
   }
+
+
 }
+
 
 
 /* Voice-to-text controls */
 .voice-textarea-wrap{ position: relative; width: 100%; }
+
 .voice-textarea-wrap textarea.voice-enabled-input{ box-sizing: border-box; width: 100%; padding-right: 46px !important; }
+
 .voice-button{
   position: absolute;
   z-index: 5;
@@ -550,24 +811,34 @@ body, .app-shell{ color: var(--text-dark); }
   box-shadow: 0 2px 6px rgba(15, 23, 42, .08);
   transition: color .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
+
 .voice-button:hover{ border-color: #6ee7b7; background: #ecfdf5; color: #047857; }
+
 .voice-button:focus-visible{ outline: 2px solid #059669; outline-offset: 2px; }
+
 .voice-button.is-listening{
   border-color: #dc2626;
   background: #dc2626;
   color: #fff;
   animation: voice-pulse 1.2s ease-out infinite;
 }
+
 @keyframes voice-pulse {
   0%{ box-shadow: 0 0 0 0 rgba(220, 38, 38, .45); }
   70%{ box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
   100%{ box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
 .textarea-voice-button{ top: 7px; right: 7px; }
-@media (prefers-reduced-motion: reduce) {
+
+@media (prefers-reduced-motion: reduce){
+
   .voice-button{ transition: none; }
+
   .voice-button.is-listening{ animation: none; }
+
+
 }
+
 
 /* Reverse-geocoded address in the selected pin details */
 .selected-address{
@@ -580,22 +851,26 @@ body, .app-shell{ color: var(--text-dark); }
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+
 .selected-address > svg{
   flex: 0 0 auto;
   margin-top: 3px;
   color: #4b5563;
 }
+
 .selected-coordinates{
   margin-top: 2px;
   color: #9ca3af;
   font-size: 0.75rem;
 }
 
+
 /* AYTAR: yakın işaretçi grupları */
 .pin-cluster-icon-wrap{
   background: transparent;
   border: 0;
 }
+
 .pin-cluster-icon{
   display: grid;
   width: 44px;
@@ -611,97 +886,140 @@ body, .app-shell{ color: var(--text-dark); }
   font-variant-numeric: tabular-nums;
   transition: transform .15s ease, background .15s ease;
 }
+
 .pin-cluster-icon-wrap:hover .pin-cluster-icon{
   transform: scale(1.08);
   background: #0f513d;
 }
+
 .pin-cluster-icon-wrap:focus-visible{
   outline: 3px solid #f2b84b;
   outline-offset: 2px;
   border-radius: 50%;
 }
-@media (prefers-reduced-motion: reduce) {
+
+@media (prefers-reduced-motion: reduce){
+
   .pin-cluster-icon{ transition: none; }
+
+
 }
+
 
 
 /* Midnight Sapphire — cohesive dark palette overrides */
 html, body, #root, .app-shell{ background: var(--bg-main); color: var(--text-dark); }
+
 body{ color-scheme: dark; }
+
 .topbar{ border-bottom-color: var(--border-color); }
-.brand, .brand strong, h1, h2, h3, strong, .panel-heading h2, .empty-panel h2, .modal-head h2, .onboarding-panel h2, .pin-meta strong, .pin-list-item strong, .profile-welcome strong, .invite-code-info strong{ color: var(--text-dark); }
-.brand small, .intro-copy, .eyebrow, .stat-label, .coordinates, .pin-date, .pin-list-item small, .pin-meta small, footer, .panel-footnote, .modal-privacy, .invite-intro, .invite-code-info small, .invite-footnote, .onboarding-copy, .onboarding-footnote, .empty-panel p, .field-label span{ color: var(--text-muted); }
-.topbar, .side-panel, .panel-footnote, .auth-modal, .invite-modal, .profile-dropdown, .invite-row, .pin-list-item, .upload-box, .file-list div, .photo-grid a, .photo-grid .photo-tile, .selected-address, .voice-button, .icon-button{
+
+.brand, .brand strong, h1, h2, h3, strong, .panel-heading h2, .empty-panel h2, .pin-meta strong, .pin-list-item strong, .profile-welcome strong{ color: var(--text-dark); }
+
+.brand small, .intro-copy, .eyebrow, .stat-label, .coordinates, .pin-date, .pin-list-item small, .pin-meta small, footer, .panel-footnote, .empty-panel p, .field-label span{ color: var(--text-muted); }
+
+.topbar, .side-panel, .panel-footnote, .profile-dropdown, .pin-list-item, .upload-box, .file-list div, .photo-grid a, .photo-grid .photo-tile, .selected-address, .voice-button, .icon-button{
   border-color: var(--border-color);
 }
-.side-panel, .auth-modal, .invite-modal, .profile-dropdown{
+
+.side-panel, .profile-dropdown{
   background: var(--surface);
   color: var(--text-dark);
   border-color: var(--border-color);
 }
+
 .panel-footnote{ background: var(--surface); border-top-color: var(--border-color); }
-.pin-list-item, .invite-row, .file-list div{ background: var(--surface); color: var(--text-dark); }
+
+.pin-list-item, .file-list div{ background: var(--surface); color: var(--text-dark); }
+
 .pin-list-item:hover, .profile-menu-item:hover{
   background: #1d2b42;
   border-color: #3d566d;
   color: var(--text-dark);
 }
+
 .pin-list-item strong, .pin-meta strong{ color: var(--text-dark); }
+
 .primary-button{
   background: var(--primary);
   color: #05251d;
   box-shadow: 0 4px 14px rgba(16, 185, 129, .18);
 }
+
 .primary-button:hover{ background: #34d399; color: #05251d; }
+
 .secondary-button, .icon-button, .profile-trigger, .copy-code-button, .delete-pin-button{
   background: var(--surface);
   border-color: var(--border-color);
   color: var(--text-dark);
 }
+
 .secondary-button:hover, .icon-button:hover, .profile-menu-item:hover, .copy-code-button:hover{ background: #1d2b42; color: var(--text-dark); }
+
 input::placeholder, textarea::placeholder{
   color: #8495aa;
   opacity: 1;
 }
-.panel-content input:not([type="file"]), .panel-content textarea, .panel-content select, .auth-form input, .activation-form input, .onboarding-form input, .category-select, input, textarea, select{
+
+.panel-content input:not([type="file"]), .panel-content textarea, .panel-content select, .category-select, input, textarea, select{
   background-color: #101a2b;
   border-color: var(--border-color);
   color: var(--text-dark);
 }
-.panel-content input:not([type="file"]):focus, .panel-content textarea:focus, .panel-content select:focus, .auth-form input:focus, .activation-form input:focus, .onboarding-form input:focus, .category-select:focus, input:focus-visible, textarea:focus-visible, select:focus-visible{
+
+.panel-content input:not([type="file"]):focus, .panel-content textarea:focus, .panel-content select:focus, .category-select:focus, input:focus-visible, textarea:focus-visible, select:focus-visible{
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
   outline-color: var(--primary);
 }
+
 select option{ background: var(--surface); color: var(--text-dark); }
+
 .upload-box{ background: #101a2b; border-color: #52647a; color: #6ee7b7; }
+
 .upload-box:hover{ background: #17283a; border-color: var(--primary); }
+
 .upload-box small{ color: var(--text-muted); }
+
 .file-list button{ color: var(--text-muted); }
+
 .empty-icon, .overlay-icon, .mini-pin, .avatar-placeholder, .pin-thumb{
   background: #1d3440;
   color: #6ee7b7;
 }
 
 
+
 .selected-address{ color: var(--text-dark); }
+
 .selected-address > svg{ color: var(--text-muted); }
+
 .selected-coordinates{ color: var(--text-muted); }
+
 .directions-link, .text-button{ color: #6ee7b7; }
+
 .directions-link:hover, .text-button:hover{ color: #a7f3d0; }
-.modal-backdrop{ background: rgba(3, 8, 20, .78); }
+
+
 .profile-dropdown{ box-shadow: 0 12px 34px rgba(0, 0, 0, .38); }
+
 .profile-welcome{ color: var(--text-muted); border-bottom-color: var(--border-color); }
+
 .profile-menu-item{ color: var(--text-dark); }
+
 .profile-menu-item svg{ color: var(--text-muted); }
-.invite-row{ border-color: var(--border-color); }
-.invite-code-info small{ color: var(--text-muted); }
+
+
+
 .voice-button{ background: var(--surface); color: var(--text-dark); border-color: var(--border-color); }
+
 .voice-button:hover{ background: #1d2b42; color: #6ee7b7; border-color: var(--primary); }
 
 
 
+
 .pin-cluster-icon{ background: #0f8060; }
+
 .pin-cluster-icon-wrap:hover .pin-cluster-icon{ background: #10b981; }
 
 
@@ -714,17 +1032,27 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 
 
+
 .status-chip.active{ background: #123a33; color: #6ee7b7; }
+
 .status-chip{ background: #352d1c; color: #fcd58b; }
-.activation-note{ background: #352d1c; color: #fcd58b; }
+
+
 .pending-status{ background: #352d1c; border-color: #66502a; color: #fcd58b; }
+
 .pending-status:hover{ background: #44371f; }
-.panel-content textarea, .auth-form input, .activation-form input, .onboarding-form input{
+
+.panel-content textarea{
   border-radius: 12px;
 }
-@media (prefers-reduced-motion: reduce) {
+
+@media (prefers-reduced-motion: reduce){
+
   .pin-list-item, .primary-button, .secondary-button, .icon-button{ transition: none; }
+
+
 }
+
 
 
 /* Mobile UI sprint: compact map action and collapsible category filter. */
@@ -737,12 +1065,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
   overflow: visible;
   scrollbar-width: none;
 }
+
 .category-filter-row:not(.is-open){
   align-items: center;
   gap: 5px;
   padding: 2px;
   background: transparent;
 }
+
 .category-filter-row.is-open{
   width: fit-content;
   max-width: min(100%, calc(100vw - 44px));
@@ -754,6 +1084,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
   backdrop-filter: blur(10px);
 }
+
 .filter-toggle-button{
   display: inline-flex;
   flex: 0 0 auto;
@@ -767,12 +1098,15 @@ select option{ background: var(--surface); color: var(--text-dark); }
   background: var(--surface);
   color: var(--text-dark);
 }
+
 .filter-toggle-button:hover, .filter-toggle-button:focus-visible{
   border-color: var(--primary);
   color: var(--primary);
 }
 
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   
   
   .category-filter-row{
@@ -783,15 +1117,20 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin-top: 7px;
     padding: 2px;
   }
+
   .category-filter-row.is-open{
     max-width: calc(100vw - 44px);
     gap: 5px;
     padding: 7px;
   }
+
   
   
   .filter-toggle-button{ width: 32px; height: 32px; }
+
+
 }
+
 
 
 /* Pin list address summary layout */
@@ -800,6 +1139,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   padding: 10px 11px;
   gap: 10px;
 }
+
 .pin-list-copy{
   display: flex;
   flex: 1;
@@ -808,6 +1148,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 4px;
   min-width: 0;
 }
+
 .pin-list-copy strong{
   display: block;
   min-width: 0;
@@ -818,6 +1159,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-weight: 700;
   line-height: 1.35;
 }
+
 .pin-list-copy .pin-category-label{
   display: flex;
   align-items: center;
@@ -825,6 +1167,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin-top: 0;
   line-height: 1.3;
 }
+
 .pin-list-copy > small:last-child{
   margin-top: 0;
   font-size: 10px;
@@ -833,6 +1176,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 
 
 /* Compact time filter for recent pins */
@@ -852,7 +1196,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   box-shadow: 0 4px 14px rgba(0, 0, 0, .16);
   backdrop-filter: blur(10px);
 }
+
 .time-filter-control > svg{ flex: 0 0 auto; color: #6ee7b7; }
+
 .time-filter-control select{
   min-width: 0;
   max-width: 210px;
@@ -866,13 +1212,22 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-weight: 650;
   cursor: pointer;
 }
+
 .time-filter-control select:focus{ box-shadow: none; }
+
 .time-filter-control option{ background: var(--surface); color: var(--text-dark); }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .time-filter-control{ min-height: 32px; margin-top: 5px; padding: 0 8px; gap: 5px; }
+
   .time-filter-control > svg{ width: 14px; height: 14px; }
+
   .time-filter-control select{ max-width: min(190px, calc(100vw - 90px)); padding: 6px 14px 6px 0; font-size: 11px; }
+
+
 }
+
 
 
 /* Keep floating map filters interactive above Leaflet's click surface. */
@@ -881,10 +1236,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
   z-index: 700;
   pointer-events: auto;
 }
+
 .time-filter-control select{
   pointer-events: auto;
   touch-action: manipulation;
 }
+
 
 
 /* Filters now live in the right panel, directly above pin search. */
@@ -900,6 +1257,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   z-index: 2;
   pointer-events: auto;
 }
+
 .panel-filters .category-filter-row{
   width: 100%;
   max-width: 100%;
@@ -908,13 +1266,16 @@ select option{ background: var(--surface); color: var(--text-dark); }
   flex-wrap: wrap;
   overflow: visible;
 }
+
 .panel-filters .category-filter-row.is-open{
   width: 100%;
   max-width: 100%;
 }
+
 .panel-filters .category-filter-row:not(.is-open){
   justify-content: flex-start;
 }
+
 .panel-filters .time-filter-control{
   align-self: flex-start;
   width: 100%;
@@ -922,25 +1283,35 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin-top: 0;
   justify-content: flex-start;
 }
+
 .panel-filters .time-filter-control select{
   width: 100%;
   max-width: none;
 }
-@media (max-width: 760px) {
+
+@media (max-width: 760px){
+
   .panel-filters .category-filter-row{ max-width: 100%; }
+
   .panel-filters .category-filter-row.is-open{ max-width: 100%; }
+
   .panel-filters .time-filter-control select{ max-width: none; }
+
+
 }
 
 
+
 /* Mobile screen-space optimization sprint */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   html, body, #root{
     width: 100%;
     height: 100%;
     min-height: 0;
     overflow: hidden;
   }
+
 
   body{
     height: 100dvh;
@@ -949,10 +1320,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
     overscroll-behavior: none;
   }
 
+
   #root{
     height: 100dvh;
     min-height: 0;
   }
+
 
   .app-shell{
     display: flex;
@@ -964,6 +1337,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     padding: 0 8px;
   }
 
+
   .topbar{
     flex: 0 0 auto;
     height: 54px;
@@ -971,14 +1345,23 @@ select option{ background: var(--surface); color: var(--text-dark); }
     gap: 8px;
   }
 
+
   .brand{ gap: 8px; min-width: 0; }
+
   .brand-mark{ width: 31px; height: 31px; border-radius: 10px; }
+
   .brand-mark svg{ width: 17px; height: 17px; }
+
   .brand strong{ font-size: 13px; line-height: 1.2; letter-spacing: -.2px; }
+
   .brand small{ margin-top: 1px; font-size: 9px; }
+
   .top-actions{ gap: 6px; min-width: 0; }
+
   .status-chip, .pending-status, .profile-trigger{ padding: 6px 8px; font-size: 10px; }
+
   .top-actions .primary-button, .top-actions .secondary-button{ padding: 7px 9px; font-size: 10px; gap: 5px; }
+
 
   .workspace{
     flex: 1 1 auto;
@@ -989,6 +1372,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     overflow: hidden;
     padding: 7px 0 0;
   }
+
   
   
   
@@ -1005,10 +1389,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
     border-radius: 12px;
   }
 
+
   .panel-content, .empty-panel{
     min-height: 0;
     padding: 10px;
   }
+
 
   .empty-panel{
     display: flex;
@@ -1022,23 +1408,30 @@ select option{ background: var(--surface); color: var(--text-dark); }
     -webkit-overflow-scrolling: touch;
   }
 
+
   .panel-filters{
     flex: 0 0 auto;
     gap: 4px;
     margin: 0 0 7px;
   }
 
+
   .panel-filters .category-filter-row{
     gap: 4px;
     padding: 0;
   }
 
+
   
 
   .panel-filters .filter-toggle-button{ width: 27px; height: 27px; }
+
   .panel-filters .category-filter-row.is-open{ gap: 4px; padding: 5px; border-radius: 10px; }
+
   .panel-filters .time-filter-control{ min-height: 27px; padding: 0 7px; gap: 5px; }
+
   .panel-filters .time-filter-control select{ padding: 4px 13px 4px 0; font-size: 10px; }
+
 
   .pin-list{
     flex: 1 1 0;
@@ -1051,6 +1444,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin: 6px 0 0;
   }
 
+
   .pin-list-item{
     min-height: 53px;
     padding: 5px 7px;
@@ -1058,29 +1452,46 @@ select option{ background: var(--surface); color: var(--text-dark); }
     border-radius: 8px;
   }
 
+
   .pin-thumb, .pin-thumb img{ width: 36px; height: 36px; }
+
   .pin-thumb{ flex-basis: 36px; border-radius: 7px; }
+
   .pin-list-copy{ gap: 2px; }
+
   .pin-list-copy strong{ font-size: 10px; line-height: 1.25; }
+
   .pin-list-copy .pin-category-label{ font-size: 9px; }
+
   .pin-list-copy > small:last-child{ font-size: 9px; line-height: 1.2; }
+
   .empty-panel > .empty-icon{ width: 32px; height: 32px; margin: 2px 0 7px; }
+
   .empty-panel h2{ font-size: 15px; }
+
   .empty-panel p{ font-size: 11px; line-height: 1.45; margin: 5px 0 8px; }
 
+
   footer{ display: none !important; }
+
   .panel-footnote{ flex: 0 0 auto; padding: 7px 9px; font-size: 9px; }
+
+
 }
+
 
 /* Lazy pin thumbnails: resolve the photo URL only as the row approaches view. */
 .pin-thumb-image-slot{ display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; border-radius: inherit; }
+
 .pin-thumb-image-slot img{ display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+
 
 .primary-button:disabled{
   opacity: 0.5;
   cursor: not-allowed;
   filter: grayscale(50%);
 }
+
 
 
 /* AYTAR: TomTom route planning */
@@ -1093,37 +1504,66 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 
 .route-info-card{ margin: 0 0 12px; padding: 13px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--surface); }
+
 .route-info-heading{ display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #f97316; }
+
 .route-info-heading h2{ margin: 0; font-size: 14px; }
+
 .route-info-card p{ margin: 6px 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+
 .route-info-card .route-summary{ color: var(--text-dark); font-weight: 700; }
+
 .route-info-card .route-error{ color: #f87171; }
+
 .route-status{ display: flex; align-items: center; gap: 7px; }
+
 .route-card-actions{ display: flex; justify-content: flex-end; margin-top: 9px; }
+
 .route-card-actions .secondary-button{ padding: 7px 10px; font-size: 11px; }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   
   
   .route-info-card{ margin-bottom: 7px; padding: 9px; }
+
   .route-info-heading h2{ font-size: 12px; }
+
   .route-info-card p{ font-size: 10px; }
+
   .route-info-card .route-stop-hint{ display: none; }
+
+
 }
+
 
 
 /* Route stops are ordered from the route start and can be focused on the map. */
 .route-stop-hint{ margin-bottom: 2px !important; }
+
 .route-stop-list-heading{ display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 13px 0 -7px; color: var(--text-dark); font-size: 12px; text-align: left; }
+
 .route-stop-list-heading span{ color: var(--text-muted); font-size: 10px; font-weight: 600; }
+
 .pin-list-item.route-stop-item{ position: relative; gap: 8px; border: 1px solid transparent; }
+
 .pin-list-item.route-stop-item.is-selected{ border-color: #2684ff; background: rgba(38, 132, 255, .1); }
+
 .route-stop-number{ display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: #2684ff; color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(38, 132, 255, .25); }
+
 .route-stop-item .pin-thumb{ flex-shrink: 0; }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .route-stop-list-heading{ margin-top: 8px; font-size: 11px; }
+
   .route-stop-number{ flex-basis: 21px; width: 21px; height: 21px; font-size: 10px; }
+
   .pin-list-item.route-stop-item{ gap: 6px; }
+
+
 }
+
 
 
 /* Fix right-panel vertical layout: keep controls compact and scroll the pin list. */
@@ -1134,6 +1574,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-height: 0;
   overflow: hidden;
 }
+
 .panel-top-controls{
   display: flex;
   flex: 0 0 auto;
@@ -1141,18 +1582,27 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-width: 0;
   gap: 0;
 }
+
 .panel-top-controls .route-info-card{
   flex-shrink: 0;
   margin-bottom: 7px;
   padding: 10px;
 }
+
 .panel-top-controls .route-info-heading{ margin-bottom: 5px; }
+
 .panel-top-controls .route-info-heading h2{ font-size: 12px; }
+
 .panel-top-controls .route-info-card p{ margin: 4px 0; font-size: 10px; line-height: 1.35; }
+
 .panel-top-controls .route-card-actions{ margin-top: 5px; }
+
 .panel-top-controls .route-card-actions .secondary-button{ padding: 5px 8px; font-size: 10px; }
+
 .panel-top-controls .panel-filters{ flex-shrink: 0; margin-bottom: 6px; }
+
 .panel-top-controls .route-stop-list-heading{ flex-shrink: 0; margin: 7px 0 2px; }
+
 .side-panel > .empty-panel:has(.pin-list) .pin-list{
   flex: 1 1 0;
   min-height: 0;
@@ -1162,6 +1612,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   -webkit-overflow-scrolling: touch;
   align-content: start;
 }
+
 
 /* Compact route information card: title, summary and clear action share one row. */
 .route-info-card{
@@ -1173,6 +1624,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 4px 10px;
   padding: 8px 12px;
 }
+
 .route-info-card .route-info-heading{
   display: flex;
   flex: 0 0 auto;
@@ -1181,27 +1633,32 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0;
   padding: 0;
 }
+
 .route-info-card .route-info-heading h2{
   margin: 0;
   padding: 0;
   font-size: 14px;
   white-space: nowrap;
 }
+
 .route-info-card p{
   margin: 0;
   padding: 0;
   font-size: 14px;
   line-height: 1.25;
 }
+
 .route-info-card .route-summary{
   flex: 1 1 auto;
   min-width: 0;
 }
+
 .route-info-card .route-stop-hint{
   order: 4;
   flex: 1 0 100%;
   margin: 0;
 }
+
 .route-info-card .route-card-actions{
   order: 3;
   flex: 0 0 auto;
@@ -1210,13 +1667,16 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0 0 0 auto;
   padding: 0;
 }
+
 .route-info-card .route-card-actions .secondary-button{
   padding: 4px 8px;
   font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
 }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .panel-top-controls .route-info-card{
     flex-direction: row;
     align-items: center;
@@ -1226,37 +1686,47 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin-bottom: 5px;
     padding: 8px 12px;
   }
+
   .panel-top-controls .route-info-card .route-info-heading{
     flex: 0 0 auto;
     margin: 0;
     padding: 0;
     gap: 4px;
   }
+
   .panel-top-controls .route-info-card .route-info-heading h2{
     font-size: 14px;
   }
+
   .panel-top-controls .route-info-card p{
     margin: 0;
     padding: 0;
     font-size: 12px;
     line-height: 1.2;
   }
+
   .panel-top-controls .route-info-card .route-summary{
     flex: 1 1 auto;
     min-width: 120px;
   }
+
   .panel-top-controls .route-info-card .route-card-actions{
     flex: 0 0 auto;
     margin: 0 0 0 auto;
   }
+
   .panel-top-controls .route-info-card .route-card-actions .secondary-button{
     padding: 4px 8px;
     font-size: 12px;
   }
+
   .panel-top-controls .route-info-card .route-stop-hint{
     display: none;
   }
+
+
 }
+
 
 
 
@@ -1267,6 +1737,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0 0 5px;
   padding: 8px 10px;
 }
+
 .panel-top-controls .route-info-row{
   display: flex;
   flex-direction: row;
@@ -1276,6 +1747,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-width: 0;
   gap: 8px;
 }
+
 .panel-top-controls .route-info-copy{
   display: flex;
   flex: 1 1 auto;
@@ -1284,6 +1756,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-width: 0;
   gap: 8px;
 }
+
 .panel-top-controls .route-info-copy .route-info-heading{
   display: flex;
   flex: 0 0 auto;
@@ -1292,6 +1765,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0;
   padding: 0;
 }
+
 .panel-top-controls .route-info-copy .route-info-heading h2{
   margin: 0;
   padding: 0;
@@ -1299,6 +1773,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.2;
   white-space: nowrap;
 }
+
 .panel-top-controls .route-info-copy p{
   flex: 1 1 auto;
   min-width: 0;
@@ -1308,9 +1783,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
+
 .panel-top-controls .route-info-copy .route-status{
   gap: 4px;
 }
+
 .panel-top-controls .route-info-card .route-card-actions{
   display: flex;
   flex: 0 0 auto;
@@ -1319,6 +1796,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0;
   padding: 0;
 }
+
 .panel-top-controls .route-info-card .route-card-actions .secondary-button{
   flex-shrink: 0;
   margin: 0;
@@ -1327,28 +1805,41 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.2;
   white-space: nowrap;
 }
+
 .panel-top-controls .route-info-card .route-stop-hint{
   display: none;
 }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .panel-top-controls .route-info-card{
     margin-bottom: 4px;
     padding: 8px 10px;
   }
+
   .panel-top-controls .route-info-row{ gap: 6px; }
+
   .panel-top-controls .route-info-copy{ gap: 6px; }
+
   .panel-top-controls .route-info-copy .route-info-heading{ gap: 3px; }
+
   .panel-top-controls .route-info-copy .route-info-heading svg{
     width: 14px;
     height: 14px;
   }
+
   .panel-top-controls .route-info-copy .route-info-heading h2{ font-size: 12px; }
+
   .panel-top-controls .route-info-copy p{ font-size: 11px; }
+
   .panel-top-controls .route-info-card .route-card-actions .secondary-button{
     padding: 4px 8px;
     font-size: 12px;
   }
+
+
 }
+
 
 
 /* Independent voice command for creating a new pin. */
@@ -1359,6 +1850,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   right: auto;
   bottom: 20px;
 }
+
 .voice-pin-button{
   display: inline-flex;
   align-items: center;
@@ -1376,7 +1868,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-weight: 700;
   transition: background .15s ease, transform .15s ease;
 }
+
 .voice-pin-button:hover{ background: #7c3aed; }
+
 .voice-pin-button.is-listening{
   width: auto;
   min-width: 48px;
@@ -1385,7 +1879,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-color: #dc2626;
   animation: voice-pin-pulse 1s ease-in-out infinite;
 }
+
 .voice-pin-button.is-listening svg{ flex: 0 0 auto; }
+
 .voice-pin-tooltip{
   position: absolute;
   left: 0;
@@ -1402,6 +1898,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.4;
   pointer-events: none;
 }
+
 .voice-pin-tooltip::after{
   content: '';
   position: absolute;
@@ -1410,46 +1907,91 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border: 6px solid transparent;
   border-top-color: #1f2937;
 }
+
 @keyframes voice-pin-pulse {
   0%, 100%{ box-shadow: 0 0 0 0 rgba(220, 38, 38, .38), 0 4px 16px rgba(79, 35, 150, .2); }
   50%{ box-shadow: 0 0 0 8px rgba(220, 38, 38, 0), 0 4px 16px rgba(79, 35, 150, .2); }
 }
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   .voice-pin-control{ left: 116px; right: auto; bottom: 8px; }
+
   .voice-pin-button{ width: 44px; height: 44px; border-radius: 11px; }
+
   .voice-pin-button.is-listening{ width: auto; min-width: 44px; height: 44px; padding: 0 9px; }
+
   .voice-pin-tooltip{ left: 0; right: auto; max-width: min(270px, calc(100vw - 132px)); }
+
+
 }
-@media (prefers-reduced-motion: reduce) { .voice-pin-button{ transition: none; } .voice-pin-button.is-listening{ animation: none; } }
+
+@media (prefers-reduced-motion: reduce){
+ .voice-pin-button{ transition: none; }
+ .voice-pin-button.is-listening{ animation: none; }
+ 
+}
+
 
 
 /* Pin editing and plus/minus votes */
 .pin-owner-actions{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+
 .pin-owner-actions > button{ flex:1 1 0; justify-content:center; min-width:0; }
+
 .pin-edit-form{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+
 .pin-edit-form textarea{ width:100%; resize:vertical; min-height:84px; padding:11px 12px; border:1px solid var(--border-color,#dce5df); border-radius:10px; background:var(--surface,#fff); color:var(--text-dark,#1f2937); font:inherit; font-size:13px; line-height:1.5; }
+
 .edit-photos-heading{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px; }
+
 .edit-photos-heading .field-label{ margin:0; }
+
 .edit-photos-heading small{ color:var(--text-muted,#64748b); font-size:11px; }
+
 .edit-photo-list{ display:flex; flex-direction:column; gap:7px; }
+
 .edit-photo-item{ display:flex; align-items:center; gap:9px; min-width:0; padding:7px; border:1px solid var(--border-color,#dce5df); border-radius:10px; }
+
 .edit-photo-item img{ width:48px; height:48px; flex:0 0 48px; object-fit:cover; border-radius:7px; }
+
 .edit-photo-item span{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+
 .edit-photo-remove{ display:grid; flex:0 0 30px; width:30px; height:30px; place-items:center; border:1px solid #fecaca; border-radius:8px; background:#fff1f2; color:#dc2626; }
+
 .edit-form-actions{ display:flex; gap:8px; margin-top:8px; }
+
 .edit-form-actions button{ flex:1 1 0; justify-content:center; }
+
 .form-error{ margin:0; color:#dc2626; font-size:12px; line-height:1.4; }
+
 .pin-vote-bar{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; margin:12px 0 15px; padding:11px 12px; border:1px solid var(--border-color,#dce5df); border-radius:12px; background:var(--surface,#fff); }
+
 .pin-vote-button{ display:grid; width:38px; height:36px; place-items:center; border:1px solid var(--border-color,#dce5df); border-radius:10px; background:var(--surface,#fff); color:var(--text-dark,#1f2937); font-size:24px; line-height:1; font-weight:700; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; }
+
 .pin-vote-button:hover:not(:disabled){ transform:translateY(-1px); }
+
 .pin-vote-button:disabled{ opacity:.4; cursor:not-allowed; }
+
 .pin-vote-button.vote-up.is-active{ border-color:#86efac; background:#dcfce7; color:#166534; }
+
 .pin-vote-button.vote-down.is-active{ border-color:#fca5a5; background:#fee2e2; color:#991b1b; }
+
 .pin-vote-score{ min-width:42px; text-align:center; color:var(--text-dark,#1f2937); font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+
 .pin-vote-score.score-positive{ color:#15803d; }
+
 .pin-vote-score.score-negative{ color:#dc2626; }
+
 .pin-vote-bar small{ flex-basis:100%; text-align:center; color:var(--text-muted,#64748b); font-size:11px; }
-@media (max-width:768px) { .pin-owner-actions{ gap:6px; } .pin-vote-bar{ gap:10px; padding:9px; } .pin-vote-button{ width:36px; height:34px; } .edit-photo-item img{ width:42px; height:42px; flex-basis:42px; } }
+
+@media (max-width:768px){
+ .pin-owner-actions{ gap:6px; }
+ .pin-vote-bar{ gap:10px; padding:9px; }
+ .pin-vote-button{ width:36px; height:34px; }
+ .edit-photo-item img{ width:42px; height:42px; flex-basis:42px; }
+ 
+}
+
 
 
 /* Compact vote score badge in the pin list */
@@ -1469,19 +2011,23 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
+
 .pin-score-badge.score-positive{
   border-color: rgba(34, 197, 94, .24);
   background: rgba(34, 197, 94, .12);
   color: #15803d;
 }
+
 .pin-score-badge.score-negative{
   border-color: rgba(239, 68, 68, .24);
   background: rgba(239, 68, 68, .12);
   color: #dc2626;
 }
+
 .pin-score-badge.score-neutral{
   color: #64748b;
 }
+
 
 
 /* Pin list: fixed two-column layout, with metadata and vote score sharing one row. */
@@ -1494,6 +2040,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-width: 0;
   text-align: left;
 }
+
 .pin-list-left{
   display: flex;
   flex: 0 0 60px;
@@ -1504,11 +2051,13 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: 60px;
   min-width: 60px;
 }
+
 .pin-list-left .pin-thumb{
   flex: 0 0 48px;
   width: 48px;
   height: 48px;
 }
+
 .pin-list-left .pin-category-label{
   display: inline-flex;
   align-items: center;
@@ -1520,6 +2069,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.2;
   white-space: nowrap;
 }
+
 .pin-list-right{
   display: flex;
   flex: 1 1 auto;
@@ -1527,6 +2077,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   min-width: 0;
   gap: 7px;
 }
+
 .pin-list-title{
   display: block;
   width: 100%;
@@ -1538,6 +2089,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .pin-list-meta{
   display: flex;
   align-items: center;
@@ -1546,6 +2098,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: 100%;
   min-width: 0;
 }
+
 .pin-list-meta small{
   flex: 1 1 auto;
   min-width: 0;
@@ -1556,6 +2109,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .pin-list-meta .pin-score-badge{
   display: inline-flex;
   flex: 0 0 auto;
@@ -1574,21 +2128,26 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
+
 .pin-list-meta .pin-score-badge.score-pos{
   border-color: rgba(34, 197, 94, .24);
   background: rgba(34, 197, 94, .2);
   color: #4ade80;
 }
+
 .pin-list-meta .pin-score-badge.score-neg{
   border-color: rgba(239, 68, 68, .24);
   background: rgba(239, 68, 68, .2);
   color: #f87171;
 }
+
 .pin-list-meta .pin-score-badge.score-zero{
   background: rgba(148, 163, 184, .2);
   color: #94a3b8;
 }
+
 .pin-list-item.route-stop-item{ position: relative; }
+
 .pin-list-item.route-stop-item > .route-stop-number{
   position: absolute;
   z-index: 1;
@@ -1598,19 +2157,34 @@ select option{ background: var(--surface); color: var(--text-dark); }
   height: 20px;
   font-size: 10px;
 }
+
 .pin-list-item.route-stop-item .pin-list-left{ margin-left: 10px; }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .pin-list-item{ gap: 8px; padding: 7px; }
+
   .pin-list-left{ flex-basis: 48px; width: 48px; min-width: 48px; gap: 5px; }
+
   .pin-list-left .pin-thumb{ flex-basis: 38px; width: 38px; height: 38px; }
+
   .pin-list-left .pin-category-label{ font-size: 8px; }
+
   .pin-list-right{ gap: 5px; }
+
   .pin-list-title{ font-size: 12px; }
+
   .pin-list-meta{ gap: 5px; }
+
   .pin-list-meta small{ font-size: 10px; }
+
   .pin-list-meta .pin-score-badge{ padding: 2px 6px; font-size: 10px; }
+
   .pin-list-item.route-stop-item .pin-list-left{ margin-left: 8px; }
+
+
 }
+
 /* Haritayı karanlık moda çeviren sihirli kod */
 
 
@@ -1622,17 +2196,20 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a;
 }
 
+
 .app-shell.light-theme .topbar, .app-shell.light-theme .side-panel, .app-shell.light-theme .profile-dropdown{
   background-color: #ffffff;
   border-color: #cbd5e1;
   color: #0f172a;
 }
 
+
 .app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
   background-color: #f8fafc;
   color: #0f172a;
   border-color: #cbd5e1;
 }
+
 
 /* Açık temada haritanın rengini düzelt (Koyu filtreyi kaldır) */
 
@@ -1642,12 +2219,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-color: #cbd5e1;
 }
 
+
 /* Admin paneli de açık temada düzgün görünsün */
-.app-shell.light-theme .invite-modal{
-  background-color: #ffffff;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
-}
+
 /* =========================================
    GÜNDÜZ MODU (LIGHT THEME) DÜZELTMELERİ
    ========================================= */
@@ -1658,14 +2232,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a !important;
 }
 
+
 /* Üst bar */
 .app-shell.light-theme .topbar{
   background-color: #ffffff !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
+
 .app-shell.light-theme .topbar .brand strong, .app-shell.light-theme .topbar .brand small{
   color: #0f172a !important;
 }
+
 
 /* Sağ Panel (Side Panel) */
 .app-shell.light-theme .side-panel{
@@ -1673,13 +2250,16 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-left: 1px solid #e2e8f0 !important;
 }
 
+
 .app-shell.light-theme .panel-content h2, .app-shell.light-theme .panel-content h3, .app-shell.light-theme .panel-heading h2, .app-shell.light-theme .panel-heading .eyebrow{
   color: #0f172a !important;
 }
 
+
 .app-shell.light-theme .pin-title, .app-shell.light-theme .pin-description, .app-shell.light-theme .pin-date, .app-shell.light-theme .pin-list-title{
   color: #334155 !important;
 }
+
 
 /* Form Elemanları (Input, Select, Textarea) */
 .app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
@@ -1688,9 +2268,11 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border: 1px solid #cbd5e1 !important;
 }
 
+
 .app-shell.light-theme input::placeholder, .app-shell.light-theme textarea::placeholder{
   color: #64748b !important;
 }
+
 
 /* Butonlar */
 .app-shell.light-theme .secondary-button{
@@ -1698,15 +2280,18 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
 }
+
 .app-shell.light-theme .secondary-button:hover{
   background-color: #e2e8f0 !important;
 }
+
 
 .app-shell.light-theme .delete-pin-button{
   background-color: #fef2f2 !important;
   color: #ef4444 !important;
   border-color: #fca5a5 !important;
 }
+
 
 /* Filtre Menüsü ve Arama Kutuları */
 .app-shell.light-theme .panel-filters, .app-shell.light-theme .time-filter-control{
@@ -1717,34 +2302,29 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 
 
+
 /* Pin Listesi */
 .app-shell.light-theme .pin-list-item{
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
 }
+
 .app-shell.light-theme .pin-list-item:hover{
   background-color: #f8fafc !important;
 }
+
 .app-shell.light-theme .pin-list-meta small{
   color: #64748b !important;
 }
 
-/* Modallar (Admin Paneli, Giriş, Davet) */
-.app-shell.light-theme .invite-modal, .app-shell.light-theme .auth-modal{
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
-}
 
-.app-shell.light-theme .modal-head h2, .app-shell.light-theme .modal-head .eyebrow{
-  color: #0f172a !important;
-}
+/* Modallar (Admin Paneli, Giriş, Davet) */
+
+
+
 
 /* Admin Panelindeki Kullanıcı Satırları */
-.app-shell.light-theme .admin-user-row{
-  background-color: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-}
+
 
 /* Harita Araç Çubuğu (Arama Barı) */
 
@@ -1756,6 +2336,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-top: 1px solid #e2e8f0 !important;
   color: #64748b !important;
 }
+
 
 /* My Pins filter: a distinct violet accent that remains readable in both themes. */
 
@@ -1769,18 +2350,22 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 13px;
   padding-bottom: 6px;
 }
+
 .pin-edit-form .panel-heading{
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 2px;
 }
+
 .pin-edit-form .panel-heading > div{
   min-width: 0;
 }
+
 .pin-edit-form .panel-heading h2{
   overflow-wrap: anywhere;
   line-height: 1.3;
 }
+
 .edit-form-subtitle{
   display: block;
   margin-top: 6px;
@@ -1788,12 +2373,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-size: 11px;
   line-height: 1.45;
 }
+
 .edit-field-group{
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
+
 .pin-edit-form .field-label{
   display: flex;
   align-items: baseline;
@@ -1801,14 +2388,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 10px;
   margin: 0;
 }
+
 .pin-edit-form .category-select{
   width: 100%;
   min-height: 40px;
 }
+
 .pin-edit-form textarea{
   box-sizing: border-box;
   min-height: 112px;
 }
+
 .edit-description-meta{
   display: flex;
   justify-content: space-between;
@@ -1816,97 +2406,123 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: var(--text-muted, #64748b);
   font-size: 10px;
 }
+
 .edit-description-meta small{
   font-size: inherit;
 }
+
 .edit-photos-heading{
   margin-top: 3px;
   padding-top: 11px;
   border-top: 1px solid var(--border-color, #dce5df);
 }
+
 .edit-photo-list{
   gap: 8px;
   max-height: 220px;
   overflow-y: auto;
   padding: 1px 2px 1px 0;
 }
+
 .edit-photo-item{
   background: var(--surface, rgba(148, 163, 184, .05));
 }
+
 .edit-photo-item span{
   overflow-wrap: anywhere;
 }
+
 .edit-photo-remove{
   flex-shrink: 0;
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
 }
+
 .edit-photo-remove:hover:not(:disabled){
   border-color: #f87171;
   background: #fee2e2;
 }
+
 .edit-upload-box{
   margin-top: 0;
 }
+
 .edit-form-error{
   padding: 9px 11px;
   border: 1px solid rgba(220, 38, 38, .24);
   border-radius: 9px;
   background: rgba(254, 226, 226, .12);
 }
+
 .edit-form-actions{
   gap: 10px;
   margin-top: 3px;
   padding-top: 10px;
   border-top: 1px solid var(--border-color, #dce5df);
 }
+
 .edit-form-actions button{
   min-height: 40px;
 }
+
 .edit-form-actions button:disabled, .pin-edit-form .icon-button:disabled{
   cursor: wait;
   opacity: .65;
 }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .pin-edit-form{
     gap: 11px;
   }
+
   .pin-edit-form textarea{
     min-height: 100px;
     padding: 10px;
   }
+
   .edit-photo-item{
     gap: 8px;
     padding: 6px;
   }
+
   .edit-form-actions{
     gap: 7px;
   }
+
   .edit-form-actions button{
     min-height: 38px;
     padding: 8px 9px;
     font-size: 12px;
   }
+
+
 }
+
 
 
 /* Light theme: ensure selected-pin details remain readable in daylight mode. */
 .app-shell.light-theme .selected-address{
   color: #334155 !important;
 }
+
 .app-shell.light-theme .selected-address > svg{
   color: #64748b !important;
   stroke: #64748b !important;
 }
+
 .app-shell.light-theme .selected-coordinates{
   color: #334155 !important;
 }
+
 .app-shell.light-theme .directions-link{
   color: #059669 !important;
 }
+
 .app-shell.light-theme .directions-link:hover{
   color: #047857 !important;
 }
+
 
 
 /* Telegram-sourced pins use a distinct AYTAR RADAR color and badge. */
@@ -1915,96 +2531,53 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .radar-source-badge{ display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; padding: 4px 7px; border: 1px solid #ddd6fe; border-radius: 999px; background: #f5f3ff; color: #6d28d9; font-size: 10px; font-weight: 800; vertical-align: middle; }
 
 
+
 /* Keep category filters visible above the compact time/search row on mobile. */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   .panel-filter-search-row{
     flex-wrap: wrap !important;
   }
+
   .panel-filter-search-row .panel-filters{
     display: contents !important;
   }
+
   .panel-filter-search-row .category-filter-row{
     display: flex !important;
     flex: 0 0 100% !important;
     width: 100% !important;
     min-width: 0 !important;
   }
+
+
 }
+
 
 
 /* Admin panel: bulk pin management */
-.admin-pin-management{
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-bottom: 20px;
-}
 
-.admin-pin-toolbar{
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-}
 
-.admin-pin-select-all{
-  display: flex;
-  flex: 1;
-  min-width: 150px;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
 
-.admin-pin-row{
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
-}
 
-.admin-pin-row.is-selected{
-  border-color: rgba(239, 68, 68, 0.45);
-  background: rgba(239, 68, 68, 0.12);
-}
 
-.admin-pin-checkbox, .admin-pin-select-all input{
-  flex: 0 0 auto;
-  margin-top: 3px;
-  accent-color: #ef4444;
-}
 
-.admin-pin-info{
-  flex: 1;
-  min-width: 0;
-}
 
-.admin-pin-title{
-  display: block;
-  overflow-wrap: anywhere;
-  font-size: 13px;
-}
 
-.admin-pin-meta{
-  display: block;
-  margin-top: 4px;
-  color: #94a3b8;
-  font-size: 12px;
-  line-height: 1.5;
-}
+
+
+
+
+
+
+
+
+
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET
    ============================================ */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   html, body, #root{
     height: 100dvh !important;
     width: 100% !important;
@@ -2012,6 +2585,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin: 0 !important;
     padding: 0 !important;
   }
+
 
   .app-shell{
     display: flex !important;
@@ -2024,12 +2598,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
     max-width: 100% !important;
   }
 
+
   .topbar{
     flex: 0 0 auto !important;
     height: 60px !important;
     min-height: 60px !important;
     padding: 0 12px !important;
   }
+
 
   /* Workspace = kalan alan, relative konum */
   .workspace{
@@ -2043,6 +2619,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     padding: 0 !important;
     gap: 0 !important;
   }
+
 
   /* Harita = tam ekran */
   
@@ -2069,6 +2646,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     border-top: 1px solid var(--border-color, #334155) !important;
   }
 
+
   /* Bottom sheet tutamaç çizgisi (opsiyonel görsel) */
   .side-panel::before{
     content: '';
@@ -2084,15 +2662,20 @@ select option{ background: var(--surface); color: var(--text-dark); }
     z-index: 2;
   }
 
+
   footer{
     display: none !important;
   }
+
+
 }
+
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET (v2)
    Panel default KAPALI, sadece .is-open ile açılır
    ============================================ */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   html, body, #root{
     height: 100dvh !important;
     width: 100% !important;
@@ -2100,6 +2683,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin: 0 !important;
     padding: 0 !important;
   }
+
 
   .app-shell{
     display: flex !important;
@@ -2112,12 +2696,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
     max-width: 100% !important;
   }
 
+
   .topbar{
     flex: 0 0 auto !important;
     height: 60px !important;
     min-height: 60px !important;
     padding: 0 12px !important;
   }
+
 
   .workspace{
     flex: 1 1 auto !important;
@@ -2130,6 +2716,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     padding: 0 !important;
     gap: 0 !important;
   }
+
 
   
 
@@ -2159,10 +2746,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
     will-change: transform !important;
   }
 
+
   .side-panel.is-open{
     transform: translateY(0) !important;
     pointer-events: auto !important;
   }
+
 
   .side-panel::before{
     content: '';
@@ -2178,10 +2767,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
     z-index: 2;
   }
 
+
   footer{
     display: none !important;
   }
+
+
 }
+
 
 /* Liste butonu — map control stack içinde */
 
@@ -2191,7 +2784,8 @@ select option{ background: var(--surface); color: var(--text-dark); }
 /* ============================================
    MOBILE FULL-SCREEN MAP + BOTTOM SHEET (FINAL)
    ============================================ */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   html, body, #root{
     height: 100dvh !important;
     width: 100% !important;
@@ -2199,6 +2793,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     margin: 0 !important;
     padding: 0 !important;
   }
+
 
   .app-shell{
     display: flex !important;
@@ -2211,12 +2806,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
     max-width: 100% !important;
   }
 
+
   .topbar{
     flex: 0 0 auto !important;
     height: 60px !important;
     min-height: 60px !important;
     padding: 0 12px !important;
   }
+
 
   .workspace{
     flex: 1 1 auto !important;
@@ -2229,6 +2826,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     padding: 0 !important;
     gap: 0 !important;
   }
+
 
   
 
@@ -2259,12 +2857,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
     visibility: hidden !important; /* KESİN ÇÖZÜM: En altta kalan yazıyı yok eder */
   }
 
+
   /* Panel açıldığında */
   .side-panel.is-open{
     transform: translateY(0) !important;
     pointer-events: auto !important;
     visibility: visible !important;
   }
+
 
   /* Tutamaç Çizgisi */
   .side-panel::before{
@@ -2278,6 +2878,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
     flex: 0 0 auto;
   }
 
+
   /* İçeriğin Kaydırılabilir Olması */
   .side-panel > .empty-panel, .side-panel > .panel-content{
     flex: 1 1 auto !important;
@@ -2288,33 +2889,56 @@ select option{ background: var(--surface); color: var(--text-dark); }
     flex-direction: column !important;
   }
 
+
   footer{
     display: none !important;
   }
+
+
 }
+
 /* ============================================
    EMOJİ TEPKİLERİ VE YORUMLAR (CHAT)
    ============================================ */
 .pin-reactions-bar{ display: flex; gap: 8px; flex-wrap: wrap; margin: 15px 0; }
+
 .reaction-btn{ display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border-color); cursor: pointer; font-size: 14px; transition: all .2s ease; color: var(--text-dark); }
+
 .reaction-btn:hover:not(:disabled){ background: rgba(148, 163, 184, 0.1); transform: translateY(-1px); }
+
 .reaction-btn.is-active{ border-color: var(--primary); background: rgba(16, 185, 129, 0.15); color: var(--primary); font-weight: 700; }
+
 .reaction-btn span{ font-size: 12px; font-weight: 800; }
 
+
 .pin-comments-section{ margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+
 .comments-title{ font-size: 14px; margin-bottom: 12px; color: var(--text-dark); }
+
 .comments-list{ display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+
 .comments-empty{ font-size: 12px; color: var(--text-muted); text-align: center; font-style: italic; padding: 10px 0; }
+
 .comment-item{ background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+
 .comment-header{ display: flex; justify-content: space-between; margin-bottom: 5px; }
+
 .comment-header strong{ font-size: 12px; color: var(--primary); }
+
 .comment-header small{ font-size: 10px; color: var(--text-muted); }
+
 .comment-text{ font-size: 13px; color: var(--text-dark); margin: 0; line-height: 1.4; white-space: pre-wrap; }
+
 .comment-form{ display: flex; gap: 8px; }
+
 .comment-form input{ flex: 1; min-width: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); font-size: 13px; outline: none; }
+
 .comment-form input:focus{ border-color: var(--primary); }
+
 .comment-form button{ padding: 8px 16px; border-radius: 8px; border: none; background: var(--primary); color: #05251d; font-weight: 700; cursor: pointer; transition: all .2s; }
+
 .comment-form button:disabled{ opacity: 0.5; cursor: not-allowed; }
+
 /* Emojiler ve Oylama Yan Yana Düzen */
 .pin-interactions-row{
   display: flex;
@@ -2326,6 +2950,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   padding-bottom: 15px;
   border-bottom: 1px solid var(--border-color);
 }
+
 
 /* Oylama Kutusunu Küçültme */
 .pin-vote-bar{
@@ -2340,6 +2965,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: fit-content;
 }
 
+
 .pin-vote-button{
   width: 26px !important;
   height: 26px !important;
@@ -2347,11 +2973,13 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-radius: 50% !important;
 }
 
+
 .pin-vote-score{
   font-size: 14px !important;
   min-width: 18px !important;
   text-align: center;
 }
+
 
 /* Emoji Çubuğu Boşluklarını Sıfırla */
 .pin-reactions-bar{
@@ -2359,15 +2987,18 @@ select option{ background: var(--surface); color: var(--text-dark); }
   padding: 0 !important;
 }
 
+
 /* Yorumlar Başlığı ve Kutusu */
 .pin-comments-section{
   margin-top: 5px !important;
 }
+
 .comments-title{
   font-size: 14px;
   margin-bottom: 10px;
   color: var(--text-dark);
 }
+
 /* Emojilerin Boyut ve Hiza Standardizasyonu */
 .reaction-btn{
   height: 34px; /* Buton yüksekliğini sabitle */
@@ -2376,6 +3007,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   justify-content: center;
   gap: 6px;
 }
+
 
 /* Emojinin kendisi */
 .reaction-btn span:first-child{
@@ -2386,6 +3018,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   justify-content: center;
 }
 
+
 /* Emojinin yanındaki sayı (örn: 1) */
 .reaction-btn span:last-child{
   font-size: 12px;
@@ -2394,6 +3027,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   display: flex;
   align-items: center;
 }
+
 /* ============================================
    SESLİ NOT & YAPAY ZEKA ÖZETLEME (v3)
    ============================================ */
@@ -2409,6 +3043,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border: 1px dashed var(--border-color);
   margin-bottom: 15px;
 }
+
 
 .record-btn{
   display: inline-flex;
@@ -2427,14 +3062,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
   transition: all 0.2s ease;
 }
 
+
 .record-btn:hover{
   background: #dc2626;
 }
+
 
 .record-btn.is-recording{
   background: #b91c1c;
   animation: pulse-bg 1.5s infinite;
 }
+
 
 @keyframes pulse-bg {
   0%{ box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.7); }
@@ -2450,6 +3088,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   animation: blink 1s infinite alternate;
 }
 
+
 @keyframes blink {
   from{ opacity: 1; }
   to{ opacity: 0.2; }
@@ -2462,11 +3101,13 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 10px;
 }
 
+
 .voice-note-audio-preview{
   flex: 1;
   height: 36px;
   outline: none;
 }
+
 
 .clear-voice-btn{
   display: grid;
@@ -2480,6 +3121,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   cursor: pointer;
 }
 
+
 /* Detay Ekranındaki Ses Oynatıcı */
 .pin-voice-note-player{
   display: flex;
@@ -2492,16 +3134,19 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 15px 0;
 }
 
+
 .voice-note-icon{
   color: #3b82f6;
   flex-shrink: 0;
 }
+
 
 .voice-note-audio{
   flex: 1;
   height: 36px;
   outline: none;
 }
+
 
 /* Yapay Zeka Özet Butonu */
 .ai-summary-btn{
@@ -2522,63 +3167,37 @@ select option{ background: var(--surface); color: var(--text-dark); }
   transition: all 0.2s ease;
 }
 
+
 .ai-summary-btn:hover{
   background: rgba(139, 92, 246, 0.2);
   transform: translateY(-1px);
 }
+
 
 .app-shell.light-theme .ai-summary-btn{
   background: #f5f3ff;
   color: #6d28d9;
   border-color: #c4b5fd;
 }
+
 /* ============================================
    MODAL Z-INDEX VE MOBİL DÜZELTME
    ============================================ */
 
 /* 1. Tüm modalların arka planını en öne çıkar (Alttaki panelin üzerine) */
-.modal-backdrop{
-  z-index: 100000 !important; 
-}
+
 
 /* 2. Özet Modalının kendisi */
-.summary-modal{
-  display: flex !important;
-  flex-direction: column !important;
-  width: 92% !important;
-  max-width: 500px !important;
-  max-height: 80vh !important; /* Ekranın %80'ini geçmesin */
-  margin: auto !important;
-  background: var(--surface, #151f32) !important;
-  border-radius: 16px !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
-  padding: 0 !important; /* Padding'i içerideki elemanlara dağıtacağız */
-}
+
 
 /* 3. Modalın Başlık Kısmı (Sabit kalacak) */
-.summary-modal .modal-head{
-  padding: 16px 20px !important;
-  margin: 0 !important;
-  border-bottom: 1px solid var(--border-color) !important;
-  flex-shrink: 0 !important;
-}
+
 
 /* 4. Modalın İçerik Kısmı (Sadece burası kaydırılacak) */
-.summary-modal-content{
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  padding: 20px !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain !important;
-}
+
 
 /* Mobilde (bottom sheet açıkken) arkada kalan panellerin tıklanmasını engelle */
-@media (max-width: 768px) {
-  .summary-modal{
-    max-height: 85dvh !important; /* Dinamik ekran yüksekliğine tam oturması için */
-  }
-}
+
 .weather-button{
   display: inline-flex;
   align-items: center;
@@ -2594,11 +3213,13 @@ select option{ background: var(--surface); color: var(--text-dark); }
   font-size: 16px;
   cursor: pointer;
 }
+
 .weather-button.is-active{
   background: #3b82f6;
   border-color: #3b82f6;
   color: #fff;
 }
+
 /* ============================================
    HAVA DURUMU EMOJİ GRUPLARI
    ============================================ */
@@ -2609,31 +3230,40 @@ select option{ background: var(--surface); color: var(--text-dark); }
   align-items: center;
 }
 
+
 .weather-group{
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px dashed rgba(148, 163, 184, 0.2);
 }
 
+
 .weather-btn{
   background: rgba(59, 130, 246, 0.05) !important;
 }
+
 
 .weather-btn.is-active{
   background: rgba(59, 130, 246, 0.2) !important;
   border-color: #3b82f6 !important;
 }
 
+
 /* Mobilde emojilerin biraz daha kompakt olması için */
-@media (max-width: 768px) {
+@media (max-width: 768px){
+
   .reaction-group{
     gap: 4px;
   }
+
   .weather-group{
     margin-top: 4px;
     padding-top: 4px;
   }
+
+
 }
+
 /* AYTAR Özel Logo Efekti ve Tam Yuvarlak Yapı */
 .brand-mark{
   position: relative;
@@ -2647,18 +3277,24 @@ select option{ background: var(--surface); color: var(--text-dark); }
   box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
 }
 
+
 .brand-mark svg{
   color: #ffffff; /* Hilal ve dalgaların rengi beyaz */
   filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.6));
 }
 
+
 /* Mobil ekranda boyut biraz daha küçülsün */
-@media (max-width: 760px) {
+@media (max-width: 760px){
+
   .brand-mark{
     width: 38px;
     height: 38px;
   }
+
+
 }
+
 /* Rota Bilgisi Kartı ve Araç Seçici Düzeni */
 .panel-top-controls .route-info-card{
   display: flex;
@@ -2671,6 +3307,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-radius: 12px;
 }
 
+
 .panel-top-controls .route-info-row{
   display: flex;
   flex-direction: column;
@@ -2678,11 +3315,13 @@ select option{ background: var(--surface); color: var(--text-dark); }
   gap: 10px;
 }
 
+
 .panel-top-controls .route-info-copy{
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 
 .panel-top-controls .route-info-heading{
   display: flex;
@@ -2691,10 +3330,12 @@ select option{ background: var(--surface); color: var(--text-dark); }
   margin: 0;
 }
 
+
 .panel-top-controls .route-info-heading h2{
   font-size: 14px;
   margin: 0;
 }
+
 
 .panel-top-controls .route-info-copy p{
   margin: 0;
@@ -2704,6 +3345,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   word-break: normal;
 }
 
+
 /* Butonlar ve Select kutusu yan yana düzgün dursun */
 .panel-top-controls .route-card-actions{
   display: flex;
@@ -2711,6 +3353,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   width: 100%;
   gap: 8px;
 }
+
 
 .panel-top-controls .route-card-actions select{
   flex: 1;
@@ -2724,12 +3367,14 @@ select option{ background: var(--surface); color: var(--text-dark); }
   outline: none;
 }
 
+
 .panel-top-controls .route-card-actions button{
   flex: 0 0 auto;
   padding: 8px 12px;
   font-size: 12px;
   white-space: nowrap;
 }
+
 /* ============================================
    AYTAR LIVE — Canlı Yayın Bileşeni
    ============================================ */
@@ -2761,11 +3406,17 @@ select option{ background: var(--surface); color: var(--text-dark); }
   cursor: pointer;
   transition: background .15s ease, color .15s ease, transform .15s ease;
 }
+
 .aytar-live-button:hover:not(:disabled){ background: #7f1d1d; color: #fff; transform: scale(1.05); }
+
 .aytar-live-button.is-active{ background: #dc2626; border-color: #dc2626; color: #fff; animation: aytar-live-pulse 1.6s ease-in-out infinite; }
+
 .aytar-live-button.is-busy{ background: #7f1d1d; color: #fff; cursor: wait; }
+
 .aytar-live-button:disabled{ opacity: .65; cursor: wait; }
+
 .aytar-live-button .gps-spinner{ color: #fff; }
+
 .aytar-live-count{
   position: absolute;
   top: -6px;
@@ -2781,6 +3432,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   line-height: 16px;
   text-align: center;
 }
+
 @keyframes aytar-live-pulse {
   0%, 100%{ box-shadow: 0 0 0 0 rgba(220, 38, 38, .55); }
   50%{ box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
@@ -2793,6 +3445,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   flex-direction: column;
   background: #0b1121;
 }
+
 .aytar-live-header{
   display: flex;
   align-items: center;
@@ -2802,7 +3455,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-bottom: 1px solid #334155;
   color: #f1f5f9;
 }
+
 .aytar-live-header strong{ flex: 1; font-size: 13px; letter-spacing: 1px; }
+
 .aytar-live-header button{
   display: grid;
   place-items: center;
@@ -2814,7 +3469,9 @@ select option{ background: var(--surface); color: var(--text-dark); }
   color: #f1f5f9;
   cursor: pointer;
 }
+
 .aytar-live-header button:hover{ background: rgba(255, 255, 255, .08); }
+
 .aytar-live-live-dot{
   display: inline-block;
   width: 10px;
@@ -2823,6 +3480,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   background: #ef4444;
   animation: aytar-live-blink 1s ease-in-out infinite;
 }
+
 @keyframes aytar-live-blink {
   0%, 100%{ opacity: 1; }
   50%{ opacity: .3; }
@@ -2834,6 +3492,7 @@ select option{ background: var(--surface); color: var(--text-dark); }
   background: #000;
   object-fit: contain;
 }
+
 .aytar-live-viewer-list{
   position: fixed;
   z-index: 5000;
@@ -2847,14 +3506,19 @@ select option{ background: var(--surface); color: var(--text-dark); }
   border-radius: 16px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
 }
+
 .aytar-live-viewer-list .aytar-live-header{
   background: transparent;
   border-bottom: 1px solid var(--border-color, #334155);
   padding: 12px 14px;
 }
+
 .aytar-live-viewer-list .aytar-live-header svg{ color: #ef4444; }
+
 .aytar-live-empty{ padding: 20px 16px; text-align: center; color: var(--text-muted, #94a3b8); font-size: 12px; }
+
 .aytar-live-session-list{ list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
 .aytar-live-session-item{
   display: flex;
   align-items: center;
@@ -2869,21 +3533,39 @@ select option{ background: var(--surface); color: var(--text-dark); }
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
 }
+
 .aytar-live-session-item:hover{ background: rgba(239, 68, 68, .1); border-color: #ef4444; }
+
 .aytar-live-session-item span{ flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .aytar-live-session-item small{ font-size: 10px; color: var(--text-muted, #94a3b8); }
+
 .app-shell.light-theme .aytar-live-button{ background: #fff; color: #dc2626; border-color: #fca5a5; }
+
 .app-shell.light-theme .aytar-live-button:hover:not(:disabled){ background: #fef2f2; }
+
 .app-shell.light-theme .aytar-live-button.is-active{ background: #dc2626; color: #fff; }
+
 .app-shell.light-theme .aytar-live-viewer-list{ background: #fff; border-color: #e2e8f0; color: #0f172a; }
+
 .app-shell.light-theme .aytar-live-session-item{ background: #f8fafc; color: #0f172a; }
+
 .app-shell.light-theme .aytar-live-session-item:hover{ background: #fef2f2; border-color: #fca5a5; }
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   .aytar-live-viewer-list{ right: 8px; top: 56px; width: calc(100vw - 16px); }
+
+
 }
-@media (prefers-reduced-motion: reduce) {
+
+@media (prefers-reduced-motion: reduce){
+
   .aytar-live-button, .aytar-live-button.is-active, .aytar-live-live-dot{ animation: none; transition: none; }
+
+
 }
+
 
 /* Sadece yayın penceresi için kesin boyutlar */
 div.aytar-live-overlay{
@@ -2904,11 +3586,13 @@ div.aytar-live-overlay{
   overflow: hidden !important;
 }
 
+
 div.aytar-live-overlay .aytar-live-header{
   padding: 6px 12px !important;
   flex-shrink: 0 !important;
   background: #0f172a !important;
 }
+
 
 div.aytar-live-overlay video.aytar-live-video{
   width: 100% !important;
@@ -2918,7 +3602,9 @@ div.aytar-live-overlay video.aytar-live-video{
   background: #000 !important;
 }
 
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   div.aytar-live-overlay{
     bottom: 10px !important;
     right: 10px !important;
@@ -2926,7 +3612,10 @@ div.aytar-live-overlay video.aytar-live-video{
     width: auto !important;
     height: 30vh !important;
   }
+
+
 }
+
 div.aytar-live-overlay{
   position: fixed !important;
   bottom: 20px !important;
@@ -2945,11 +3634,13 @@ div.aytar-live-overlay{
   overflow: hidden !important;
 }
 
+
 div.aytar-live-overlay .aytar-live-header{
   padding: 8px 12px !important;
   flex-shrink: 0 !important;
   background: #0f172a !important;
 }
+
 
 div.aytar-live-overlay video.aytar-live-video{
   width: 100% !important;
@@ -2959,7 +3650,9 @@ div.aytar-live-overlay video.aytar-live-video{
   background: #000 !important;
 }
 
-@media (max-width: 768px) {
+
+@media (max-width: 768px){
+
   div.aytar-live-overlay{
     bottom: 10px !important;
     right: 10px !important;
@@ -2967,7 +3660,10 @@ div.aytar-live-overlay video.aytar-live-video{
     width: auto !important;
     height: 30vh !important;
   }
+
+
 }
 
+
 /* AYTAR auth providers — keeps the existing light modal style */
-.auth-provider-button{width:100%;min-height:42px;border:1px solid #dfe6e1;border-radius:10px;background:#fff;color:#26382e;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-top:10px}.auth-provider-button:hover{background:#f5f8f5;border-color:#b8cbbd}.auth-provider-button:disabled{opacity:.6;cursor:wait}.auth-google-mark{width:20px;height:20px;border:1px solid #e3e8e4;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#4285f4}.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0 5px;color:#89958d;font-size:10px}.auth-divider:before, .auth-divider:after{content:'';height:1px;flex:1;background:#e8ede9}.auth-form .auth-provider-button{margin-top:14px}
+
