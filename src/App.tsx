@@ -91,33 +91,28 @@ function categoryClass(category?: string | null): string {
   const normalized = normalizeCategory(category);
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'SARI' ? 'sari' : 'kirmizi'}`;
 }
-function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false, opacity: number = 1): L.DivIcon { 
+function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false, ageHours: number = 0): L.DivIcon {
+  const badge = `<span style="position:absolute;top:-4px;right:-8px;min-width:16px;height:16px;padding:0 2px;box-sizing:border-box;border-radius:999px;background:#0f172a;border:1px solid #ffffff;color:#ffffff;font:600 9px/14px Arial,sans-serif;text-align:center;white-space:nowrap;z-index:2;box-shadow:0 0 4px rgba(0,0,0,.8);">${ageHours}</span>`;
+  const wrap = (svg: string) => `<div class="neon-pin-icon" style="position:relative;width:32px;height:40px;opacity:1;">${svg}${badge}</div>`;
+
   if (isTelegramPin(description, ownerId)) {
     return new L.DivIcon({
       className: 'pin-icon-wrap',
-      html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg('#B026FF', '<circle cx="24" cy="22" r="10.5" fill="none" stroke="#B026FF" stroke-width="1.8" filter="url(#neonGlow)"/><path d="M24 11.5v10.5l7 4M16 15l16 14M32 15 16 29" fill="none" stroke="#B026FF" stroke-width="1.7" stroke-linecap="round" filter="url(#neonGlow)"/><circle cx="24" cy="22" r="2.5" fill="#0f172a" stroke="#B026FF" stroke-width="1.5" filter="url(#neonGlow)"/>')}</div>`,
-      iconSize: [32, 40],
+      html: wrap(createNeonPinSvg('#B026FF', '<circle cx="24" cy="22" r="10.5" fill="none" stroke="#B026FF" stroke-width="1.8" filter="url(#neonGlow)"/><path d="M24 11.5v10.5l7 4M16 15l16 14M32 15 16 29" fill="none" stroke="#B026FF" stroke-width="1.7" stroke-linecap="round" filter="url(#neonGlow)"/><circle cx="24" cy="22" r="2.5" fill="#0f172a" stroke="#B026FF" stroke-width="1.5" filter="url(#neonGlow)"/>')),
+      iconSize: [42, 44],
       iconAnchor: [16, 38]
     });
   }
-  
+
   const normCat = normalizeCategory(category);
   const color = categoryFilterColors[normCat] || '#FF1744';
   const letter = normCat === 'YEŞİL' ? 'Y' : normCat === 'MAVİ' ? 'M' : normCat === 'SARI' ? 'S' : 'K';
-  
-  if (isFresh) {
-    return new L.DivIcon({
-      className: 'pin-icon-wrap',
-      html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg(color, createNeonLetter(color, letter), true)}</div>`,
-      iconSize: [32, 40],
-      iconAnchor: [16, 38]
-    });
-  }
-  
+  const svg = createNeonPinSvg(color, createNeonLetter(color, letter), isFresh);
+
   return new L.DivIcon({
     className: 'pin-icon-wrap',
-    html: `<div class="neon-pin-icon" style="opacity: ${opacity};">${createNeonPinSvg(color, createNeonLetter(color, letter))}</div>`,
-    iconSize: [32, 40],
+    html: wrap(svg),
+    iconSize: [42, 44],
     iconAnchor: [16, 38]
   });
 }
@@ -173,16 +168,10 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('tr-TR');
 }
 
-function getPinOpacity(pin: Pin): number {
+function getPinAgeHours(pin: Pin): number {
   const createdAt = new Date(pin.created_at).getTime();
-  if (!Number.isFinite(createdAt)) return 1;
-  const ageHours = (Date.now() - createdAt) / (1000 * 60 * 60);
-  if (ageHours <= 1) return 1.0;     
-  if (ageHours <= 3) return 0.8;     
-  if (ageHours <= 6) return 0.6;     
-  if (ageHours <= 12) return 0.35;   
-  if (ageHours <= 20) return 0.15;   
-  return 0.05;                       
+  if (!Number.isFinite(createdAt)) return 0;
+  return Math.max(0, Math.floor((Date.now() - createdAt) / (1000 * 60 * 60)));
 }
 
 function getUserBadge(profile: Profile | null) {
@@ -243,6 +232,7 @@ function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null
 
 function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; selectedId: string | null; isDimmed: (pin: Pin) => boolean; onSelect: (pin: Pin) => void }) {
   const [, setRevision] = useState(0);
+  useEffect(() => { const timer = window.setInterval(() => setRevision(v => v + 1), 60_000); return () => window.clearInterval(timer); }, []);
   const map = useMapEvents({ zoomend: () => setRevision(v => v + 1), moveend: () => setRevision(v => v + 1) });
   const zoom = map.getZoom(); const cells = new Map<string, Pin[]>();
   for (const pin of pins) {
@@ -255,12 +245,11 @@ function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; 
     if (group.length === 1) {
       const pin = group[0];
       const isFresh = (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000;
-      const calculatedOpacity = Math.min(isDimmed(pin) ? 0.3 : 1, getPinOpacity(pin));
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh, calculatedOpacity)} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh, getPinAgeHours(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
-    return <Marker key={key} position={center} icon={clusterIcon} opacity={group.some(pin => !isDimmed(pin)) ? 1 : 0.35} alt={`${group.length} işaretçi içeren grup`} title={`${group.length} işaretçi — yakınlaştırmak için tıkla`} keyboard eventHandlers={{ click: () => { const bounds = L.latLngBounds(group.map(pin => [pin.lat, pin.lng] as L.LatLngTuple)); if (bounds.getNorthEast().equals(bounds.getSouthWest())) { map.flyTo(center, Math.min(18, zoom + 3), { duration: 0.4 }); } else { map.fitBounds(bounds, { padding: [36, 36], maxZoom: Math.min(18, zoom + 3), animate: true }); } } }} />;
+    return <Marker key={key} position={center} icon={clusterIcon} opacity={1} alt={`${group.length} işaretçi içeren grup`} title={`${group.length} işaretçi — yakınlaştırmak için tıkla`} keyboard eventHandlers={{ click: () => { const bounds = L.latLngBounds(group.map(pin => [pin.lat, pin.lng] as L.LatLngTuple)); if (bounds.getNorthEast().equals(bounds.getSouthWest())) { map.flyTo(center, Math.min(18, zoom + 3), { duration: 0.4 }); } else { map.fitBounds(bounds, { padding: [36, 36], maxZoom: Math.min(18, zoom + 3), animate: true }); } } }} />;
   })}</>;
 }
 
