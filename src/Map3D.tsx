@@ -159,7 +159,6 @@ export default function Map3D({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [28.9784, 41.0082],
       zoom: 15,
       pitch: 60,
