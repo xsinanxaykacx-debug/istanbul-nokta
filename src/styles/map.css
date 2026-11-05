@@ -294,15 +294,6 @@
 .leaflet-marker-icon, .leaflet-popup-content-wrapper, .leaflet-popup-tip{
   filter: none !important;
 }
-.app-shell.light-theme .map .leaflet-layer, .app-shell.light-theme .map .leaflet-control-zoom-in, .app-shell.light-theme .map .leaflet-control-zoom-out, .app-shell.light-theme .map .leaflet-control-attribution{
-  filter: none !important;
-}
-.app-shell.light-theme .category-filter-button{
-  border-color: #cbd5e1 !important;
-}
-.app-shell.light-theme .map .leaflet-layer, .app-shell.light-theme .map .leaflet-control-zoom-in, .app-shell.light-theme .map .leaflet-control-zoom-out, .app-shell.light-theme .map .leaflet-control-attribution{
-  filter: none !important;
-}
 .maplibregl-ctrl-top-left{
   margin-top: 70px !important;
 }
@@ -325,12 +316,6 @@
   background: #8b5cf6;
   color: #fff;
   box-shadow: 0 4px 12px rgba(139, 92, 246, .25);
-}
-.app-shell.light-theme .category-filter-button.my-pins-filter-button{
-  border-color: #c4b5fd !important;
-}
-.app-shell.light-theme .category-filter-button.my-pins-filter-button.selected{
-  border-color: #8b5cf6 !important;
 }
 .pin-icon.pin-icon-telegram{ background: #7c3aed !important; }
 .telegram-pin-icon-wrap{ filter: drop-shadow(0 4px 7px rgba(124, 58, 237, .45)); }
