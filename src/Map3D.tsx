@@ -160,14 +160,6 @@ export default function Map3D({
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://tiles.openfreemap.org/styles/liberty',
-       // OpenFreeMap stilindeki bozuk shield filtrelerini yüklemeden önce ayıkla.
-       transformStyle: (_previousStyle, nextStyle) => ({
-         ...nextStyle,
-         layers: nextStyle.layers.filter((layer) => {
-           if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
-           return !('filter' in layer && containsNullFilterValue(layer.filter));
-         }),
-       }),
       center: [28.9784, 41.0082],
       zoom: 15,
       pitch: 60,
@@ -179,6 +171,17 @@ export default function Map3D({
 
     const mapInstance = map.current;
     if (!mapInstance) return;
+
+    // Harita stilini yüklemeden önce hatalı shield filtrelerini ayıkla.
+    mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty', {
+      transformStyle: (_previousStyle, nextStyle) => ({
+        ...nextStyle,
+        layers: nextStyle.layers.filter((layer) => {
+          if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
+          return !('filter' in layer && containsNullFilterValue(layer.filter));
+        }),
+      }),
+    });
 
     // Stil sprite'ında bulunmayan POI ikonları için şeffaf yedek görsel.
     mapInstance.on('styleimagemissing', (event) => {
