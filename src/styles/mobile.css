@@ -716,7 +716,7 @@ footer span:first-child{width:100%}
     flex-direction: column !important;
     width: calc(100% - 60px) !important;
     height: auto !important;
-    max-height: 60dvh !important;
+    max-height: 40dvh !important;
     min-height: 0 !important;
     overflow: hidden !important;
     z-index: 9999 !important;
@@ -733,12 +733,6 @@ footer span:first-child{width:100%}
     will-change: transform;
   }
 
-  .locate-button,
-  .traffic-button,
-  .route-button,
-  .map-top-right-controls{
-    z-index: 10000 !important;
-  }
 
   .side-panel.is-open{
     transform: translateY(0) !important;
