@@ -187,7 +187,7 @@ export default function Map3D({
   const routeMarkers = useRef<maplibregl.Marker[]>([]);
   const draftMarker = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [, setAgeClock] = useState(0);
+  const [ageClock, setAgeClock] = useState(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setAgeClock((value) => value + 1), 60_000);
