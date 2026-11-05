@@ -613,6 +613,11 @@ footer span:first-child{width:100%}
     flex-wrap: wrap !important;
   }
 
+  .panel-filter-search-row .category-filter-row{
+    margin-top: -4px !important;
+    margin-bottom: 2px !important;
+  }
+
   .panel-filter-search-row .panel-filters{
     display: contents !important;
   }
