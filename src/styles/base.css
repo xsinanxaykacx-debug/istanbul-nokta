@@ -1,6 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /* Global typography, theme tokens and foundational reset */
+/* Varsayılan tema: koyu */
+:root {
+  --bg-main: #0B0F19;
+  --surface: #121B2C;
+  --accent: #0D9488;
+  --message-out: #115E59;
+  --message-in: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-muted: #94A3B8;
+  --border-color: #1E293B;
+  --input-bg: #1E293B;
+  --hover-bg: #1E293B;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --radius-card: 12px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+
+  /* Mevcut bileşenlerle geriye dönük uyumluluk */
+  --primary: #10b981;
+  --primary-hover: #059669;
+  --text-dark: #f1f5f9;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-dark);
+  background: var(--bg-main);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+}
+
+/* Açık tema */
+[data-theme="light"] {
+  --bg-main: #F8FAFC;
+  --surface: #FFFFFF;
+  --accent: #0284C7;
+  --message-out: #E0F2FE;
+  --message-in: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-muted: #64748B;
+  --border-color: #E2E8F0;
+  --input-bg: #FFFFFF;
+  --hover-bg: #F1F5F9;
+  --shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.12);
+  --radius-card: 12px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+}
 :root {
   --bg-main: #0b1121;
   --surface: #151f32;
