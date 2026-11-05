@@ -1,4 +1,5 @@
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
+import { getAvatarGradient } from '../../lib/avatarGradient';
 import {
   ArrowLeft, LoaderCircle, MessageSquare, MoreVertical,
   Phone, Send, ShieldBan, Trash2, Video, VolumeX
@@ -86,7 +87,7 @@ export default function ChatPanel({
       <div className="aytar-communication-chat">
         <div className="aytar-communication-chathead">
           <button type="button" onClick={() => onSelectMember(null)} aria-label="Üyelere dön"><ArrowLeft size={17} /></button>
-          <span className="aytar-communication-avatar">{initials(selected.username)}</span>
+          <span className="aytar-communication-avatar" style={getAvatarGradient(selected.username)}>{initials(selected.username)}</span>
           <div><strong>{selected.username}</strong><small><i /> Çevrimiçi</small></div>
           <button type="button" className="aytar-communication-call" title="Sesli ara" onClick={() => onStartCall('audio')} disabled={callStatus !== 'idle'}><Phone size={16} /></button>
           <button type="button" className="aytar-communication-call" title="Görüntülü ara" onClick={() => onStartCall('video')} disabled={callStatus !== 'idle'}><Video size={16} /></button>
@@ -124,7 +125,7 @@ export default function ChatPanel({
             <div key={chat.member.user_id} className="aytar-communication-member" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <button type="button" onClick={() => { onChatMenuPeerIdChange(null); onSelectMember(chat.member); onClearMessages(); }}
                 style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 10, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
-                <span className="aytar-communication-avatar">{initials(chat.member.username)}</span>
+                <span className="aytar-communication-avatar" style={getAvatarGradient(chat.member.username)}>{initials(chat.member.username)}</span>
                 <span className="aytar-communication-memberinfo"><strong>{chat.member.username}</strong><small>{chat.lastMessage.body}</small></span>
                 {mutedPeerIds.includes(chat.member.user_id) && <span title="Sessize alındı" aria-label="Sessiz" style={{ display: 'inline-flex', color: '#9ca3af', marginLeft: 3 }}><VolumeX size={14} /></span>}
                 <time>{new Date(chat.lastMessage.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</time>
