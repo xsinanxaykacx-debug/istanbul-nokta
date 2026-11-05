@@ -282,7 +282,7 @@ function LazyPinThumbnail({ path, url, onVisible, onError, category }: { path:st
 
 export default function App() {
   const Map3DView = Map3D;
-  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [isDarkMode,setIsDarkMode]=useState(true); const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
+  const [session,setSession]=useState<any>(null); const [showWelcome,setShowWelcome]=useState(false); const [profile,setProfile]=useState<Profile|null>(null); const [pushEnabled,setPushEnabled]=useState(false); const [pushBusy,setPushBusy]=useState(false); const [viewportBounds,setViewportBounds]=useState<[number,number,number,number]|null>(null); const [selected,setSelected]=useState<Pin|null>(null); const [editPinMode,setEditPinMode]=useState(false); const [editDescription,setEditDescription]=useState(''); const [editCategory,setEditCategory]=useState('KIRMIZI'); const [editPhotos,setEditPhotos]=useState<PinPhoto[]>([]); const [editFiles,setEditFiles]=useState<File[]>([]); const [editError,setEditError]=useState<string|null>(null); const [showTraffic,setShowTraffic]=useState(false); const [showHeatmap,setShowHeatmap]=useState(false); const [theme,setTheme]=useState<'dark'|'light'>('dark'); const isDarkMode=theme==='dark'; const [is3D, setIs3D] = useState(false); const [routeMode,setRouteMode]=useState(false); const [routeStart,setRouteStart]=useState<[number,number]|null>(null); const [routeEnd,setRouteEnd]=useState<[number,number]|null>(null); const [routeLine,setRouteLine]=useState<[number,number][]|null>(null); const [routeInfo,setRouteInfo]=useState<{distance:string;duration:string;pinsOnRoute:string[]}|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [routeError,setRouteError]=useState<string|null>(null);
   const [routeProfile, setRouteProfile] = useState<string>('driving-car');
   const [debouncedQuery,setDebouncedQuery]=useState(''); const [searchResultIds,setSearchResultIds]=useState<string[]|null>(null); const [photoUrls,setPhotoUrls]=useState<Record<string,string>>({}); const [pinAddresses,setPinAddresses]=useState<Record<string,string>>({}); const pinAddressesRef=useRef<Record<string,string>>({}); const visiblePinsRef=useRef<Pin[]>([]); const addressRequestRef=useRef<{pinId:string;controller:AbortController}|null>(null); const addressQueueWakeRef=useRef<(() => void)|null>(null); const addressAttemptedRef=useRef<Set<string>>(new Set()); const [lightboxIndex,setLightboxIndex]=useState<number|null>(null); const [thumbFailed,setThumbFailed]=useState<Record<string,boolean>>({});
   const [authMode,setAuthMode]=useState<'login'|'signup'>('login'); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -360,6 +360,24 @@ export default function App() {
   useEffect(() => { categoryRef.current = category; }, [category]);
   useEffect(() => { descriptionRef.current = description; }, [description]);
   useEffect(() => { filesRef.current = files; }, [files]);
+
+  useEffect(() => {
+    try {
+      const savedTheme = window.localStorage.getItem('aytar-theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme);
+    } catch {
+      // localStorage kullanılamazsa varsayılan koyu tema korunur.
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      window.localStorage.setItem('aytar-theme', theme);
+    } catch {
+      // Tema geçişi localStorage olmadan da çalışmaya devam eder.
+    }
+  }, [theme]);
 
   useEffect(() => {
     wasShowingContentRef.current = !!(selected || showFilterOptions || editPinMode || draftPosition);
@@ -1202,7 +1220,7 @@ export default function App() {
       case 'ZOOM':
         if (mapRef.current) { command.action === 'in' ? mapRef.current.zoomIn() : mapRef.current.zoomOut(); setNotice({ kind: 'success', text: command.action === 'in' ? 'Yakınlaştırıldı.' : 'Uzaklaştırıldı.' }); } return;
       case 'CLEAR_ROUTE': setRouteMode(false); setRouteStart(null); setRouteEnd(null); setRouteLine(null); setRouteInfo(null); setRouteError(null); setIsPanelOpen(false); if(isNavigating) stopNavigation(); setNotice({ kind: 'success', text: 'Rota temizlendi.' }); return;
-      case 'THEME': setIsDarkMode(command.mode === 'dark'); setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' }); return;
+      case 'THEME': setTheme(command.mode === 'dark' ? 'dark' : 'light'); setNotice({ kind: 'success', text: command.mode === 'dark' ? 'Gece moduna geçildi.' : 'Gündüz moduna geçildi.' }); return;
       case 'SEARCH_PLACE':
         setNotice({ kind: 'info', text: `"${command.query}" aranıyor...` });
         try {
@@ -1366,7 +1384,7 @@ export default function App() {
   return <main className={`app-shell ${isDarkMode ? '' : 'light-theme'}`}>
     {showWelcome&&<WelcomeModal onClose={dontShowAgain=>{if(dontShowAgain){try{window.localStorage.setItem('aytar_welcome_seen','true');}catch(error){console.warn('Rehber tercihi kaydedilemedi:',error);}}setShowWelcome(false);}}/>}
     <header className="topbar"><a className="brand" href="/"><span className="brand-mark"><AytarLogo size={22} /></span><span><strong>AYTAR</strong><small>Daima İleri</small></span></a><div className="top-actions">
-      <button type="button" className="icon-button" onClick={() => setIsDarkMode(!isDarkMode)} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
+      <button type="button" className="icon-button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={isDarkMode ? 'Gündüz Moduna Geç' : 'Gece Moduna Geç'} style={{ marginRight: '10px' }}>
         {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
       </button>
       {llmLoading && <span style={{fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '5px', marginRight: '10px'}}><BrainCircuit size={14} className="gps-spinner"/> YZ Yükleniyor...</span>}
