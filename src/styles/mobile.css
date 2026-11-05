@@ -714,10 +714,10 @@ footer span:first-child{width:100%}
     left: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    width: 100% !important;
-    height: 70dvh !important;
-    max-height: 70dvh !important;
-    min-height: 280px !important;
+    width: calc(100% - 60px) !important;
+    height: auto !important;
+    max-height: 40dvh !important;
+    min-height: 0 !important;
     overflow: hidden !important;
     z-index: 9999 !important;
     padding-top: 0 !important;
@@ -731,6 +731,13 @@ footer span:first-child{width:100%}
     pointer-events: none !important;
     visibility: hidden !important;
     will-change: transform;
+  }
+
+  .locate-button,
+  .traffic-button,
+  .route-button,
+  .map-top-right-controls{
+    z-index: 10000 !important;
   }
 
   .side-panel.is-open{
