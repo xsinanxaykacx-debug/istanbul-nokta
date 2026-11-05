@@ -29,7 +29,56 @@ const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
 function containsNullFilterValue(value: unknown): boolean {
   if (value === null) return true;
   if (Array.isArray(value)) return value.some(containsNullFilterValue);
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some(containsNullFilterValue);
+  }
   return false;
+}
+
+let mapLibreStyleSanitizerInstalled = false;
+
+function install3DStyleSanitizer(): void {
+  if (mapLibreStyleSanitizerInstalled) return;
+
+  const originalSetStyle = maplibregl.Map.prototype.setStyle;
+  maplibregl.Map.prototype.setStyle = function (
+    style: Parameters<typeof originalSetStyle>[0],
+    options?: Parameters<typeof originalSetStyle>[1]
+  ) {
+    const callerTransform = options?.transformStyle;
+    return originalSetStyle.call(this, style, {
+      ...options,
+      transformStyle: (previousStyle, nextStyle) => {
+        const transformedStyle = callerTransform
+          ? callerTransform(previousStyle, nextStyle)
+          : nextStyle;
+
+        return {
+          ...transformedStyle,
+          layers: transformedStyle.layers.filter((layer) => {
+            if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
+            return !('filter' in layer && containsNullFilterValue(layer.filter));
+          }),
+        };
+      },
+    });
+  };
+
+  mapLibreStyleSanitizerInstalled = true;
+}
+
+function bindMissingStyleImageFallback(mapInstance: maplibregl.Map): void {
+  const addTransparentFallback = (event: { id: string }) => {
+    if (mapInstance.hasImage(event.id)) return;
+    mapInstance.addImage(event.id, {
+      width: 1,
+      height: 1,
+      data: new Uint8Array([0, 0, 0, 0]),
+    });
+  };
+
+  mapInstance.off('styleimagemissing', addTransparentFallback);
+  mapInstance.on('styleimagemissing', addTransparentFallback);
 }
 
 
@@ -156,6 +205,8 @@ export default function Map3D({
     if (map.current || !mapContainer.current) return;
 
     maplibregl.setWorkerUrl(maplibreWorkerUrl);
+    // Map3D her mount edildiğinde ve sonradan yapılan tüm setStyle çağrılarında uygula.
+    install3DStyleSanitizer();
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -171,41 +222,14 @@ export default function Map3D({
     const mapInstance = map.current;
     if (!mapInstance) return;
 
-    // Eksik sprite ikonları her stil yüklemesinde şeffaf yedekle karşılanır.
-    // Listener, ilk stil isteğinden önce bağlanır ve setStyle çağrılarında korunur.
-    mapInstance.on('styleimagemissing', (event) => {
-      if (mapInstance.hasImage(event.id)) return;
-      mapInstance.addImage(event.id, {
-        width: 1,
-        height: 1,
-        data: new Uint8Array([0, 0, 0, 0]),
-      });
+    // styleimagemissing MapLibre harita örneğine bağlıdır; her yeni 3D örneğinde bağla.
+    bindMissingStyleImageFallback(mapInstance);
+    mapInstance.on('style.load', () => {
+      bindMissingStyleImageFallback(mapInstance);
     });
 
-    // MapLibre'ın bu haritadaki tüm sonraki setStyle çağrılarını da temizle.
-    // Böylece 3D stil yeniden yüklendiğinde (2D/3D geçişi dahil) aynı filtre uygulanır.
-    const originalSetStyle = mapInstance.setStyle.bind(mapInstance);
-    mapInstance.setStyle = ((style: Parameters<typeof mapInstance.setStyle>[0], options?: Parameters<typeof mapInstance.setStyle>[1]) => {
-      const callerTransform = options?.transformStyle;
-      return originalSetStyle(style, {
-        ...options,
-        transformStyle: (previousStyle, nextStyle) => {
-          const transformedStyle = callerTransform
-            ? callerTransform(previousStyle, nextStyle)
-            : nextStyle;
-
-          return {
-            ...transformedStyle,
-            layers: transformedStyle.layers.filter((layer) => {
-              if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
-              return !('filter' in layer && containsNullFilterValue(layer.filter));
-            }),
-          };
-        },
-      });
-    }) as typeof mapInstance.setStyle;
-
-    // İlk 3D stil yüklemesi de aynı merkezi temizleme yolundan geçer.
+    // İlk 3D stil ve tüm sonraki stil değişiklikleri prototype seviyesindeki
+    // sanitizer'dan geçer; 2D/3D geçişinde yeniden oluşturulan Map örnekleri de kapsanır.
     mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty');
 
     mapInstance.once('load', () => {
