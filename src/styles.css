@@ -2430,3 +2430,51 @@ div.aytar-live-overlay video.aytar-live-video{
 
 /* AYTAR auth providers — keeps the existing light modal style */
 
+/* Profile dropdown and top-right controls: theme-aware light mode colors. */
+.app-shell.light-theme .profile-dropdown{
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.app-shell.light-theme .profile-welcome{
+  color: var(--text-muted) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+.app-shell.light-theme .profile-welcome strong{
+  color: var(--text-primary) !important;
+}
+
+.app-shell.light-theme .profile-menu-item{
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.app-shell.light-theme .profile-menu-item svg{
+  color: var(--text-muted) !important;
+}
+
+.app-shell.light-theme .profile-menu-item:hover:not(:disabled){
+  background: var(--hover-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.app-shell.light-theme .profile-menu-item:disabled{
+  color: var(--text-muted) !important;
+  opacity: .65;
+}
+
+.app-shell.light-theme .profile-trigger,
+.app-shell.light-theme .top-actions > .icon-button{
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.app-shell.light-theme .profile-trigger:hover,
+.app-shell.light-theme .top-actions > .icon-button:hover{
+  background: var(--hover-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
