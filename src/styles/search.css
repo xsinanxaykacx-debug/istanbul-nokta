@@ -1,0 +1,234 @@
+.searchbox{pointer-events:auto;background:#fff;border:1px solid #e7ebe8;box-shadow:0 3px 15px #20382a12;border-radius:11px;height:42px;display:flex;align-items:center;gap:9px;padding:0 12px;color:#738078}.searchbox{width:min(320px,60%)}.searchbox input{border:0;outline:0;width:100%;min-width:0;color:#29372f;font-size:12px;background:transparent}
+@media(max-width:760px){.searchbox{height:39px;width:70%}}
+
+/* Polish Sprint v1 */
+
+.search-clear{ border: 0; background: transparent; color: #65736a; display: grid; place-items: center; padding: 3px; flex-shrink: 0; }
+
+
+/* Map Search UI/UX Sprint */
+
+
+.searchbox{
+  width: min(360px, calc(100% - 30px));
+  min-width: 0;
+  flex: 0 1 360px;
+  height: 50px;
+  gap: 11px;
+  padding: 0 16px;
+  border: 1px solid #e5ebe7;
+  border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #627168;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.searchbox:focus-within{
+  border-color: #6a9c82;
+  box-shadow: 0 0 0 3px rgba(106, 156, 130, 0.18), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.searchbox > svg{
+  flex: 0 0 auto;
+  color: #53675b;
+}
+
+.searchbox input{
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.search-clear{
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.search-clear:hover{
+  background: #f0f4f1;
+  color: #244a3a;
+}
+
+@media (max-width: 760px) {
+  
+
+  .searchbox{
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+    height: 48px;
+    padding: 0 15px;
+  }
+
+  .searchbox input{
+    font-size: 14px;
+  }}
+
+/* Nominatim place search and separate pin search */
+
+
+
+.place-search-spinner{ flex: 0 0 auto; color: #537160; }
+
+.place-search-result{ display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 12px; border: 0; border-bottom: 1px solid #edf1ee; background: #fff; color: #34463c; text-align: left; font-size: 12px; line-height: 1.5; cursor: pointer; }
+.place-search-result:last-child{ border-bottom: 0; }
+.place-search-result:hover, .place-search-result:focus-visible{ background: #f1f7f3; outline: none; }
+.place-search-result svg{ flex: 0 0 auto; margin-top: 1px; color: #3478d4; }
+.place-search-status{ padding: 13px; color: #7b8981; font-size: 12px; }
+
+.search-place-dot{ display: block; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; background: #2785ff; box-shadow: 0 0 0 5px #2785ff33, 0 3px 10px #102b4c66; }
+.pin-searchbox{ display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 37px; margin: 0 0 16px; padding: 0 10px; border: 1px solid #e5ebe7; border-radius: 9px; background: #fbfcfb; color: #7b8981; }
+.pin-searchbox:focus-within{ border-color: #8bb39a; box-shadow: 0 0 0 2px #dcefe366; }
+.pin-searchbox input{ flex: 1; width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #29372f; font-size: 11px; }
+.pin-searchbox .search-clear{ flex: 0 0 auto; }
+.side-panel > .empty-panel > .pin-searchbox{
+  flex: 0 0 auto;
+}
+
+
+
+
+
+
+.searchbox, .pin-searchbox{
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+.searchbox:focus-within, .pin-searchbox:focus-within{
+  border-color: #6ee7b7;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, .1);
+}
+.searchbox input, .pin-searchbox input{
+  background: transparent;
+  color: var(--text-dark);
+}
+
+
+
+
+
+.pin-searchbox{ position: relative; padding-right: 40px; }
+.pin-searchbox input.voice-enabled-input{ padding-right: 2px; }
+.pin-searchbox .pin-voice-button{ right: 5px; top: 50%; transform: translateY(-50%); width: 27px; height: 27px; }
+.pin-searchbox .search-clear{ position: absolute; right: 36px; top: 50%; transform: translateY(-50%); z-index: 6; }
+.searchbox, .pin-searchbox, .place-search-result{
+  border-color: var(--border-color);
+}
+.search-clear:hover{
+  background: #1d2b42;
+  border-color: #3d566d;
+  color: var(--text-dark);
+}
+
+
+.searchbox, .pin-searchbox{
+  background: #101a2b;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+.searchbox > svg, .pin-searchbox > svg{ color: var(--text-muted); }
+.searchbox input, .pin-searchbox input{
+  background: transparent;
+  color: var(--text-dark);
+}
+.searchbox input::placeholder, .pin-searchbox input::placeholder{
+  color: #8495aa;
+  opacity: 1;
+}
+.searchbox:focus-within, .pin-searchbox:focus-within{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
+}
+.search-clear{ color: var(--text-muted); }
+
+
+/* Mobile screen-space optimization sprint */
+@media (max-width: 768px) {
+
+  
+
+  
+  .searchbox{ height: 38px; padding: 0 11px; gap: 8px; }
+  .searchbox input{ font-size: 12px; }
+
+  .pin-searchbox{
+    flex: 0 0 auto;
+    min-height: 32px;
+    height: 32px;
+    padding-left: 10px;
+    padding-right: 34px;
+    margin-bottom: 2px;
+  }
+
+  .pin-searchbox input{ font-size: 11px; }
+  .pin-searchbox .pin-voice-button{ width: 23px; height: 23px; right: 4px; }
+  .pin-searchbox .search-clear{ right: 30px; }}
+.side-panel > .empty-panel:has(.pin-searchbox){
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel-top-controls .pin-searchbox{ flex-shrink: 0; }
+
+/* Filtre Menüsü ve Arama Kutuları */
+.app-shell.light-theme .pin-searchbox{
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Haritanın kendisini açık temada normal göster (filtreyi kaldır) */
+
+
+/* Arama çubuğunu haritanın sol üstüne sabitle, arkada beyazlık bırakma */
+.place-search-wrap{
+  position: absolute !important;
+  top: 15px !important;
+  left: 15px !important;
+  width: 350px !important;
+  max-width: calc(100% - 30px) !important;
+  z-index: 1000 !important;
+  background: transparent !important;
+}
+
+/* Arama kutusunun kendi tasarımı */
+.place-searchbox{
+  width: 100% !important;
+  background: #151f32 !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  border-radius: 12px !important;
+}
+
+/* Açılan sonuçların ekranı kaplamasını engelle */
+.place-search-results{
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  background: #151f32 !important;
+  border: 1px solid #334155 !important;
+}
+
+@media (max-width: 768px) {
+  .place-search-wrap{
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+    top: 10px !important;
+    max-width: none !important;
+  }}
+/* MapLibre'nin sol üstteki zoom/pusula butonlarını arama çubuğunun altına it */
+
+
+/* Arama çubuğunun haritanın en üstünde kalmasını sağla */
+.place-search-wrap{
+  z-index: 1000 !important;
+}
