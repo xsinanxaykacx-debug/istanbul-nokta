@@ -180,13 +180,6 @@
 }
 .panel-top-controls .pin-searchbox{ flex-shrink: 0; }
 
-/* Filtre Menüsü ve Arama Kutuları */
-.app-shell.light-theme .pin-searchbox{
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
 /* Haritanın kendisini açık temada normal göster (filtreyi kaldır) */
 
 
