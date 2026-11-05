@@ -1,0 +1,149 @@
+
+/* AYTAR Communication Center */
+.aytar-communication-button{position:relative!important;display:inline-flex;flex:0 0 34px;align-items:center;justify-content:center;width:34px;min-width:34px;height:34px;margin:0;padding:0;border:1px solid var(--border-color,#334155);border-radius:50%;background:var(--surface,#151f32);color:#38bdf8;box-shadow:0 4px 12px rgba(0,0,0,.22);cursor:pointer;transition:all .18s ease}
+.aytar-communication-button:hover, .aytar-communication-button.is-active{background:#082f49;border-color:#0ea5e9;color:#7dd3fc;transform:translateY(-1px)}
+.aytar-communication-count{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:#22c55e;color:#05251b;font-size:10px;font-weight:800;line-height:16px;text-align:center}
+.aytar-communication-panel{position:fixed;z-index:100000;top:68px;right:16px;display:flex;flex-direction:column;width:min(390px,calc(100vw - 24px));height:min(620px,calc(100dvh - 90px));overflow:hidden;border:1px solid rgba(100,116,139,.35);border-radius:18px;background:#0c1526;color:#e2e8f0;box-shadow:0 24px 80px rgba(0,0,0,.55);font-family:inherit}
+.aytar-communication-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;background:linear-gradient(120deg,#10233c,#0d1729);border-bottom:1px solid rgba(148,163,184,.16)}
+.aytar-communication-brand{display:flex;align-items:center;gap:10px}.aytar-communication-brand>div{display:flex;flex-direction:column;gap:3px}.aytar-communication-brand strong{font-size:12px;letter-spacing:1.1px}.aytar-communication-brand small{font-size:10px;color:#94a3b8}
+.aytar-communication-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:rgba(14,165,233,.14);color:#38bdf8}
+.aytar-communication-close, .aytar-communication-chathead>button{display:grid;place-items:center;width:32px;height:32px;border:1px solid rgba(148,163,184,.2);border-radius:9px;background:transparent;color:#cbd5e1;cursor:pointer}
+.aytar-communication-tabs{display:grid;grid-template-columns:repeat(3,1fr);padding:7px;gap:5px;border-bottom:1px solid rgba(148,163,184,.14)}
+.aytar-communication-tabs button{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 4px;border:0;border-radius:9px;background:transparent;color:#94a3b8;font-size:11px;cursor:pointer}
+.aytar-communication-tabs button.active{background:rgba(14,165,233,.14);color:#7dd3fc}
+.aytar-communication-members{display:flex;flex:1;min-height:0;flex-direction:column;overflow:auto;padding:12px}
+.aytar-communication-search{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid rgba(148,163,184,.2);border-radius:10px;color:#64748b}
+.aytar-communication-search input{width:100%;border:0;outline:0;background:transparent;color:#e2e8f0;font:inherit;font-size:12px}
+.aytar-communication-sectionlabel{display:flex;justify-content:space-between;margin:17px 3px 8px;color:#7c8da5;font-size:9px;font-weight:800;letter-spacing:1.1px}.aytar-communication-sectionlabel b{color:#38bdf8}
+.aytar-communication-member{display:flex;align-items:center;gap:11px;width:100%;padding:10px 8px;border:0;border-radius:11px;background:transparent;color:#cbd5e1;text-align:left;cursor:pointer}.aytar-communication-member:hover{background:rgba(148,163,184,.09)}
+.aytar-communication-avatar{display:grid;flex:0 0 38px;place-items:center;width:38px;height:38px;border:1px solid rgba(56,189,248,.25);border-radius:50%;background:linear-gradient(145deg,#12304c,#17243a);color:#7dd3fc;font-size:14px;font-weight:700}
+.aytar-communication-memberinfo{display:flex;flex:1;flex-direction:column;gap:4px}.aytar-communication-memberinfo strong{font-size:12px}.aytar-communication-memberinfo small, .aytar-communication-chathead small{display:flex;align-items:center;gap:5px;color:#4ade80;font-size:10px}.aytar-communication-member>svg{color:#64748b}
+.aytar-communication-empty{display:flex;flex:1;min-height:110px;align-items:center;justify-content:center;flex-direction:column;gap:9px;padding:22px;color:#7c8da5;text-align:center;font-size:12px;line-height:1.6}.aytar-communication-empty-tall{flex:1}
+.aytar-communication-chat{display:flex;flex:1;min-height:0;flex-direction:column}
+.aytar-communication-chathead{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid rgba(148,163,184,.14)}.aytar-communication-chathead>div{display:flex;flex:1;flex-direction:column;gap:4px}.aytar-communication-chathead strong{font-size:12px}.aytar-communication-chathead small i{width:6px;height:6px;border-radius:50%;background:#4ade80}.aytar-communication-call{color:#38bdf8!important}
+.aytar-communication-messages{display:flex;flex:1;min-height:0;flex-direction:column;gap:9px;overflow:auto;padding:14px 11px}
+.aytar-message-row{display:flex;max-width:84%;flex-direction:column;gap:4px;padding:9px 11px;border-radius:13px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.aytar-message-row p{margin:0;white-space:pre-wrap}.aytar-message-row time{align-self:flex-end;color:#94a3b8;font-size:9px}.aytar-message-row.mine{align-self:flex-end;border:1px solid rgba(14,165,233,.22);border-bottom-right-radius:4px;background:#12304a}.aytar-message-row.theirs{align-self:flex-start;border:1px solid rgba(148,163,184,.14);border-bottom-left-radius:4px;background:#172235}
+.aytar-communication-compose{display:flex;align-items:flex-end;gap:8px;padding:10px;border-top:1px solid rgba(148,163,184,.14)}.aytar-communication-compose textarea{flex:1;max-height:100px;resize:vertical;padding:10px;border:1px solid rgba(148,163,184,.2);border-radius:11px;outline:0;background:#111e31;color:#e2e8f0;font:inherit;font-size:12px}.aytar-communication-compose button{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:11px;background:#0284c7;color:white;cursor:pointer}.aytar-communication-compose button:disabled{opacity:.45;cursor:not-allowed}
+.aytar-communication-meetings{display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:25px;text-align:center}.aytar-communication-meetingicon{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;background:rgba(14,165,233,.13);color:#38bdf8}.aytar-communication-meetings strong{font-size:14px}.aytar-communication-meetings p{max-width:280px;margin:0;color:#94a3b8;font-size:12px;line-height:1.6}.aytar-communication-meetings small{color:#38bdf8;font-size:10px}
+.app-shell.light-theme .aytar-communication-panel{background:#f8fafc;color:#0f172a;border-color:#cbd5e1}.app-shell.light-theme .aytar-communication-head{background:linear-gradient(120deg,#e0f2fe,#f1f5f9)}.app-shell.light-theme .aytar-communication-search input, .app-shell.light-theme .aytar-communication-compose textarea{color:#0f172a}.app-shell.light-theme .aytar-communication-compose textarea{background:#fff}.app-shell.light-theme .aytar-message-row.theirs{background:#e2e8f0;color:#0f172a}.app-shell.light-theme .aytar-message-row.mine{background:#dbeafe;color:#0f172a}.app-shell.light-theme .aytar-communication-member{color:#0f172a}
+@media(max-width:600px){.aytar-communication-panel{top:58px;right:8px;width:calc(100vw - 16px);height:calc(100dvh - 68px);border-radius:15px}}
+
+/* AYTAR one-to-one WebRTC call window */
+.aytar-call-backdrop{position:fixed;z-index:100020;inset:0;display:grid;place-items:center;padding:16px;background:rgba(2,6,18,.78);backdrop-filter:blur(9px)}
+.aytar-call-window{display:flex;width:min(560px,100%);min-height:360px;max-height:min(760px,calc(100dvh - 32px));flex-direction:column;overflow:hidden;border:1px solid rgba(56,189,248,.25);border-radius:22px;background:#0b1424;color:#e2e8f0;box-shadow:0 30px 100px rgba(0,0,0,.6)}
+.aytar-call-header{display:flex;align-items:center;justify-content:space-between;padding:16px 19px;border-bottom:1px solid rgba(148,163,184,.16)}
+.aytar-call-header>div{display:flex;flex-direction:column;gap:4px}.aytar-call-header strong{font-size:13px}.aytar-call-header small{color:#94a3b8;font-size:11px}
+.aytar-call-status{width:9px;height:9px;border-radius:50%;background:#38bdf8;box-shadow:0 0 12px currentColor}.aytar-call-status.active{background:#4ade80}.aytar-call-status.ringing{background:#fbbf24}
+.aytar-call-stage{position:relative;display:grid;flex:1;min-height:280px;place-items:center;overflow:hidden;background:radial-gradient(ellipse at center,#18304a,#07101e 72%)}
+.aytar-remote-video{width:100%;height:100%;min-height:280px;object-fit:contain;background:#050b14}.aytar-remote-video.audio-only{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.aytar-local-video{position:absolute;right:14px;bottom:14px;width:clamp(90px,24%,150px);max-height:32%;aspect-ratio:4/3;object-fit:cover;border:1px solid rgba(255,255,255,.35);border-radius:13px;background:#101b2c;box-shadow:0 8px 25px rgba(0,0,0,.4)}
+.aytar-audio-avatar{position:absolute;display:flex;align-items:center;flex-direction:column;gap:10px;color:#7dd3fc}.aytar-audio-avatar strong{color:#f1f5f9;font-size:16px}.aytar-audio-avatar small{color:#94a3b8;font-size:11px}
+.aytar-call-overlay-text{position:absolute;bottom:18px;padding:8px 13px;border:1px solid rgba(148,163,184,.18);border-radius:99px;background:rgba(5,12,24,.8);color:#cbd5e1;font-size:11px}
+.aytar-call-controls{display:flex;align-items:center;justify-content:center;gap:14px;padding:17px;border-top:1px solid rgba(148,163,184,.16)}
+.aytar-call-controls button, .aytar-incoming-actions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:48px;height:48px;border:1px solid rgba(148,163,184,.22);border-radius:50%;background:#1b2a40;color:#e2e8f0;cursor:pointer}
+.aytar-call-controls button.off{background:#7f1d1d;color:#fecaca}.aytar-call-controls button.hangup, .aytar-incoming-actions button.decline{background:#dc2626;border-color:#dc2626;color:#fff}
+.aytar-incoming-actions{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;background:rgba(3,9,19,.88);backdrop-filter:blur(8px)}
+.aytar-incoming-actions>strong{font-size:15px;color:#f8fafc}.aytar-incoming-actions>div{display:flex;gap:16px}
+.aytar-incoming-actions button{width:auto;height:46px;padding:0 18px;border-radius:99px;font-size:12px;font-weight:700}.aytar-incoming-actions button.accept{background:#16a34a;border-color:#16a34a;color:#fff}
+@media(max-width:600px){.aytar-call-backdrop{padding:8px}.aytar-call-window{min-height:320px;border-radius:17px}.aytar-call-stage, .aytar-remote-video{min-height:240px}}
+
+
+/* AYTAR call history and four-tab layout */
+.aytar-communication-tabs{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.aytar-communication-tabs button{ gap: 4px; font-size: 10px; white-space: nowrap; }
+.aytar-call-history{ display: flex; flex: 1; min-height: 0; flex-direction: column; overflow-y: auto; padding: 12px; }
+.aytar-call-history-title{ display: flex; align-items: center; justify-content: space-between; padding: 3px 3px 12px; color: #e2e8f0; font-size: 12px; }
+.aytar-call-history-title button{ border: 0; background: transparent; color: #7dd3fc; font: inherit; font-size: 10px; cursor: pointer; }
+.aytar-call-history-title button:disabled{ opacity: .35; cursor: default; }
+.aytar-call-history-item{ display: flex; align-items: center; gap: 10px; padding: 11px 5px; border-top: 1px solid rgba(148,163,184,.13); }
+.aytar-call-history-item > div{ display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.aytar-call-history-item > div strong{ overflow: hidden; color: #e2e8f0; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.aytar-call-history-item > div small{ color: #94a3b8; font-size: 9px; }
+.aytar-call-history-item .history-icon{ display: grid; flex: 0 0 32px; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: rgba(14,165,233,.13); color: #7dd3fc; }
+.aytar-call-history-item .history-icon.incoming{ background: rgba(34,197,94,.13); color: #4ade80; }
+.aytar-call-history-item .history-result{ color: #94a3b8; font-size: 10px; white-space: nowrap; }
+.aytar-call-history-item .history-result.completed{ color: #4ade80; font-variant-numeric: tabular-nums; }
+.aytar-call-history-item .history-result.missed, .aytar-call-history-item .history-result.failed{ color: #f87171; }
+.app-shell.light-theme .aytar-call-history-title, .app-shell.light-theme .aytar-call-history-item > div strong{ color: #0f172a; }
+.app-shell.light-theme .aytar-call-history-item{ border-top-color: #e2e8f0; }
+@media(max-width:380px){.aytar-communication-tabs button{gap:3px;padding:8px 1px;font-size:9px}.aytar-communication-tabs button svg{width:13px;height:13px}}
+
+/* Mobile call controls: keep the action bar inside the visible viewport. */
+@media (max-width: 600px) {
+  .aytar-call-backdrop{
+    align-items: stretch;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+  .aytar-call-window{
+    width: 100%;
+    height: calc(100dvh - 16px - env(safe-area-inset-bottom));
+    min-height: 0;
+    max-height: none;
+    border-radius: 17px;
+  }
+  .aytar-call-header{ flex: 0 0 auto; }
+  .aytar-call-stage{
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .aytar-remote-video{ min-height: 0; }
+  .aytar-call-controls{
+    flex: 0 0 auto;
+    min-height: 82px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    gap: 16px;
+  }
+  .aytar-call-controls button{ flex: 0 0 48px; min-width: 48px; min-height: 48px; }
+  .aytar-call-controls button.hangup{
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 94px;
+    padding: 0 16px;
+    border-radius: 28px;
+  }
+  .aytar-call-controls button.hangup span{
+    display: inline;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .aytar-local-video{ right: 10px; bottom: 10px; width: clamp(76px, 25%, 118px); }}
+/* FIX: the global mobile layout hides every <footer>; explicitly restore the call action bar. */
+@media (max-width: 760px) {
+  .aytar-call-backdrop .aytar-call-controls{
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 100021;
+    flex: 0 0 auto !important;
+    width: 100%;
+    min-height: 82px;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(148, 163, 184, .16);
+  }
+  .aytar-call-backdrop .aytar-call-controls button{
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .aytar-call-backdrop .aytar-call-controls button.hangup{
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 94px;
+    padding: 0 16px;
+    border-radius: 28px;
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+  }
+  .aytar-call-backdrop .aytar-call-controls button.hangup span{
+    display: inline !important;
+    font-size: 12px;
+    font-weight: 700;
+  }}
