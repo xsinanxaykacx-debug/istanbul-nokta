@@ -881,9 +881,9 @@ footer span:first-child{width:100%}
     bottom: 0 !important;
     top: auto !important;
     width: 100% !important;
-    height: 60vh !important; /* Yüksekliği netleştirdik */
-    max-height: 50vh !important;
-    min-height: 50vh !important;
+    height: auto !important; /* Yüksekliği netleştirdik */
+    max-height: 55vh !important;
+    min-height: 0vh !important;
     z-index: 9999 !important; /* Diğer her şeyin üstünde */
     display: flex !important;
     flex-direction: column !important;
