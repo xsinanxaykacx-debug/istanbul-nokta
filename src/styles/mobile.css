@@ -624,7 +624,47 @@ footer span:first-child{width:100%}
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 5px !important;
-    width: 100@media (max-width: 768px){
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .panel-filter-search-row .category-filter-row{
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 2px 0 !important;
+    gap: 5px !important;
+  }
+
+  .panel-filter-search-row .category-filter-row.is-open{
+    max-width: 100% !important;
+    padding: 6px !important;
+    gap: 5px !important;
+  }
+
+  .panel-filter-search-row .time-filter-control{
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .panel-filter-search-row .pin-searchbox{
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+}
+
+@media (max-width: 768px){
 
   html, body, #root{
     width: 100% !important;
