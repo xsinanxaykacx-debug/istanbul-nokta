@@ -1,0 +1,73 @@
+/* Authentication and onboarding styles extracted from styles.css. */
+.auth-form input, .activation-form input{display:block;width:100%;border:1px solid #dfe6e1;border-radius:10px;padding:12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px;resize:vertical}
+.auth-form input:focus, .activation-form input:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}
+.auth-modal{width:min(430px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:25px;box-shadow:0 30px 100px #0b1e1466}
+.auth-form{margin-top:12px}
+.auth-form .field-label{margin-top:14px}
+.auth-form .primary-button{margin-top:19px}
+.activation-form{border-top:1px solid #e9eeea;margin-top:17px;padding-top:16px}
+.activation-note{display:flex;align-items:flex-start;gap:9px;background:#fff5e5;color:#80601e;padding:11px;border-radius:10px;font-size:11px;line-height:1.6}
+.activation-note svg{flex-shrink:0}
+.onboarding-panel{display:flex;flex-direction:column;justify-content:center;min-height:100%;text-align:left}
+.onboarding-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;background:#e5f1e8;color:#2c6b4c;margin-bottom:18px}
+.onboarding-panel .eyebrow{margin-bottom:8px}
+.onboarding-panel h2{font:800 23px Manrope,sans-serif;letter-spacing:-.6px;color:#23372b;margin:0}
+.onboarding-copy{font-size:12px;line-height:1.75;color:#748078;margin:10px 0 12px}
+.onboarding-form{margin-top:2px}
+.onboarding-form input{display:block;width:100%;min-width:0;border:1px solid #dfe6e1;border-radius:10px;padding:13px 12px;color:#25352c;background:#fbfcfb;outline:none;font-size:12px}
+.onboarding-form input:focus{border-color:#6a9c82;box-shadow:0 0 0 3px #dcefe3}
+.onboarding-form .primary-button{min-height:44px}
+.onboarding-form .primary-button:disabled{opacity:.6;cursor:not-allowed}
+.onboarding-footnote{font-size:10px;line-height:1.6;color:#8a958e;margin:13px 0 0}
+@media(max-width:760px){
+.onboarding-panel{min-height:300px}
+
+}
+.auth-modal{ border-color: var(--border-color); }
+.auth-form input, .activation-form input, .onboarding-form input{
+  border-color: transparent;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: var(--text-dark);
+}
+.auth-form input:focus, .activation-form input:focus, .onboarding-form input:focus{
+  border-color: #6ee7b7;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, .1);
+}
+.onboarding-copy{ color: var(--text-muted); }
+.onboarding-panel h2{ color: var(--text-dark); }
+.onboarding-copy, .onboarding-footnote{ color: var(--text-muted); }
+.auth-modal{
+  border-color: var(--border-color);
+}
+.auth-modal{
+  background: var(--surface);
+  color: var(--text-dark);
+  border-color: var(--border-color);
+}
+.auth-form input, .activation-form input, .onboarding-form input{
+  background-color: #101a2b;
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+.auth-form input:focus, .activation-form input:focus, .onboarding-form input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .16);
+  outline-color: var(--primary);
+}
+.activation-note{ background: #352d1c; color: #fcd58b; }
+.auth-form input, .activation-form input, .onboarding-form input{
+  border-radius: 12px;
+}
+.app-shell.light-theme .auth-modal{
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.auth-provider-button{width:100%;min-height:42px;border:1px solid #dfe6e1;border-radius:10px;background:#fff;color:#26382e;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-top:10px}
+.auth-provider-button:hover{background:#f5f8f5;border-color:#b8cbbd}
+.auth-provider-button:disabled{opacity:.6;cursor:wait}
+.auth-google-mark{width:20px;height:20px;border:1px solid #e3e8e4;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#4285f4}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0 5px;color:#89958d;font-size:10px}
+.auth-divider:before, .auth-divider:after{content:'';height:1px;flex:1;background:#e8ede9}
+.auth-form .auth-provider-button{margin-top:14px}
