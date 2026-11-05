@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ICE_SERVERS } from './lib/liveClient';
+import { getAvatarGradient } from './lib/avatarGradient';
 import ChatPanel from './components/chat/ChatPanel';
 
 type Profile = { id: string; status: 'pending' | 'active' | 'disabled'; role: 'user' | 'admin'; username: string | null };
@@ -810,7 +811,7 @@ export default function AytarCommunication({ profile, session, onNotice, onAuthR
               {loadingMembers && members.length === 0 ? <div className="aytar-communication-empty"><LoaderCircle className="gps-spinner" /> Üyeler yükleniyor...</div>
                 : filteredMembers.length === 0 ? <div className="aytar-communication-empty">Şu anda başka çevrimiçi aktif üye yok.</div>
                 : filteredMembers.map(member => <button type="button" key={member.user_id} className="aytar-communication-member" onClick={() => { setSelected(member); setMessages([]); }}>
-                  <span className="aytar-communication-avatar">{initials(member.username)}</span>
+                  <span className="aytar-communication-avatar" style={getAvatarGradient(member.username)}>{initials(member.username)}</span>
                   <span className="aytar-communication-memberinfo"><strong>{member.username}</strong><small><Circle size={8} fill="currentColor" /> Çevrimiçi</small></span>
                   <MessageCircle size={17} />
                 </button>)}
