@@ -25,6 +25,7 @@ const PIN_CLUSTER_LAYER_ID = 'pin-clusters';
 const PIN_CLUSTER_COUNT_LAYER_ID = 'pin-cluster-count';
 const PIN_POINT_LAYER_ID = 'pin-points';
 const FRESH_PULSE_LAYER_ID = 'fresh-pulse-layer';
+const PIN_AGE_LAYER_ID = 'pin-age-labels';
 
 function containsNullFilterValue(value: unknown): boolean {
   if (value === null) return true;
@@ -186,6 +187,12 @@ export default function Map3D({
   const routeMarkers = useRef<maplibregl.Marker[]>([]);
   const draftMarker = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [, setAgeClock] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setAgeClock((value) => value + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const onMapClickRef = useRef(onMapClick);
   const onPinSelectRef = useRef(onPinSelect);
@@ -220,22 +227,14 @@ export default function Map3D({
             (typeof pin.owner_id === 'string' && pin.owner_id.toLowerCase().startsWith(TELEGRAM_OWNER_ID_PREFIX))
           ),
           is_fresh: (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000,
-          opacity: (() => {
-            const ageHours = (Date.now() - new Date(pin.created_at).getTime()) / (1000 * 60 * 60);
-            if (ageHours <= 1) return 1.0;
-            if (ageHours <= 3) return 0.8;
-            if (ageHours <= 6) return 0.6;
-            if (ageHours <= 12) return 0.35;
-            if (ageHours <= 20) return 0.15;
-            return 0.05;
-          })(),
+          age_hours: Math.max(0, Math.floor((Date.now() - new Date(pin.created_at).getTime()) / (1000 * 60 * 60))),
         },
         geometry: {
           type: 'Point' as const,
           coordinates: [pin.lng, pin.lat] as [number, number],
         },
       })),
-  }), [pins]);
+  }), [pins, ageClock]);
 
   useEffect(() => {
     onMapClickRef.current = onMapClick;
@@ -437,8 +436,30 @@ export default function Map3D({
         'icon-ignore-placement': true,
       },
       paint: {
-        'icon-opacity': ['get', 'opacity']
+        'icon-opacity': 1
       }
+    });
+
+    mapInstance.addLayer({
+      id: PIN_AGE_LAYER_ID,
+      type: 'symbol',
+      source: PIN_SOURCE_ID,
+      filter: ['!', ['has', 'point_count']],
+      layout: {
+        'text-field': ['to-string', ['get', 'age_hours']],
+        'text-font': ['Open Sans Semibold'],
+        'text-size': 10,
+        'text-offset': [1.25, -1.35],
+        'text-anchor': 'center',
+        'text-allow-overlap': true,
+        'text-ignore-placement': true,
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': '#0f172a',
+        'text-halo-width': 3,
+        'text-halo-blur': 0.5,
+      },
     });
 
     const setPointerCursor = () => {
