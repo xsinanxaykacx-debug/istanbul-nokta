@@ -278,7 +278,28 @@ export default function Map3D({
 
     // İlk 3D stil ve tüm sonraki stil değişiklikleri prototype seviyesindeki
     // sanitizer'dan geçer; 2D/3D geçişinde yeniden oluşturulan Map örnekleri de kapsanır.
-    mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty');
+    // Stil dosyasını kendimiz al: sprite'ı kaldır ve sorunlu shield katmanlarını filtrele.
+    fetch('https://tiles.openfreemap.org/styles/liberty')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Stil isteği başarısız: HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((style) => {
+        delete style.sprite;
+        style.layers = style.layers.filter((layer: any) => {
+          if (!/highway[-_]shield|road[-_]shield/i.test(layer.id)) return true;
+          return !('filter' in layer && containsNullFilterValue(layer.filter));
+        });
+        if (map.current === mapInstance) {
+          mapInstance.setStyle(style);
+        }
+      })
+      .catch((err) => {
+        console.error('Stil yüklenemedi:', err);
+        if (map.current === mapInstance) {
+          mapInstance.setStyle('https://tiles.openfreemap.org/styles/liberty');
+        }
+      });
 
     mapInstance.once('load', () => {
       void (async () => {
