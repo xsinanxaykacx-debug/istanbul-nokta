@@ -1470,133 +1470,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .pin-list-item.route-stop-item .pin-list-left{ margin-left: 10px; }
 
-/* Haritayı karanlık moda çeviren sihirli kod */
-
-/* Pinlerin ve popup'ların renginin değişmemesi için */
-
-/* Açık Tema (Gündüz Modu) */
-.app-shell.light-theme{
-  background-color: var(--bg-main);
-  color: var(--text-primary);
-}
-
-.app-shell.light-theme .topbar, .app-shell.light-theme .side-panel, .app-shell.light-theme .profile-dropdown{
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-.app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
-  background-color: #f8fafc;
-  color: #0f172a;
-  border-color: #cbd5e1;
-}
-
-/* Açık temada haritanın rengini düzelt (Koyu filtreyi kaldır) */
-
-.app-shell.light-theme .pin-list-item, .app-shell.light-theme .empty-panel{
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-}
-
-/* Admin paneli de açık temada düzgün görünsün */
-
-/* =========================================
-   GÜNDÜZ MODU (LIGHT THEME) DÜZELTMELERİ
-   ========================================= */
-
-/* Genel arka plan ve yazı rengi */
-.app-shell.light-theme{
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-/* Üst bar */
-.app-shell.light-theme .topbar{
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-.app-shell.light-theme .topbar .brand strong, .app-shell.light-theme .topbar .brand small{
-  color: #0f172a !important;
-}
-
-/* Sağ Panel (Side Panel) */
-.app-shell.light-theme .side-panel{
-  background-color: #ffffff !important;
-  border-left: 1px solid #e2e8f0 !important;
-}
-
-.app-shell.light-theme .panel-content h2, .app-shell.light-theme .panel-content h3, .app-shell.light-theme .panel-heading h2, .app-shell.light-theme .panel-heading .eyebrow{
-  color: #0f172a !important;
-}
-
-.app-shell.light-theme .pin-title, .app-shell.light-theme .pin-description, .app-shell.light-theme .pin-date, .app-shell.light-theme .pin-list-title{
-  color: var(--text-primary) !important;
-}
-
-/* Form Elemanları (Input, Select, Textarea) */
-.app-shell.light-theme input, .app-shell.light-theme textarea, .app-shell.light-theme select{
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
-}
-
-.app-shell.light-theme input::placeholder, .app-shell.light-theme textarea::placeholder{
-  color: #64748b !important;
-}
-
-/* Butonlar */
-.app-shell.light-theme .secondary-button{
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-.app-shell.light-theme .secondary-button:hover{
-  background-color: #e2e8f0 !important;
-}
-
-.app-shell.light-theme .delete-pin-button{
-  background-color: #fef2f2 !important;
-  color: #ef4444 !important;
-  border-color: #fca5a5 !important;
-}
-
-/* Filtre Menüsü ve Arama Kutuları */
-.app-shell.light-theme .panel-filters, .app-shell.light-theme .time-filter-control{
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-/* Pin Listesi */
-.app-shell.light-theme .pin-list-item{
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-}
-
-.app-shell.light-theme .pin-list-item:hover{
-  background-color: #f8fafc !important;
-}
-
-.app-shell.light-theme .pin-list-meta small{
-  color: var(--text-muted) !important;
-}
-
-/* Modallar (Admin Paneli, Giriş, Davet) */
-
-/* Admin Panelindeki Kullanıcı Satırları */
-
-/* Harita Araç Çubuğu (Arama Barı) */
-
-/* Alt Bilgi (Footer) */
-.app-shell.light-theme footer{
-  background-color: #ffffff !important;
-  border-top: 1px solid #e2e8f0 !important;
-  color: #64748b !important;
-}
-
 /* My Pins filter: a distinct violet accent that remains readable in both themes. */
 
 /* Pin edit form: clearer field rhythm, file rows and inline error feedback. */
@@ -1722,28 +1595,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .edit-form-actions button:disabled, .pin-edit-form .icon-button:disabled{
   cursor: wait;
   opacity: .65;
-}
-
-/* Light theme: ensure selected-pin details remain readable in daylight mode. */
-.app-shell.light-theme .selected-address{
-  color: #334155 !important;
-}
-
-.app-shell.light-theme .selected-address > svg{
-  color: #64748b !important;
-  stroke: #64748b !important;
-}
-
-.app-shell.light-theme .selected-coordinates{
-  color: #334155 !important;
-}
-
-.app-shell.light-theme .directions-link{
-  color: #059669 !important;
-}
-
-.app-shell.light-theme .directions-link:hover{
-  color: #047857 !important;
 }
 
 /* Telegram-sourced pins use a distinct AYTAR RADAR color and badge. */
@@ -2023,12 +1874,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 .ai-summary-btn:hover{
   background: rgba(139, 92, 246, 0.2);
   transform: translateY(-1px);
-}
-
-.app-shell.light-theme .ai-summary-btn{
-  background: #f5f3ff;
-  color: #6d28d9;
-  border-color: #c4b5fd;
 }
 
 /* ============================================
@@ -2351,18 +2196,6 @@ select option{ background: var(--surface); color: var(--text-dark); }
 
 .aytar-live-session-item small{ font-size: 10px; color: var(--text-muted, #94a3b8); }
 
-.app-shell.light-theme .aytar-live-button{ background: #fff; color: #dc2626; border-color: #fca5a5; }
-
-.app-shell.light-theme .aytar-live-button:hover:not(:disabled){ background: #fef2f2; }
-
-.app-shell.light-theme .aytar-live-button.is-active{ background: #dc2626; color: #fff; }
-
-.app-shell.light-theme .aytar-live-viewer-list{ background: #fff; border-color: #e2e8f0; color: #0f172a; }
-
-.app-shell.light-theme .aytar-live-session-item{ background: #f8fafc; color: #0f172a; }
-
-.app-shell.light-theme .aytar-live-session-item:hover{ background: #fef2f2; border-color: #fca5a5; }
-
 /* Sadece yayın penceresi için kesin boyutlar */
 div.aytar-live-overlay{
   position: fixed !important;
@@ -2426,55 +2259,4 @@ div.aytar-live-overlay video.aytar-live-video{
   object-fit: cover !important;
   display: block !important;
   background: #000 !important;
-}
-
-/* AYTAR auth providers — keeps the existing light modal style */
-
-/* Profile dropdown and top-right controls: theme-aware light mode colors. */
-.app-shell.light-theme .profile-dropdown{
-  background: var(--surface) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
-}
-
-.app-shell.light-theme .profile-welcome{
-  color: var(--text-muted) !important;
-  border-bottom-color: var(--border-color) !important;
-}
-
-.app-shell.light-theme .profile-welcome strong{
-  color: var(--text-primary) !important;
-}
-
-.app-shell.light-theme .profile-menu-item{
-  background: transparent !important;
-  color: var(--text-primary) !important;
-}
-
-.app-shell.light-theme .profile-menu-item svg{
-  color: var(--text-muted) !important;
-}
-
-.app-shell.light-theme .profile-menu-item:hover:not(:disabled){
-  background: var(--hover-bg) !important;
-  color: var(--text-primary) !important;
-}
-
-.app-shell.light-theme .profile-menu-item:disabled{
-  color: var(--text-muted) !important;
-  opacity: .65;
-}
-
-.app-shell.light-theme .profile-trigger,
-.app-shell.light-theme .top-actions > .icon-button{
-  background: var(--surface) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
-}
-
-.app-shell.light-theme .profile-trigger:hover,
-.app-shell.light-theme .top-actions > .icon-button:hover{
-  background: var(--hover-bg) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
 }
