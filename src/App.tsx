@@ -230,7 +230,7 @@ function FlyTo({ position, zoom, isNavigating }: { position:[number,number]|null
   return null; 
 }
 
-function ClusteredPins({ pins, selectedId, isDimmed, onSelect }: { pins: Pin[]; selectedId: string | null; isDimmed: (pin: Pin) => boolean; onSelect: (pin: Pin) => void }) {
+function ClusteredPins({ pins, selectedId, isDimmed: _isDimmed, onSelect }: { pins: Pin[]; selectedId: string | null; isDimmed: (pin: Pin) => boolean; onSelect: (pin: Pin) => void }) {
   const [, setRevision] = useState(0);
   useEffect(() => { const timer = window.setInterval(() => setRevision(v => v + 1), 60_000); return () => window.clearInterval(timer); }, []);
   const map = useMapEvents({ zoomend: () => setRevision(v => v + 1), moveend: () => setRevision(v => v + 1) });
