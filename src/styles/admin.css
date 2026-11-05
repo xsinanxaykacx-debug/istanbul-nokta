@@ -1,8 +1,4 @@
-/* Admin panel styles extracted from styles.css. */
-.app-shell.light-theme .admin-user-row{
-  background-color: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-}
+
 .admin-pin-management{
   display: flex;
   flex-direction: column;
