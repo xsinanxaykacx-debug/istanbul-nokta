@@ -714,9 +714,9 @@ footer span:first-child{width:100%}
     left: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    width: calc(100% - 60px) !important;
-    height: 60dvh !important;
-    max-height: 60dvh !important;
+    width: 100% !important;
+    height: 55dvh !important;
+    max-height: 55dvh !important;
     min-height: 0 !important;
     overflow: hidden !important;
     z-index: 9999 !important;
