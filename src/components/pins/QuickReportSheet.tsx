@@ -48,10 +48,10 @@ interface CategoryDef {
 
 const CATEGORIES: CategoryDef[] = [
   { key: 'polis',         label: 'Sivil Trafik Polisi',    Icon: Shield,        color: '#3b82f6' },
-  { key: 'yol_calismasi', label: 'Trafik Kontrol Noktas?', Icon: TrafficCone,   color: '#f59e0b' },
+  { key: 'yol_calismasi', label: 'Trafik Kontrol Noktası', Icon: TrafficCone,   color: '#f59e0b' },
   { key: 'radar',         label: 'Mobil Radar',            Icon: Radar,         color: '#eab308' },
   { key: 'kaza',          label: 'Yolda Kaza',             Icon: Ambulance,     color: '#ef4444' },
-  { key: 'yol_kapali',    label: 'Yol Kapal?',             Icon: OctagonMinus,  color: '#64748b' },
+  { key: 'yol_kapali',    label: 'Yol Kapalı',             Icon: OctagonMinus,  color: '#64748b' },
   { key: 'tehlike',       label: 'Yolda Tehlike',          Icon: TriangleAlert, color: '#f97316' },
 ];
 
