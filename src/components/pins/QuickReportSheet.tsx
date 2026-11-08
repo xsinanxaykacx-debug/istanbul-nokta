@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Radar,
   Shield,
@@ -43,15 +43,16 @@ interface CategoryDef {
   key: QuickCategory;
   label: string;
   Icon: typeof Radar;
+  color: string;
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { key: 'polis',         label: 'Sivil Trafik Polisi',    Icon: Shield },
-  { key: 'yol_calismasi', label: 'Trafik Kontrol Noktası', Icon: TrafficCone },
-  { key: 'radar',         label: 'Mobil Radar',            Icon: Radar },
-  { key: 'kaza',          label: 'Yolda Kaza',             Icon: Ambulance },
-  { key: 'yol_kapali',    label: 'Yol Kapalı',             Icon: OctagonMinus },
-  { key: 'tehlike',       label: 'Yolda Tehlike',          Icon: TriangleAlert },
+  { key: 'polis',         label: 'Sivil Trafik Polisi',    Icon: Shield,        color: '#3b82f6' },
+  { key: 'yol_calismasi', label: 'Trafik Kontrol Noktas?', Icon: TrafficCone,   color: '#f59e0b' },
+  { key: 'radar',         label: 'Mobil Radar',            Icon: Radar,         color: '#eab308' },
+  { key: 'kaza',          label: 'Yolda Kaza',             Icon: Ambulance,     color: '#ef4444' },
+  { key: 'yol_kapali',    label: 'Yol Kapal?',             Icon: OctagonMinus,  color: '#64748b' },
+  { key: 'tehlike',       label: 'Yolda Tehlike',          Icon: TriangleAlert, color: '#f97316' },
 ];
 
 const QUICK_CATEGORY_LABEL: Record<QuickCategory, string> = {
@@ -367,15 +368,18 @@ export default function QuickReportSheet({
               Kategoriye dokun; konumun otomatik alınacak.
             </p>
             <div className="quick-report-grid">
-              {CATEGORIES.map(({ key, label, Icon }) => (
+              {CATEGORIES.map(({ key, label, Icon, color }) => (
                 <button
                   key={key}
                   type="button"
                   className="quick-category-card"
                   onClick={() => handleCategoryClick(key)}
                   disabled={loading}
+                  style={{ '--cat-color': color } as CSSProperties}
                 >
-                  <Icon size={22} />
+                  <div className="quick-category-icon-wrapper">
+                    <Icon size={24} color={color} />
+                  </div>
                   <span>{label}</span>
                 </button>
               ))}
