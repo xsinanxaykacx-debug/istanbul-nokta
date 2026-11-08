@@ -12,6 +12,8 @@ export type Pin = {
   description: string;
   created_at: string;
   category: string | null;
+  report_mode?: 'quick' | 'detailed';
+  quick_category?: string | null;
   voice_note_url?: string | null;
   pin_photos: PinPhoto[];
   pin_votes: PinVote[];
@@ -92,7 +94,7 @@ export function usePins({
       while (true) {
         let query = supabase
           .from('pins')
-          .select('id,owner_id,lat,lng,description,category,created_at,voice_note_url,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)')
+          .select('id,owner_id,lat,lng,description,category,created_at,voice_note_url,report_mode,quick_category,pin_photos(id,storage_path,public_url,sort_order),pin_votes(vote_type,user_id)')
           .gte('created_at', cutoff)
           .order('created_at', { ascending: false })
           .range(offset, offset + pageSize - 1);

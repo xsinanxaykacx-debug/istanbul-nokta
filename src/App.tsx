@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Navigation, Plus, Search, ShieldCheck, SlidersHorizontal, UserRound, X, BrainCircuit, Sparkles, Award, Trophy, Star, Bell, BellOff } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, LocateFixed, LoaderCircle, LogIn, LogOut, MapPin, Mic, Navigation, Plus, Search, ShieldCheck, SlidersHorizontal, UserRound, X, BrainCircuit, Sparkles, Award, Trophy, Star, Bell, BellOff, Zap } from 'lucide-react';
 import { isConfigured, supabase } from './lib/supabase';
 import { compressPhoto } from './lib/photos';
 import { containsProfanity } from './lib/moderation';
@@ -21,6 +21,7 @@ import SearchPanel from './components/search/SearchPanel';
 import PinList from './components/pins/PinList';
 import PinCreateForm from './components/pins/PinCreateForm';
 import PinDetail from './components/pins/PinDetail';
+import QuickReportSheet from './components/pins/QuickReportSheet';
 import AdminPanel from './components/admin/AdminPanel';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://aytar.vercel.app';
@@ -78,6 +79,24 @@ const categoryFilterColors: Record<string, string> = {
   'Tümü': '#f97316', 'YEŞİL': '#39FF14', 'MAVİ': '#00E5FF', 'KIRMIZI': '#FF1744', 'SARI': '#FFEA00', 'BENIM': '#8b5cf6',
 };
 
+// ---- Quick Report category icons (LAB) ----
+const quickCategoryIconPaths: Record<string, string> = {
+  kaza: '<path d="M5 17h14M6 17l1.5-5.5A2 2 0 0 1 9.4 10h5.2a2 2 0 0 1 1.9 1.5L18 17M7 17v2M17 17v2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="7.5" cy="14.5" r="1" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1" fill="currentColor"/>',
+  radar: '<path d="M12 12 4 4M12 12l8 8M12 12a6 6 0 1 0-6-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>',
+  polis: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  yol_calismasi: '<path d="M3 21 12 3l9 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v6M12 17v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  tehlike: '<path d="M12 4 2 20h20L12 4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 10v5M12 17v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  yol_kapali: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m6 6 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+};
+const quickCategoryColors: Record<string, string> = {
+  kaza: '#ef4444',
+  radar: '#3b82f6',
+  polis: '#8b5cf6',
+  yol_calismasi: '#f59e0b',
+  tehlike: '#f97316',
+  yol_kapali: '#64748b',
+};
+
 function normalizeCategory(category?: string | null): string {
   switch (category) {
     case 'YEŞİL': case 'Yeşiller': case 'Yeşil': return 'YEŞİL';
@@ -91,9 +110,42 @@ function categoryClass(category?: string | null): string {
   const normalized = normalizeCategory(category);
   return `category-${normalized === 'YEŞİL' ? 'yesil' : normalized === 'MAVİ' ? 'mavi' : normalized === 'SARI' ? 'sari' : 'kirmizi'}`;
 }
-function getPinIcon(category?: string | null, description?: string | null, ownerId?: string | null, isFresh: boolean = false, ageHours: number = 0): L.DivIcon {
+function getPinIcon(
+  category?: string | null,
+  description?: string | null,
+  ownerId?: string | null,
+  isFresh: boolean = false,
+  ageHours: number = 0,
+  reportMode?: 'quick' | 'detailed' | null,
+  quickCategory?: string | null
+): L.DivIcon {
   const badge = `<span style="position:absolute;top:-4px;right:-8px;min-width:16px;height:16px;padding:0 2px;box-sizing:border-box;border-radius:999px;background:#0f172a;border:1px solid #ffffff;color:#ffffff;font:600 9px/14px Arial,sans-serif;text-align:center;white-space:nowrap;z-index:2;box-shadow:0 0 4px rgba(0,0,0,.8);">${ageHours}</span>`;
   const wrap = (svg: string) => `<div class="neon-pin-icon" style="position:relative;width:32px;height:40px;opacity:1;">${svg}${badge}</div>`;
+  // Quick report branch (LAB), before Telegram detection.
+  if (reportMode === 'quick' && quickCategory) {
+    const color = quickCategoryColors[quickCategory] || '#64748b';
+    const path = quickCategoryIconPaths[quickCategory] || quickCategoryIconPaths.tehlike;
+
+    const quickSvg = `<svg width="34" height="42" viewBox="0 0 34 42" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="quickGlow">
+          <feGaussianBlur stdDeviation="1.6" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path d="M17 2C9.8 2 4 7.8 4 15c0 9.5 13 25 13 25s13-15.5 13-25c0-7.2-5.8-13-13-13Z"
+        fill="#0f172a" stroke="#334155" stroke-width="2" filter="url(#quickGlow)"/>
+      <g transform="translate(5 8)" color="${color}">${path}</g>
+    </svg>`;
+
+    return new L.DivIcon({
+      className: 'pin-icon-wrap',
+      html: wrap(quickSvg),
+      iconSize: [42, 44],
+      iconAnchor: [16, 38]
+    });
+  }
+
 
   if (isTelegramPin(description, ownerId)) {
     return new L.DivIcon({
@@ -245,7 +297,7 @@ function ClusteredPins({ pins, selectedId, isDimmed: _isDimmed, onSelect }: { pi
     if (group.length === 1) {
       const pin = group[0];
       const isFresh = (Date.now() - new Date(pin.created_at).getTime()) < 10 * 60 * 1000;
-      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh, getPinAgeHours(pin))} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
+      return <Marker key={pin.id} position={[pin.lat, pin.lng]} icon={getPinIcon(pin.category, pin.description, pin.owner_id, isFresh, getPinAgeHours(pin), pin.report_mode, pin.quick_category)} title={pinMarkerTitle(pin)} alt={pinMarkerTitle(pin)} keyboard eventHandlers={{ click: () => onSelect(pin) }} />;
     }
     const center: [number, number] = [group.reduce((sum, pin) => sum + pin.lat, 0) / group.length, group.reduce((sum, pin) => sum + pin.lng, 0) / group.length];
     const clusterIcon = L.divIcon({ className: 'pin-cluster-icon-wrap', html: `<div class="pin-cluster-icon"><span>${group.length}</span></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
@@ -318,7 +370,10 @@ export default function App() {
 
   const knownPinIdsRef = useRef<Set<string>>(new Set());
 
-  const active=profile?.status==='active'; const canSeePins=active; const canAdd=active; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
+  // Hizli Ihbar (LAB)
+  const [quickReportOpen, setQuickReportOpen] = useState(false);
+
+  const active=profile?.status==='active'; const canSeePins=active; const canAdd=true /* LAB TEST - GERI AL */; const canDeleteSelected=!!selected&&!!session?.user?.id&&(selected.owner_id===session.user.id||profile?.role==='admin');
 
   const {
     pins,
@@ -1508,6 +1563,27 @@ export default function App() {
           <button type="button" className={`traffic-button ${showTraffic?'is-active':''}`} onClick={()=>{const nextTraffic=!showTraffic;setShowTraffic(nextTraffic);if(nextTraffic&&!tomtomApiKey)setNotice({kind:'error',text:'Trafik katmanı için VITE_TOMTOM_API_KEY yapılandırılmalı.'});}} aria-pressed={showTraffic} aria-label={showTraffic?'Trafik katmanını kapat':'Trafik katmanını aç'} title={showTraffic?'Trafiği kapat':tomtomApiKey?'Trafik':'Trafik (API anahtarı gerekli)'}>🚦</button>
         </div>
         </div>
+
+        {/* Hizli Ihbar FAB (LAB) */}
+        {canAdd && (
+          <button
+            type="button"
+            className="quick-report-fab"
+            onClick={() => setQuickReportOpen(true)}
+            aria-label="Hızlı ihbar"
+            title="Hızlı ihbar"
+          >
+            <Zap size={22} />
+          </button>
+        )}
+        <QuickReportSheet
+          open={quickReportOpen}
+          onClose={() => setQuickReportOpen(false)}
+          onReported={() => {
+            setQuickReportOpen(false);
+            void loadPins();
+          }}
+        />
 
         {!canSeePins&&!is3D&&<div className="map-overlay"><div className="overlay-icon"><ShieldCheck size={23}/></div><strong>İşaretçiler üyelere özel</strong><p>Harita herkese açık. Konumları görmek ve eklemek için referans koduyla hesabını etkinleştir.</p><button className="primary-button" onClick={()=>setAuthOpen(true)}>Üye ol / giriş yap</button></div>}
       </div>
