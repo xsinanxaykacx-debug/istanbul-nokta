@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Car,
   Radar,
   Shield,
-  Construction,
-  AlertTriangle,
-  Ban,
+  TrafficCone,
+  Ambulance,
+  OctagonMinus,
+  TriangleAlert,
   MapPin,
   X,
   Check,
@@ -42,24 +42,24 @@ interface QuickReportSheetProps {
 interface CategoryDef {
   key: QuickCategory;
   label: string;
-  Icon: typeof Car;
+  Icon: typeof Radar;
 }
 
 const CATEGORIES: CategoryDef[] = [
-  { key: 'kaza',          label: 'Kaza',          Icon: Car },
-  { key: 'radar',         label: 'Radar',         Icon: Radar },
-  { key: 'polis',         label: 'Sivil Polis',   Icon: Shield },
-  { key: 'yol_calismasi', label: 'Yol Çalışması', Icon: Construction },
-  { key: 'tehlike',       label: 'Tehlike',       Icon: AlertTriangle },
-  { key: 'yol_kapali',    label: 'Yol Kapalı',    Icon: Ban },
+  { key: 'polis',         label: 'Sivil Trafik Polisi',    Icon: Shield },
+  { key: 'yol_calismasi', label: 'Trafik Kontrol Noktası', Icon: TrafficCone },
+  { key: 'radar',         label: 'Mobil Radar',            Icon: Radar },
+  { key: 'kaza',          label: 'Yolda Kaza',             Icon: Ambulance },
+  { key: 'yol_kapali',    label: 'Yol Kapalı',             Icon: OctagonMinus },
+  { key: 'tehlike',       label: 'Yolda Tehlike',          Icon: TriangleAlert },
 ];
 
 const QUICK_CATEGORY_LABEL: Record<QuickCategory, string> = {
-  kaza: 'Kaza',
-  radar: 'Radar',
-  polis: 'Sivil Polis',
-  yol_calismasi: 'Yol Çalışması',
-  tehlike: 'Tehlike',
+  kaza: 'Yolda Kaza',
+  radar: 'Mobil Radar',
+  polis: 'Sivil Trafik Polisi',
+  yol_calismasi: 'Trafik Kontrol Noktası',
+  tehlike: 'Yolda Tehlike',
   yol_kapali: 'Yol Kapalı',
 };
 

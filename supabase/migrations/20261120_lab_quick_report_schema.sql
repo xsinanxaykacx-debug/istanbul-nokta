@@ -1,9 +1,7 @@
 -- =============================================================
--- LAB: Hizli Ihbar (Quick Report) - SEMA
--- Dal: lab/quick-report
--- DIKKAT: Yalnizca LAB icindir. Uretim AYTAR'a UYGULANMAZ.
+-- Quick Report schema migration (additive)
 -- create_pin_with_photos akisina ve voice_note_url alanina dokunmaz.
--- Idempotent sema taslagi; bu dosya calistirilmamistir.
+-- Idempotent; adds only Quick Report columns, indexes, stats table and RLS policies.
 -- =============================================================
 
 ALTER TABLE public.pins
