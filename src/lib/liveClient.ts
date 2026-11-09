@@ -22,15 +22,26 @@ export const liveSupabase = isLiveConfigured
     })
   : null;
 
+const TURN_URLS = (import.meta.env.VITE_TURN_URLS as string | undefined)
+  ?.split(',')
+  .map((url) => url.trim())
+  .filter((url) => url.startsWith('turn:') || url.startsWith('turns:')) ?? [];
+const TURN_USERNAME = (import.meta.env.VITE_TURN_USERNAME as string | undefined)?.trim();
+const TURN_CREDENTIAL = (import.meta.env.VITE_TURN_CREDENTIAL as string | undefined)?.trim();
+
+const CONFIGURED_TURN_SERVERS: RTCIceServer[] =
+  TURN_URLS.length > 0 && TURN_USERNAME && TURN_CREDENTIAL
+    ? [{ urls: TURN_URLS, username: TURN_USERNAME, credential: TURN_CREDENTIAL }]
+    : [
+        {
+          urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443'],
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
+      ];
+
 export const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  {
-    urls: [
-      'turn:openrelay.metered.ca:80',
-      'turn:openrelay.metered.ca:443'
-    ],
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  }
+  ...CONFIGURED_TURN_SERVERS,
 ];
